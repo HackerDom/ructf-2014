@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Radio!</title>
+    <style>
+        body * {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        body {
+            width: 300px;
+            margin: 20px auto;
+        }
+
+        form {
+            margin: 40% auto;
+        }
+
+        input {
+            height: 30px;
+            width: 100%;
+            padding: 10px;
+            margin: 20px 0;
+        }
+
+        textarea {
+            font-size: 20px;
+            box-sizing: border-box;
+            padding: 10px;
+            /* border: none; */
+            width: 100%;
+        }
+
+        input[type="submit"] {
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+{% block body %}
+<form method="POST" action="/post/">
+    <input type="text" name="callsign" placeholder="callsign"/>
+    <input type="text" name="frequency" placeholder="frequency"/>
+    <textarea name="message" placeholder="message" cols="30" rows="3"></textarea>
+    <input type="submit"/>
+</form>
+{% endblock %}
+
+</body>
+</html>
