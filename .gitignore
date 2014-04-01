@@ -1,0 +1,24 @@
+
+#############
+## Pahaz
+#############
+
+*.py[co]
+__pycache__
+
+# Packages
+*.egg
+*.egg-info
+
+services/dispatcher/dist/
+services/dispatcher/build/
+services/dispatcher/eggs/
+services/dispatcher/parts/
+services/dispatcher/venv/
+services/dispatcher/messages.db
+
+# IDE
+services/dispatcher/.idea
+
+# Installer logs
+pip-log.txt
