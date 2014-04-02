@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use Socket;
-use FMGCDB qw/init fl_read fl_write/;
+use FMGCDB qw/db_init fl_read fl_write/;
 use threads;
 
 use constant {
@@ -11,7 +11,7 @@ use constant {
 
 ($|, $SIG{'PIPE'}) = (1, 'IGNORE');
 
-eval { init } or die "Can't initialize db";
+eval { db_init } or die "Can't initialize db";
 
 socket $S, PF_INET, SOCK_STREAM, getprotobyname 'tcp';
 setsockopt $S, SOL_SOCKET, SO_REUSEADDR, 1;

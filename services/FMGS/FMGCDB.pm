@@ -1,7 +1,9 @@
 package FMGCDB;
 
+require Exporter;
+
 our @ISA = qw/Exporter/;
-our @EXPORT_OK = qw/init fl_read fl_write/;
+our @EXPORT_OK = qw/db_init fl_read fl_write/;
 our $VERSION = 1.0;
 
 my %cache;
@@ -10,7 +12,7 @@ use constant {
     DB_FOLDER => 'db/'
 };
 
-sub init {
+sub db_init {
     return 1 if -d DB_FOLDER;
     mkdir DB_FOLDER or die "ERR_INIT";
 }
