@@ -4,6 +4,8 @@ our @ISA = qw/Exporter/;
 our @EXPORT_OK = qw/init fl_read fl_write/;
 our $VERSION = 1.0;
 
+my %cache;
+
 use constant {
     DB_FOLDER => 'db/'
 };
@@ -15,6 +17,8 @@ sub init {
 
 sub fl_read {
     my $flight = shift;
+    return $cache{$flight} if exists $cache{$flight};
+
     open F, '<', DB_FOLDER . $flight or die "ERR_OPEN: '$flight'";
 
     my $data = {};
@@ -25,11 +29,15 @@ sub fl_read {
     }
 
     close F;
+
+    $cache{$flight} = $data;
     return $data;
 }
 
 sub fl_write {
     my ($flight, $data) = @_;
+    $cache{$flight} = $data;
+
     local $\ = "\n";
     open F, '>', DB_FOLDER . $flight or die "ERR_CREATE: '$flight'";
 
