@@ -21,6 +21,10 @@ iface $iface inet static
 # Wired internet on the game (disabled by default)
 iface $iface.300 inet dhcp
 
+auto $iface.100
+iface $iface.100 inet static
+    address 10.23.0.1
+    netmask 255.255.255.0
 END
 
 for i in $(seq 1 $N); do cat <<END
