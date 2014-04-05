@@ -40,6 +40,12 @@ def change_ip(host, pwd, ip, mask, gw):
     submit(host, 'system/system_ls.html', params)
     #get_page(host, 'logout.html', {'tmp' : 0})
 
+def configure_vlan(host, vlan, portspec):
+    args = {'submit' : 'Apply'}
+    args.update(dict(map(lambda port: [('R%x' % (int(port) + 15))] * 2,
+                         portspec.split(','))))
+    get_page(host, 'vlans/vlan_setup.html', args)
+
 @cmd
 def add_vlan(host, pwd, vlan, portspec):
     get_page(host, 'login.html', {'password' : pwd})
@@ -47,10 +53,13 @@ def add_vlan(host, pwd, vlan, portspec):
                    {'VID' : vlan,
                     'submit' : 'Add',
                     'R10' : 0}) # does not matter
-    args = {'submit' : 'Apply'}
-    args.update(dict(map(lambda port: [('R%x' % (int(port) + 15))] * 2,
-                         portspec.split(','))))
-    get_page(host, 'vlans/vlan_setup.html', args)
+    configure_vlan(host, vlan, portspec)
+    get_page(host, 'logout.html', {'tmp' : 0})
+
+@cmd
+def change_vlan(host, pwd, vlan, portspec):
+    get_page(host, 'login.html', {'password' : pwd})
+    configure_vlan(host, vlan, portspec)
     get_page(host, 'logout.html', {'tmp' : 0})
 
 @cmd
