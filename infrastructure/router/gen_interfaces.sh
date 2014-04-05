@@ -14,7 +14,9 @@ iface wlan0 inet dhcp
 	wpa-conf /etc/wpa_supplicant.conf
 
 auto $iface
-iface $iface inet manual
+iface $iface inet static
+    address 10.24.0.254
+    netmask 255.255.255.0
 
 # Wired internet on the game (disabled by default)
 iface $iface.300 inet dhcp
