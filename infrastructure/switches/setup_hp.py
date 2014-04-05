@@ -41,6 +41,40 @@ def change_ip(host, pwd, ip, mask, gw):
     #get_page(host, 'logout.html', {'tmp' : 0})
 
 @cmd
+def add_vlan(host, pwd, vlan, portspec):
+    get_page(host, 'login.html', {'password' : pwd})
+    get_page(host, 'vlans/vlan_mconf.html',
+                   {'VID' : vlan,
+                    'submit' : 'Add',
+                    'R10' : 0}) # does not matter
+    args = {'submit' : 'Apply'}
+    args.update(dict(map(lambda port: [('R%x' % (int(port) + 15))] * 2,
+                         portspec.split(','))))
+    get_page(host, 'vlans/vlan_setup.html', args)
+    get_page(host, 'logout.html', {'tmp' : 0})
+
+@cmd
+def del_vlan(host, pwd, vlan):
+    get_page(host, 'login.html', {'password' : pwd})
+    data = get_page(host, 'vlans/vlan_mconf.html')
+    vlans = {}
+    for i in range(0, 64):
+        res = re.search('<input\s+name="R10"\s+'
+                        'type="radio"\s+'
+                        'value="%d"\s*(?:checked\s*)?><br>'
+                        '\s*(\d+)</td>' % i, data)
+        if res != None:
+            vlans[res.group(1)] = i
+    try:
+        num = vlans[vlan]
+        get_page(host, 'vlans/vlan_mconf.html',
+                 {'submit' : 'Delete',
+                  'VID' : '',
+                  'R10' : num})
+    finally:
+        get_page(host, 'logout.html', {'tmp' : 0})
+
+@cmd
 def setup(host, pwd):
     get_page(host, 'login.html', {'password' : pwd})
     # TODO(malets): do some stuff here
