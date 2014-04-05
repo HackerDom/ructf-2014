@@ -29,6 +29,18 @@ def change_pwd(host, old, new):
     get_page(host, 'logout.html', {'tmp' : 0})
 
 @cmd
+def change_ip(host, pwd, ip, mask, gw):
+    get_page(host, 'login.html', {'password' : pwd})
+    ips, masks, gws = map(lambda name: name.split('.'), [ip, mask, gw])
+    params = {'ip' : ip, 'sm' : mask, 'gw' : gw}
+    for i in range(1, 5):
+        params['lanip_%d' % i] = ips[i-1]
+        params['sn_%d' % i]    = masks[i-1]
+        params['gw_%d' % i]    = gws[i-1]
+    submit(host, 'system/system_ls.html', params)
+    #get_page(host, 'logout.html', {'tmp' : 0})
+
+@cmd
 def setup(host, pwd):
     get_page(host, 'login.html', {'password' : pwd})
     # TODO(malets): do some stuff here
