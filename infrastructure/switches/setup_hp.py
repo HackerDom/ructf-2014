@@ -23,6 +23,16 @@ def cmd(fn):
     cmds[fn.__name__] = lambda host, pwd, args: fn(host, pwd, *args)
 
 @cmd
+def reset(host, pwd):
+    get_page(host, 'login.html', {'password' : pwd})
+    submit(host, 'system/system_config.html',
+           {'factory' : 'Yes',
+            'warm' : '',
+            'tool_sel' : 'reset',
+            'upload' : 'on',
+            'R10' : 0})
+
+@cmd
 def change_pwd(host, old, new):
     get_page(host, 'login.html', {'password' : old})
     submit(host, 'system/system_pswd.html', {'pow' : old, 'pw' : new, 'pcw' : new})
