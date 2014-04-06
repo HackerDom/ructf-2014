@@ -10,24 +10,26 @@ DEFAULT_MASK=255.255.255.0
 DEFAULT_PREFIX=24
 DEFAULT_GW=192.168.2.1
 
-ip addr add $DEFAULT_GW/$DEFAULT_PREFIX dev $DEV
+check_ping() {
+    local addr=$1 count=$2
+    if [ -n "$3" ]; then
+        local action=" after $3"
+    else
+        local action=
+    fi
+    for ((i=0; i!=count; ++i)); do
+        ping -c 1 -W 1 $addr &>/dev/null && return 0
+    done
+    echo "Can't ping $addr$action" >&2
+    return 1
+}
 
 configure() {
     if ! $SETUP reset $DEFAULT_IP ""; then
         echo "Failed to reset $DEFAULT_IP" >&2
         return 2
     fi
-    local ping=false
-    for ((i=0; i!=30; ++i)); do
-        if ping -c 1 -W 1 $DEFAULT_IP &>/dev/null; then
-            ping=true
-            break
-        fi
-    done
-    if ! $ping; then
-        echo "Can't ping $DEFAULT_IP after reset" >&2
-        return 3
-    fi
+    check_ping $DEFAULT_IP 30 reset || return 3
 
     NORMAL_IP=10.24.$N.1
     NORMAL_MASK=$DEFAULT_MASK
@@ -38,53 +40,21 @@ configure() {
         return 4
     fi
 
-    ping=false
-    for ((i=0; i!=5; ++i)); do
-        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
-            ping=true
-            break
-        fi
-    done
-    if ! $ping; then
-        echo "Can't ping $NORMAL_IP after address change" >&2
-        return 5
-    fi
+    check_ping $NORMAL_IP 5 'address change' || return 5
 
     pwd=$(grep "^$N:" $(dirname $0)/hp_pwds | cut -f2 -d:)
     if ! $SETUP change_pwd $NORMAL_IP "" "$pwd"; then
         echo "Can't change pwd on $NORMAL_IP" >&2
         return 6
     fi
-
-    ping=false
-    for ((i=0; i!=5; ++i)); do
-        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
-            ping=true
-            break
-        fi
-    done
-    if ! $ping; then
-        echo "Can't ping $NORMAL_IP after password change" >&2
-        return 7
-    fi
+    check_ping $NORMAL_IP 5 'password change' || return 7
 
     TEAM_VLAN=$((100+N))
     if ! $SETUP add_vlan $NORMAL_IP "$pwd" $TEAM_VLAN "$(seq -s, 1 24)"; then
         echo "Can't configure VLAN #$TEAM_VLAN on $NORMAL_IP" >&2
         return 8
     fi
-
-    ping=false
-    for ((i=0; i!=5; ++i)); do
-        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
-            ping=true
-            break
-        fi
-    done
-    if ! $ping; then
-        echo "Can't ping $NORMAL_IP after VLAN configuration" >&2
-        return 9
-    fi
+    check_ping $NORMAL_IP 5 'VLAN configuration' || return 9
 
     vlan_aware=23,24
     ingress_filter=$(seq -s, 1 22)
@@ -97,24 +67,11 @@ configure() {
     fi
 }
 
-succ=false
-for ((i=0; i!=3; ++i)); do
-    if ping -c 1 -W 1 $DEFAULT_IP &>/dev/null; then
-        succ=true
-        configure
-        configured=$?
-        break
-    fi
-done
+ip addr add $DEFAULT_GW/$DEFAULT_PREFIX dev $DEV
+
+check_ping $DEFAULT_IP 3 "" && up=true || up=false
+if $up; then configure; configured=$?; fi
 
 ip addr del $DEFAULT_GW/$DEFAULT_PREFIX dev $DEV
 
-if ! $succ; then
-    echo "Can't ping $DEFAULT_IP" >&2
-    exit 1
-fi
-
-if ! $configure; then
-    echo "Can't configure $DEFAULT_IP" >&2
-    exit 2
-fi
+! $up && exit 20 || exit $configured
