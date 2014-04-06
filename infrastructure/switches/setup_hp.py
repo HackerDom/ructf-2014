@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import os, re, sys, urllib2, urllib, zlib
+import os, re, socket, sys, urllib2, urllib, zlib
 from cookielib import CookieJar
 
 def get_page(host, path, post=None):
     url = "http://%s/%s" % (host, path)
     url_opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(CookieJar()))
-    data = (url_opener.open(url, urllib.urlencode(post)).read()
+    timeout = 2
+    data = (url_opener.open(url, urllib.urlencode(post), timeout).read()
             if post != None
             else url_opener.open(url).read())
     try:
@@ -25,12 +26,15 @@ def cmd(fn):
 @cmd
 def reset(host, pwd):
     get_page(host, 'login.html', {'password' : pwd})
-    submit(host, 'system/system_config.html',
-           {'factory' : 'Yes',
-            'warm' : '',
-            'tool_sel' : 'reset',
-            'upload' : 'on',
-            'R10' : 0})
+    try:
+        submit(host, 'system/system_config.html',
+               {'factory' : 'Yes',
+                'warm' : '',
+                'tool_sel' : 'reset',
+                'upload' : 'on',
+                'R10' : 0})
+    except socket.timeout:
+        pass
 
 @cmd
 def change_pwd(host, old, new):
