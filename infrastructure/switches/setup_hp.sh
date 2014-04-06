@@ -51,12 +51,27 @@ configure() {
     fi
 
     pwd=$(grep "^$N:" $(dirname $0)/hp_pwds | cut -f2 -d:)
-    if ! $SETUP change_pwd $NORMAL_IP "" $pwd; then
+    if ! $SETUP change_pwd $NORMAL_IP "" "$pwd"; then
         echo "Can't change pwd on $NORMAL_IP" >&2
         return 6
     fi
 
-    #TODO(malets): VLANs, ports, ...
+    ping=false
+    for ((i=0; i!=5; ++i)); do
+        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
+            ping=true
+            break
+        fi
+    done
+    if ! $ping; then
+        echo "Can't ping $NORMAL_IP after password change" >&2
+        return 7
+    fi
+
+    if ! $SETUP add_vlan $NORMAL_IP "$pwd" $((100+N)) "$(seq -s, 1 24)"; then
+        echo "Can't configure VLAN #$((100+N)) on $NORMAL_IP" >&2
+        return 8
+    fi
 }
 
 succ=false
