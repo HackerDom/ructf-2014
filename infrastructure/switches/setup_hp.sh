@@ -68,9 +68,32 @@ configure() {
         return 7
     fi
 
-    if ! $SETUP add_vlan $NORMAL_IP "$pwd" $((100+N)) "$(seq -s, 1 24)"; then
-        echo "Can't configure VLAN #$((100+N)) on $NORMAL_IP" >&2
+    TEAM_VLAN=$((100+N))
+    if ! $SETUP add_vlan $NORMAL_IP "$pwd" $TEAM_VLAN "$(seq -s, 1 24)"; then
+        echo "Can't configure VLAN #$TEAM_VLAN on $NORMAL_IP" >&2
         return 8
+    fi
+
+    ping=false
+    for ((i=0; i!=5; ++i)); do
+        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
+            ping=true
+            break
+        fi
+    done
+    if ! $ping; then
+        echo "Can't ping $NORMAL_IP after VLAN configuration" >&2
+        return 9
+    fi
+
+    vlan_aware=23,24
+    ingress_filter=$(seq -s, 1 22)
+    tagged=
+    pvids=$(for i in {1..22}; do echo -n ${TEAM_VLAN},; done; echo -n 1,1)
+    if ! $SETUP configure_ports $NORMAL_IP "$pwd" \
+            "$vlan_aware" "$ingress_filter" "$tagged" "$pvids"; then
+        echo "Can't configure port VLANs on $NORMAL_IP" >&2
+        return 10
     fi
 }
 

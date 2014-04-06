@@ -6,7 +6,7 @@ from cookielib import CookieJar
 def get_page(host, path, post=None):
     url = "http://%s/%s" % (host, path)
     url_opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(CookieJar()))
-    timeout = 2
+    timeout = 3
     data = (url_opener.open(url, urllib.urlencode(post), timeout).read()
             if post != None
             else url_opener.open(url).read())
@@ -54,10 +54,26 @@ def change_ip(host, pwd, ip, mask, gw):
     submit(host, 'system/system_ls.html', params)
     #get_page(host, 'logout.html', {'tmp' : 0})
 
+def port2field(base, port):
+    return 'R%x' % (int(port) + base)
+
+def portspec2list((base, portspec)):
+    return dict(map(lambda port: [port2field(base, port)] * 2,
+                    portspec.split(',')))
+
+def portspec2enabled((base, count, with0, portspec)):
+    result = {}
+    if with0:
+        for port in range(1, count+1):
+            result[port2field(base, port)] = 0
+    for port in portspec.split(','):
+        if len(port) != 0:
+            result[port2field(base, port)] = 1
+    return result
+
 def configure_vlan(host, vlan, portspec):
     args = {'submit' : 'Apply'}
-    args.update(dict(map(lambda port: [('R%x' % (int(port) + 15))] * 2,
-                         portspec.split(','))))
+    args.update(portspec2list((15, portspec)))
     get_page(host, 'vlans/vlan_setup.html', args)
 
 @cmd
@@ -96,6 +112,25 @@ def del_vlan(host, pwd, vlan):
                   'R10' : num})
     finally:
         get_page(host, 'logout.html', {'tmp' : 0})
+
+@cmd
+def configure_ports(host, pwd, aware, ingress, tagged, pvid):
+    PORT_COUNT = 24
+    if len(pvid.split(',')) != PORT_COUNT:
+        raise Exception('pvid list should have length of exactly 24')
+    args = {'_submit' : 'Apply'}
+    for part in map(portspec2enabled, [
+            (0xf,  PORT_COUNT, False, aware),
+            (0x4f, PORT_COUNT, False, ingress),
+            (0x8f, PORT_COUNT, True,  tagged)]):
+        args.update(part)
+    pvids = pvid.split(',')
+    for port in range(0, len(pvids)):
+        args['pvid%d' % (port+1)] = pvids[port]
+
+    get_page(host, 'login.html', {'password' : pwd})
+    get_page(host, 'vlans/vlan_pconf.html', args)
+    get_page(host, 'logout.html', {'tmp' : 0})
 
 @cmd
 def setup(host, pwd):
