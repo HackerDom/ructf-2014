@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 DEV=${1?no device}
 N=${2?no team number}
@@ -17,26 +17,46 @@ configure() {
         echo "Failed to reset $DEFAULT_IP" >&2
         return 2
     fi
-    local reset=false
+    local ping=false
     for ((i=0; i!=30; ++i)); do
         if ping -c 1 -W 1 $DEFAULT_IP &>/dev/null; then
-            reset=true
+            ping=true
             break
         fi
     done
-    if ! $reset; then
+    if ! $ping; then
         echo "Can't ping $DEFAULT_IP after reset" >&2
         return 3
-    else
-        NORMAL_IP=10.24.$N.1
-        NORMAL_MASK=$DEFAULT_MASK
-        NORMAL_GW=10.24.$N.254
-        if ! $SETUP change_ip $DEFAULT_IP "" \
-                $NORMAL_IP $NORMAL_MASK $NORMAL_GW; then
-            echo "Failed to change ip to $NORMAL_IP" >&2
-            return 4
-        fi
     fi
+
+    NORMAL_IP=10.24.$N.1
+    NORMAL_MASK=$DEFAULT_MASK
+    NORMAL_GW=10.24.$N.254
+    if ! $SETUP change_ip $DEFAULT_IP "" \
+            $NORMAL_IP $NORMAL_MASK $NORMAL_GW; then
+        echo "Failed to change ip to $NORMAL_IP" >&2
+        return 4
+    fi
+
+    ping=false
+    for ((i=0; i!=5; ++i)); do
+        if ping -c 1 -W 1 $NORMAL_IP &>/dev/null; then
+            ping=true
+            break
+        fi
+    done
+    if ! $ping; then
+        echo "Can't ping $NORMAL_IP after address change" >&2
+        return 5
+    fi
+
+    pwd=$(grep "^$N:" $(dirname $0)/hp_pwds | cut -f2 -d:)
+    if ! $SETUP change_pwd $NORMAL_IP "" $pwd; then
+        echo "Can't change pwd on $NORMAL_IP" >&2
+        return 6
+    fi
+
+    #TODO(malets): VLANs, ports, ...
 }
 
 succ=false
