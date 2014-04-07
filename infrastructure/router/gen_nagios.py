@@ -30,6 +30,22 @@ define hostgroup {
 {% for i in range(1,N+1) %}
 define host {
     use            generic-host
+    host_name      Team {{i}} vuln image
+    address        10.24.{{i}}.3
+    check_interval 1
+    hostgroups     Essential hosts
+}
+
+define host {
+    use                   generic-host
+    host_name             Team {{i}} test image
+    address               10.24.{{i}}.2
+    check_interval        1
+    notifications_enabled 0
+}
+
+define host {
+    use            generic-host
     host_name      Team {{i}} switch
     address        10.24.{{i}}.1
     check_interval 1
@@ -73,7 +89,7 @@ define service {
 define service {
     use                   generic-service
     host_name             Team {{i}} switch
-    service_description   Reserved port #{{j}}
+    service_description   Team port #{{j}}
     check_command         check_snmp_port!{{100+j}}
     check_interval 1
     notifications_enabled 0
