@@ -7,16 +7,14 @@ import jinja2, sys
 if __name__ == '__main__':
     N=sys.argv[1]
     template="""
-define host {
-    use            generic-host
-    host_name      Core switch
-    address        10.24.0.1
-    check_interval 1
-}
-
 define command {
     command_name   check_snmp_port
     command_line   /usr/lib/nagios/plugins/check_snmp -H '$HOSTADDRESS$' -P 2c -C public -o 'IF-MIB::ifOperStatus.$ARG1$' -c 1
+}
+
+define command {
+    command_name   check_snmp_portspeed
+    command_line   /usr/lib/nagios/plugins/check_snmp -H '$HOSTADDRESS$' -P 2c -C public -o 'IF-MIB::ifSpeed.$ARG1$' -c 1000000000
 }
 
 define servicegroup {
@@ -25,6 +23,14 @@ define servicegroup {
 
 define hostgroup {
     hostgroup_name   Essential hosts
+}
+
+define host {
+    use            generic-host
+    host_name      Core switch
+    address        10.24.0.1
+    hostgroups     Essential hosts
+    check_interval 1
 }
 
 {% for i in range(1,N+1) %}
@@ -50,6 +56,24 @@ define host {
     address        10.24.{{i}}.1
     check_interval 1
     hostgroups     Essential hosts
+}
+
+define service {
+    use                 generic-service
+    host_name           Core switch
+    service_description Team {{i}} port
+    check_command       check_snmp_port!{{i}}
+    check_interval 1
+    servicegroups       Essential services
+}
+
+define service {
+    use                 generic-service
+    host_name           Core switch
+    service_description Team {{i}} port speed
+    check_command       check_snmp_portspeed!{{i}}
+    check_interval 1
+    servicegroups       Essential services
 }
 
 define service {
