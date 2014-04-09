@@ -80,7 +80,7 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Core switch port
-    check_command       check_snmp_port!124
+    check_command       check_snmp_port!101
     check_interval 1
     servicegroups       Essential services
 }
@@ -89,7 +89,7 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Core switch port speed
-    check_command       check_snmp_portspeed!124
+    check_command       check_snmp_portspeed!101
     check_interval 1
     servicegroups       Essential services
 }
@@ -98,27 +98,19 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Backup core switch port
-    check_command       check_snmp_port!123
-    check_interval 1
-}
-
-define service {
-    use                 generic-service
-    host_name           Team {{i}} switch
-    service_description Reserved port #1
-    check_command       check_snmp_port!101
-    check_interval 1
-}
-
-define service {
-    use                 generic-service
-    host_name           Team {{i}} switch
-    service_description Reserved port #2
     check_command       check_snmp_port!102
     check_interval 1
 }
 
-{% for j in range(3,23) %}
+define service {
+    use                 generic-service
+    host_name           Team {{i}} switch
+    service_description Backup core switch port speed
+    check_command       check_snmp_portspeed!102
+    check_interval 1
+}
+
+{% for j in range(3,25) %}
 define service {
     use                   generic-service
     host_name             Team {{i}} switch
