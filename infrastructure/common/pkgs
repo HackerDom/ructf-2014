@@ -2,4 +2,4 @@ mc htop less vim iproute wireless-tools wpasupplicant
 firmware-linux-free firmware-linux-nonfree rfkill git tcpdump minicom
 screen python python-jinja2 dnsutils mtr-tiny hdparm
 ca-certificates ntp snmp snmp-mibs-downloader bzip2 exim4-daemon-light
-lm-sensors stress cpufrequtils augeas-tools firmware-realtek
+lm-sensors stress cpufrequtils augeas-tools firmware-realtek iotop
