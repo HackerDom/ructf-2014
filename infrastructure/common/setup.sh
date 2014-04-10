@@ -7,6 +7,7 @@ apt-get -y install $(cat $BASE/pkgs)
 set +e;
 /usr/bin/augtool -s set /files/etc/ssh/sshd_config/UseDNS no
 /usr/bin/augtool -s set /files/etc/ssh/sshd_config/PasswordAuthentication no
+/usr/bin/augtool -s set /files/etc/ssh/sshd_config/AllowAgentForwarding yes
 set -e;
 /etc/init.d/ssh restart
 
