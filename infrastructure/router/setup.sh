@@ -8,6 +8,12 @@ $BASE/../common/setup.sh
 
 apt-get -y install $(cat $BASE/pkgs)
 
+set +e;
+/usr/bin/augtool -s set /files/etc/ssh/sshd_config/ListenAddress[1] 10.23.0.1
+/usr/bin/augtool -s set /files/etc/ssh/sshd_config/ListenAddress[2] 172.16.19.178
+set -e;
+
+/etc/init.d/ssh restart
 N=16
 
 python $BASE/gen_dhcp.py $N > /etc/dhcp/dhcpd.conf
