@@ -30,7 +30,7 @@ define host {
     host_name      Core switch
     address        10.24.0.1
     hostgroups     Essential hosts
-    check_interval 1
+    check_interval 5
 }
 
 {% for i in range(1,N+1) %}
@@ -38,7 +38,7 @@ define host {
     use            generic-host
     host_name      Team {{i}} vuln image
     address        10.24.{{i}}.3
-    check_interval 1
+    check_interval 5
     hostgroups     Essential hosts
 }
 
@@ -46,7 +46,7 @@ define host {
     use                   generic-host
     host_name             Team {{i}} test image
     address               10.24.{{i}}.2
-    check_interval        1
+    check_interval        5
     notifications_enabled 0
 }
 
@@ -54,7 +54,7 @@ define host {
     use            generic-host
     host_name      Team {{i}} switch
     address        10.24.{{i}}.1
-    check_interval 1
+    check_interval 5
     hostgroups     Essential hosts
 }
 
@@ -63,7 +63,7 @@ define service {
     host_name           Core switch
     service_description Team {{i}} port
     check_command       check_snmp_port!{{i}}
-    check_interval 1
+    check_interval 5
     servicegroups       Essential services
 }
 
@@ -72,7 +72,7 @@ define service {
     host_name           Core switch
     service_description Team {{i}} port speed
     check_command       check_snmp_portspeed!{{i}}
-    check_interval 1
+    check_interval 5
     servicegroups       Essential services
 }
 
@@ -80,8 +80,8 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Core switch port
-    check_command       check_snmp_port!101
-    check_interval 1
+    check_command       check_snmp_port!124
+    check_interval 5
     servicegroups       Essential services
 }
 
@@ -89,8 +89,8 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Core switch port speed
-    check_command       check_snmp_portspeed!101
-    check_interval 1
+    check_command       check_snmp_portspeed!124
+    check_interval 5
     servicegroups       Essential services
 }
 
@@ -99,7 +99,7 @@ define service {
     host_name           Team {{i}} switch
     service_description Backup core switch port
     check_command       check_snmp_port!102
-    check_interval 1
+    check_interval 5
 }
 
 define service {
@@ -107,7 +107,7 @@ define service {
     host_name           Team {{i}} switch
     service_description Backup core switch port speed
     check_command       check_snmp_portspeed!102
-    check_interval 1
+    check_interval 5
 }
 
 {% for j in range(3,25) %}
@@ -116,7 +116,7 @@ define service {
     host_name             Team {{i}} switch
     service_description   Team port #{{j}}
     check_command         check_snmp_port!{{100+j}}
-    check_interval 1
+    check_interval 5
     notifications_enabled 0
 }
 {% endfor %}

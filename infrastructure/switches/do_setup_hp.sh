@@ -52,10 +52,10 @@ configure() {
         "$pwd" $TEAM_VLAN "$(seq -s, 1 24)" || return 8
     check_ping $NORMAL_IP 5 'VLAN configuration' || return 9
 
-    vlan_aware=1,2
-    ingress_filter=$(seq -s, 3 24)
+    vlan_aware=23,24
+    ingress_filter=$(seq -s, 1 22)
     tagged=
-    pvids=$(echo -n 1,1; for i in {1..22}; do echo -n ${TEAM_VLAN},; done)
+    pvids=$(for i in {1..22}; do echo -n ${TEAM_VLAN},; done; echo -n 1,1)
     do_setup configure_ports $NORMAL_IP "$pwd" \
         "$vlan_aware" "$ingress_filter" "$tagged" "$pvids" || return 10
     check_ping $NORMAL_IP 5 'port configuration' || return 11
