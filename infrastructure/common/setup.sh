@@ -5,7 +5,7 @@ BASE=$(dirname $0)
 apt-get -y install $(cat $BASE/pkgs)
 
 set +e;
-/usr/bin/augtool -s set /files/etc/ssh/ssh_config/ForwardAgent yes
+/usr/bin/augtool -s set /files/etc/ssh/ssh_config/Host/ForwardAgent yes
 /usr/bin/augtool -s set /files/etc/ssh/sshd_config/UseDNS no
 /usr/bin/augtool -s set /files/etc/ssh/sshd_config/PasswordAuthentication no
 /usr/bin/augtool -s set /files/etc/ssh/sshd_config/AllowAgentForwarding yes
