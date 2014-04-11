@@ -23,5 +23,5 @@ N=16
 python $BASE/gen_dhcp.py $N > /etc/dhcp/dhcpd.conf
 /etc/init.d/isc-dhcp-server restart
 
-python gen_nagios.py $N > /etc/nagios3/conf.d/ructf2014.cfg
+python $BASE/gen_nagios.py $N > /etc/nagios3/conf.d/ructf2014.cfg
 /etc/init.d/nagios3 reload
