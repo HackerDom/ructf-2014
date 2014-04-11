@@ -15,7 +15,7 @@ set -e;
 /etc/init.d/ssh restart
 
 set +e;
-augtool -s set /files/etc/aliases/*[name = 'root']/value andrey.malets@gmail.com
+augtool -s set "/files/etc/aliases/*[name = 'root']/value" andrey.malets@gmail.com
 set -e;
 
 N=16
