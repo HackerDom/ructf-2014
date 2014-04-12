@@ -11,62 +11,80 @@
 
 #include <signal.h>
 
+#include "debug.h"
 #include "storage.h"
 
-#define PORT 5555
+#define DEFAULT_PORT 5555
 #define MAX_MSG_LENGTH 32767
-#define END_STRING "chau\n"
-#define COMPLETE_STRING "fin-respuesta"
 
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL SO_NOSIGPIPE
-#endif
+#define die(message) { perror(message); exit(1); }
 
-#define perro(x) {fprintf(stderr, "%s:%d: %s: %s\n", __FILE__, __LINE__, x, strerror(errno));exit(1);}
+FILE* new_stream;
 
-#define D(...) fprintf(new_stream, __VA_ARGS__)
-
-int main() {
+int create_server_socket (int port)
+{
 	int sock;
 	struct sockaddr_in name;
-	char buf[MAX_MSG_LENGTH] = {0};
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) perro("opening socket");
+	if (sock < 0) 
+		die("create socket");
 
 	int optval = 1;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
 	name.sin_family = AF_INET;
 	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port = htons(PORT);
-	if(bind(sock, (void*) &name, sizeof(name))) perro("binding tcp socket");
-	if(listen(sock, 1) == -1) perro("listen");
+	name.sin_port = htons(port);
+
+	if(bind(sock, (void*) &name, sizeof(name)))
+		die("bind");
+
+	if(listen(sock, 1) == -1)
+		die("listen");
+
+	D("Listening to port: %d\n", port);
+	return sock;
+}
+
+int main(int argc, char ** argv)
+{
+	char buf[MAX_MSG_LENGTH] = {0};
+
+	int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;
+	int sock = create_server_socket(port);
 
 	struct sockaddr cli_addr;
 	int cli_len = sizeof(cli_addr);
-	int new_socket, new_fd, pid;
-	FILE* new_stream;
+	int client, new_fd, pid;
 
-	if(new_fd = dup(STDERR_FILENO) == -1) perro("dup");
-	new_stream = fdopen(new_fd, "w");
-	setbuf(new_stream, NULL); // sin buffering
+	// if(new_fd = dup(STDERR_FILENO) == -1) die("dup");
+	// new_stream = fdopen(new_fd, "w");
+	// setbuf(new_stream, NULL); // sin buffering
 
-	D("Initializing server...\n");
-	while(new_socket = accept(sock, &cli_addr, &cli_len)) {
-		D("Client connected.\nForking... ");
-		if(pid = fork()) D("child pid = %d.\n", pid);
+	while (1) {
+		client = accept(sock, &cli_addr, &cli_len);
+		if (client < 0)
+			die("accept");
+
+		pid = fork();
+		if (pid < 0)
+			die("fork");
+
+		if (pid > 0) {
+			D("New client connected. PID: %d\n", pid);
+		}
 		else {
 			pid = getpid();
-			if(new_socket < 0) perro("accept");
-			if(dup2(new_socket, STDOUT_FILENO) == -1) perro("dup2");
-			if(dup2(new_socket, STDERR_FILENO) == -1) perro("dup2");
+			if(client < 0) die("accept");
+			if(dup2(client, STDOUT_FILENO) == -1) die("dup2");
+			printf("Hello, Client!\r\n");
 			while(1) {
 				short int readc = 0, filled = 0;
 				while(1) {
 					char UName[MAX_MSG_LENGTH]={0};
-					send(new_socket, "Login: ", 8, 0);
-					readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+					send(client, "Login: ", 8, 0);
+					readc = recv(client, buf,  MAX_MSG_LENGTH, 0);
 					buf[readc-2]=0;
 					strcpy(UName,buf);
 					D(UName);
@@ -81,8 +99,8 @@ int main() {
 						{
 							int login=1;
 							char chOriginalPassword[]="root";
-							send(new_socket, "Password: ",10, 0);
-							readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+							send(client, "Password: ",10, 0);
+							readc = recv(client, buf,  MAX_MSG_LENGTH, 0);
 							readc-=2;
 							D("\t[%d]=%s\n", readc,buf);
 							buf[readc]=0;	
@@ -100,34 +118,34 @@ int main() {
 								D(UName);
 								char msg[MAX_MSG_LENGTH]="Hi, ";
 								strcat(msg,UName);
-								send(new_socket, msg,strlen(msg), 0);
+								send(client, msg,strlen(msg), 0);
 								strcpy(msg,"\nexit - Exit\nsend-Send\ninRoom-spisok komnat\n");
-								send(new_socket, msg,strlen(msg), 0);
+								send(client, msg,strlen(msg), 0);
 								while(1)
 								{
-									readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+									readc = recv(client, buf,  MAX_MSG_LENGTH, 0);
 									if(readc<1)break;
 									buf[readc-2]=0;
 									if(readc <= 0) break;
 									if(strcmp(buf,"inRoom")==0)
 									{
 										strcpy(msg,"spisok komnat:\n");
-										send(new_socket, msg,strlen(msg), 0);
+										send(client, msg,strlen(msg), 0);
 										strcpy(msg,"1");
-										send(new_socket, msg,strlen(msg), 0);
+										send(client, msg,strlen(msg), 0);
 										while(1)
 										{
 
-											readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+											readc = recv(client, buf,  MAX_MSG_LENGTH, 0);
 											if(readc<1)break;
 											buf[readc-2]=0;
 											if(readc <= 0) break;
 												if(strcmp(buf,"1")==0){
 													strcpy(msg,"Send:");
-													send(new_socket, msg,strlen(msg), 0);
+													send(client, msg,strlen(msg), 0);
 													while(1)
 													{
-														readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+														readc = recv(client, buf,  MAX_MSG_LENGTH, 0);
 														if(readc<1)break;
 														buf[readc-2]=0;
 														if(readc <= 0) break;
@@ -136,13 +154,13 @@ int main() {
 										}
 									}else 	if(strcmp(buf,"exit")==0)
 									{
-										close(new_socket);
+										close(client);
 										D("\t[%d] Dying.", pid);
 										exit(0);
 									}
 								}
 							}else{
-								send(new_socket, "NO pass",10, 0);
+								send(client, "NO pass",10, 0);
 							}
 						}
 					}
@@ -152,7 +170,7 @@ int main() {
 					break;
 				}
 			}
-			close(new_socket);
+			close(client);
 			D("\t[%d] Dying.", pid);
 			exit(0);
 		}
@@ -160,14 +178,4 @@ int main() {
 	fclose(new_stream);
 	close(sock);
 	return 0;
-}
-
-int create_room()
-{
-
-}
-
-int send_msg()
-{
-
 }
