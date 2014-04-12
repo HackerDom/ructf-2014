@@ -64,15 +64,18 @@ int main() {
 			while(1) {
 				short int readc = 0, filled = 0;
 				while(1) {
+					char UName[MAX_MSG_LENGTH]={0};
 					send(new_socket, "Login: ", 8, 0);
 					readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
 					buf[readc-2]=0;
-					
+					strcpy(UName,buf);
+					D(UName);
+								
 					if(readc <= 0) break;
 					if(strcmp(buf,"root")==0)
 					{
 						int i=0;
-						char UName[MAX_MSG_LENGTH]={0};
+						
 						strcpy(UName,buf);
 						while(1)
 						{
@@ -94,10 +97,11 @@ int main() {
 							}
 							if(login)
 							{
+								D(UName);
 								char msg[MAX_MSG_LENGTH]="Hi, ";
 								strcat(msg,UName);
 								send(new_socket, msg,strlen(msg), 0);
-								strcpy(msg,"\nexit - Exit\nsend-Send\n");
+								strcpy(msg,"\nexit - Exit\nsend-Send\ninRoom-spisok komnat\n");
 								send(new_socket, msg,strlen(msg), 0);
 								while(1)
 								{
@@ -105,7 +109,32 @@ int main() {
 									if(readc<1)break;
 									buf[readc-2]=0;
 									if(readc <= 0) break;
-									if(strcmp(buf,"exit")==0)
+									if(strcmp(buf,"inRoom")==0)
+									{
+										strcpy(msg,"spisok komnat:\n");
+										send(new_socket, msg,strlen(msg), 0);
+										strcpy(msg,"1");
+										send(new_socket, msg,strlen(msg), 0);
+										while(1)
+										{
+
+											readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+											if(readc<1)break;
+											buf[readc-2]=0;
+											if(readc <= 0) break;
+												if(strcmp(buf,"1")==0){
+													strcpy(msg,"Send:");
+													send(new_socket, msg,strlen(msg), 0);
+													while(1)
+													{
+														readc = recv(new_socket, buf,  MAX_MSG_LENGTH, 0);
+														if(readc<1)break;
+														buf[readc-2]=0;
+														if(readc <= 0) break;
+													}}
+											
+										}
+									}else 	if(strcmp(buf,"exit")==0)
 									{
 										close(new_socket);
 										D("\t[%d] Dying.", pid);
@@ -122,8 +151,6 @@ int main() {
 					D("\t[%d] Client disconnected.\n", pid);
 					break;
 				}
-				
-				send(new_socket, "> ", 3, MSG_NOSIGNAL);
 			}
 			close(new_socket);
 			D("\t[%d] Dying.", pid);
@@ -134,6 +161,12 @@ int main() {
 	close(sock);
 	return 0;
 }
+
+int create_room()
+{
+
+}
+
 int send_msg()
 {
 
