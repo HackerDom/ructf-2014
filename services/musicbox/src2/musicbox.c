@@ -1,7 +1,12 @@
 #include "server.h"
+#include "store.h"
 
-int port = 4242;
+static const int port = 4242;
+static const char *upload_dir = "uploads";
 
 int main() {
-	mb_start_server(port);
+	Store store;
+
+	mb_store_init(&store, upload_dir);
+	mb_start_server(port, &store);
 }

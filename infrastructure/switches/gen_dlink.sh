@@ -4,6 +4,8 @@ N=${1?no team count}
 [ -n "$2" ] && clean=true || clean=false
 cat <<END
 config ipif system ipaddress 10.24.0.1/24 vlan default 
+create iproute default 10.24.0.254
+create snmp community public view Default read_only
 END
 
 $clean || echo "delete vlan JURY"

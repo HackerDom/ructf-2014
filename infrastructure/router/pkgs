@@ -1,4 +1,2 @@
-openvpn mc htop less vim bridge-utils iptables iproute wireless-tools wpasupplicant
-firmware-linux-free firmware-linux-nonfree rfkill git ifenslave-* tcpdump minicom
-screen tftpd-hpa python isc-dhcp-server python-jinja2 dnsutils mtr-tiny hdparm
-ca-certificates
+openvpn bridge-utils iptables iproute ifenslave-* tftpd-hpa isc-dhcp-server
+nagios3-core nagios3-cgi
