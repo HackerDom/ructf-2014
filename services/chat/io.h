@@ -1,5 +1,5 @@
 #pragma once
 
-void read_line(int sock, char *buf, int size);
+void Write(const char *message, ...);
 
-void write_line(int sock, char *buf);
+void WriteLn(const char *message, ...);

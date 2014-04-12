@@ -1,4 +1,7 @@
 #include "storage.h"
+
+#include <stdio.h>
+#include <string.h>
 #include "debug.h"
 
 int user_create(char *user, char *pass)
@@ -19,7 +22,7 @@ int rooms_get(char **rooms, int size)
     if (size > 0)
         strcpy(rooms[0], "room one");
     if (size > 1)
-        strcpy(rooms[1], "room two")
+        strcpy(rooms[1], "room two");
     return 0;
 }
 
@@ -31,7 +34,7 @@ int room_create(char *name, int ownerId, char *pass)
 
 int room_join(int roomId, int userId, char *pass)
 {
-    D("room_join: %d, %d, %s", roomId, ownerId, pass);
+    D("room_join: %d, %d, %s", roomId, userId, pass);
     return 0;
 }
 
