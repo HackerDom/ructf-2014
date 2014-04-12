@@ -1,0 +1,8 @@
+Commands:
+
+    \register    - register new user
+    \login       - login
+    \list        - list all chat rooms
+    \join <room> - join chat room by name
+    \leave       - leave current chat room
+    \quit        - 

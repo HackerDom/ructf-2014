@@ -11,6 +11,8 @@
 
 #include <signal.h>
 
+#include "storage.h"
+
 #define PORT 5555
 #define MAX_MSG_LENGTH 32767
 #define END_STRING "chau\n"
