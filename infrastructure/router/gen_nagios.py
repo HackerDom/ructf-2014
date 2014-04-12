@@ -56,6 +56,14 @@ define host {
     hostgroups     Essential hosts
 }
 
+define service {
+    use                 generic-service
+    host_name           Team {{i}} vuln image
+    service_description SSH
+    check_command       check_ssh_port!36000
+    check_interval 2
+}
+
 define host {
     use                   generic-host
     host_name             Team {{i}} test image
