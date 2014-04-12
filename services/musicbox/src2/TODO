@@ -1,0 +1,14 @@
+server.h
+	int mb_start_server(int port)
+networking.h
+	int mb_send_all_bytes(int sockfd, uint_8 *buffer, int length)
+	int mb_recieve_all_bytes(int sockfd, uint_8 *buffer, int length)
+metadata.h
+	int mb_set_metadata(FILE *input, FILE *output, Tag *tags, int tags_count)
+	int mb_get_metadata(FILE *input, Tag **tags)
+store.h
+	int mb_store_init(Store **store, char *folder)
+	int mb_store_put(Store *store, uuid_t id, uint_8 *buffer, int length)
+	int mb_store_get(Store *store, uuid_t id, uint_8 **buffer, int *length)
+
+	
