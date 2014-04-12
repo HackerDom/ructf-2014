@@ -17,6 +17,11 @@ define command {
     command_line   /usr/lib/nagios/plugins/check_snmp -H '$HOSTADDRESS$' -P 2c -C public -o 'IF-MIB::ifSpeed.$ARG1$' -c 1000000000
 }
 
+define command {
+    command_name   check_testimage
+    command_line   /usr/lib/nagios/plugins/check_testimage $HOSTADDRESS
+}
+
 define servicegroup {
     servicegroup_name   Essential services
 }
@@ -57,6 +62,14 @@ define host {
     address               10.23.{{i}}.2
     check_interval        2
     notifications_enabled 0
+}
+
+define service {
+    use                 generic-service
+    host_name           Team {{i}} test image
+    service_description tftp to http
+    check_command       check_testimage
+    check_interval 2
 }
 {% endif %}
 
