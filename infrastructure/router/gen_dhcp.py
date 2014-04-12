@@ -21,8 +21,7 @@ subnet 10.23.{{i}}.0 netmask 255.255.255.0 {
 {% for i in range(1,N+1) %}
 host testimage{{ loop.index }} {
     fixed-address 10.23.{{ loop.index }}.2;
-    hardware ethernet {{ testimage }};
-    option host-name test{{ loop.index }};
+    option dhcp-client-identifier 1:{{ testimage }};
 }
 {% endfor %}
 {% for i in range(1,N+1) %}
