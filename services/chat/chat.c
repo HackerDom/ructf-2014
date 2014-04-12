@@ -118,9 +118,7 @@ int main(int argc, char ** argv)
 			process_client();
 			D("  [%d] process finished\n", getpid());
 
-			fclose(stdin);
-			fclose(stdout);
-			fclose(stderr);
+			shutdown(client, 2);
 			exit(0);
 		}
 	}
