@@ -13,7 +13,7 @@ enum MBResponseType {
 	MB_RESPONSE_PUT_OK,
 	MB_RESPONSE_GET_OK,
 	MB_RESPONSE_UNKNOWN_REQUEST_TYPE_ERROR
-}
+};
 
 void mb_start_server(int port);
 

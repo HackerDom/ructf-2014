@@ -41,13 +41,13 @@ void mb_start_server(int port) {
 			close(listener);
 
 			if (setsockopt (newsockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-						sizeof(timeout)) < 0)l
+						sizeof(timeout)) < 0)
 				error("setsockopt failed on SO_RCVTIMEO");
 
 			if (setsockopt (newsockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
 						sizeof(timeout)) < 0)
 				error("setsockopt failed on SO_SNDTIMEO");
-			
+
 			mb_process_client(newsockfd);
 			exit(0);
 		}
@@ -64,7 +64,7 @@ void mb_process_client(int sockfd) {
 	char *data = NULL;
 	int data_length;
 
-	if (recv(sockfd, &request_type, sizeof(MBRequestType)) != sizeof(MBRequestType))
+	if (recv(sockfd, &request_type, sizeof(enum MBRequestType), 0) != sizeof(enum MBRequestType))
 		error("Failed to retrieve request type");
 
 	if (request_type == MB_REQUEST_PUT) {
@@ -77,7 +77,7 @@ void mb_process_client(int sockfd) {
 		response_type = MB_RESPONSE_UNKNOWN_REQUEST_TYPE_ERROR;
 	}
 
-	send(sockfd, (void *)&response_type, sizeof(MBResponseType), 0);
+	send(sockfd, (void *)&response_type, sizeof(enum MBResponseType), 0);
 	if (data != NULL)
 		send(sockfd, data, data_length, 0);
 }
