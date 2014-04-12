@@ -3,4 +3,4 @@ firmware-linux-free firmware-linux-nonfree rfkill git tcpdump minicom
 screen python python-jinja2 dnsutils mtr-tiny hdparm
 ca-certificates ntp snmp snmp-mibs-downloader bzip2 exim4-daemon-light
 lm-sensors stress cpufrequtils augeas-tools firmware-realtek iotop
-cron-apt nagios-nrpe-server
+cron-apt nagios-nrpe-server atftp wget

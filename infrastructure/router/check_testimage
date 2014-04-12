@@ -1,0 +1,8 @@
+#!/bin/bash
+
+host=$1
+randoms=$(dd if=/dev/urandom bs=1M count=1 | xxd -p | tr -d '\n')
+echo $randoms | atftp -p -l /dev/stdin -r /test $host 69
+randoms1=$(wget -O- http://$host/test)
+
+[ "$randoms" = "$randoms1" ] && exit 0 || exit 2
