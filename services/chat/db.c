@@ -29,12 +29,9 @@ return 0;
 }
 
 int add_user(char *user, char *pass) {
-    bson b, sub, out;
-    bson_iterator it;
-    mongo_cursor cursor;
+   bson b;
     int result;
     bson_init( &b );
-    bson_append_new_oid( &b, "_id" );
     bson_append_new_oid( &b, "user_id" );
 
     bson_append_string( &b, "user", user);
@@ -42,13 +39,6 @@ int add_user(char *user, char *pass) {
     /* Finish the BSON obj. */
     bson_finish( &b );
 
-    /* Advance to the 'items' array */
-    bson_find( &it, &b, "items" );
-
-    /* Get the subobject representing items */
-    bson_iterator_subobject_init( &it, &sub, 0 );
-
-    bson_destroy( &sub );
 
     /* Insert the sample BSON document. */
     if( mongo_insert( &conn, "chat.users", &b, NULL ) != MONGO_OK ) {
@@ -56,10 +46,32 @@ int add_user(char *user, char *pass) {
       exit( 1 );
     }
 
-    mongo_cmd_drop_collection( &conn, "test", "users", NULL );
-    mongo_cursor_destroy( &cursor );
+    bson_destroy( &b );
+    return 0;
+}
+
+int room_create(char *name, int ownerId, char *pass)
+{
+    D("room_create: %s, %d, %s", name, ownerId, pass);
+
+    bson b;
+    int result;
+    bson_init( &b );
+    bson_append_new_oid( &b, "room_id" );
+
+    bson_append_string( &b, "room", user);
+    bson_append_string( &b, "pass",pass);
+    /* Finish the BSON obj. */
+    bson_finish( &b );
+
+
+    /* Insert the sample BSON document. */
+    if( mongo_insert( &conn, "chat.rooms", &b, NULL ) != MONGO_OK ) {
+      D( "FAIL: Failed to insert document with error %d\n", conn.err );
+      exit( 1 );
+    }
+
     bson_destroy( &b );
 
-
-    return 0;
+	return 0;
 }
