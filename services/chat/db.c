@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "debug.h"
 
 #define MONGO_HOST "127.0.0.1"
@@ -68,12 +69,17 @@ int user_login(char *user, char *pass)
 
 int say( char *message)
 {
+    D("asdsad");
     bson b;
     int result;
+    time_t tp;
+    tp = time(NULL);
+    D("%d", tp);
     bson_init( &b );
     bson_append_string( &b, "roomId", currentRoom);
     bson_append_string( &b, "userId", currentUser);
     bson_append_string( &b, "message", message);
+    bson_append_time_t(&b, "time", tp);
     /* Finish the BSON obj. */
     bson_finish( &b );
     /* Insert the sample BSON document. */
@@ -171,6 +177,10 @@ int list_room()
     while ( mongo_cursor_next( cursor ) == MONGO_OK )
     {
         bson_iterator iterator[1];
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
+        {
+            WriteLn("%d", bson_iterator_time_t(iterator)) ;
+        }
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "message" ))
         {
             WriteLn(bson_iterator_string( iterator) ) ;
@@ -180,4 +190,3 @@ int list_room()
     mongo_cursor_destroy( cursor );
     return 0;
 }
-
