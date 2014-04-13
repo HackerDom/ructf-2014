@@ -59,14 +59,11 @@ class Store(object):
             print(msg)
 
     def _insert(self, object_dict_):
-        self.info('_insert() ' + repr(object_dict_))
         assert type(object_dict_) == dict, 'Wow! Not dict!'
         self._memory.append(object_dict_)
 
     def sync(self):
         f = open(self._db_name, 'wb')
-        print 'sync()'
-        print(self._memory)
         for d in self._memory:
             for name_, type_, len_ in self._schema:
                 bytes_bytes = DUMPERS[type_](d[name_], len_)
@@ -74,10 +71,7 @@ class Store(object):
             f.write('\n')
         f.close()
 
-        # self.auto_mem_resync_counter += 1
-        # if self.auto_mem_resync_counter > 5:
         self._memory = self.init_mem(self._db_name, self._schema)
-        print(self._memory)
 
     def execute(self, row):
         """
@@ -98,7 +92,6 @@ class Store(object):
                 r = re.compile(r'^.*?values?[ ]*(\(.*?\))$', re.M)
                 z = r.match(tail)
                 if z:
-                    self.info('insert!')
                     rez = [self.insert(*z.groups())]
                     if self.auto_sync:
                         self.sync()
@@ -117,11 +110,9 @@ class Store(object):
                 return rez[0]
 
             return rez
-        # except Exception as e:
-        #     self.error("Invalid SQL syntax detected: {0!r} by {1}".format(row, e))
-        #     raise Exception('Invalid SQL syntax!!')
-        finally:
-            pass
+        except Exception as e:
+            self.error("Invalid SQL syntax detected: {0!r} by {1}".format(row, e))
+            raise Exception('Invalid SQL syntax!!')
 
     def go_go(self, method, args):
         return self.__getattribute__(method)(*args)
@@ -183,10 +174,6 @@ class Store(object):
         where = 'True' if not where else where
         where = self.fix_where(where)
 
-        # self.info('where:' + where)
-        # self.info('limit:' + str(limit))
-        # self.info('desk:' + str(bool(desk)))
-        #
         rez = []
         l = locals()
         mem = self._memory if not desk else reversed(self._memory)
