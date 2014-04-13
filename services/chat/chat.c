@@ -63,7 +63,15 @@ void print_greeting()
 
 void cmd_register(char *buf)
 {
+char *cmd,*user,*pass;
+ char space[10]=" ";
+ cmd= strtok (buf,space);
+ user = strtok (NULL,space);
+ pass = strtok (NULL,space);
 
+D(user);
+D(pass);
+user_create(user,pass);
 }
 
 void cmd_help()

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "debug.h"
+#include "db.h"
 
 #define CHECK(f,name) if (!f) {D("Cannot open file: %s", name);return -1;}
 
@@ -43,11 +44,12 @@ int lines_count(char *fname)
 int user_create(char *user, char *pass)
 {
     D("user_create: user=%s, pass=%s", user, pass);
-
+	
     if (append(FILE_USERS, "%s:%s", user, pass) < 0)
         return -1;
-
-    int userId = lines_count(FILE_USERS);
+    D("/nuser")
+    add_user(user,pass);
+	int userId = lines_count(FILE_USERS);
     D("  OK, assigned userId=%d", userId);
 
     return userId;
