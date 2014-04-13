@@ -41,20 +41,6 @@ int lines_count(char *fname)
     return result;
 }
 
-int user_create(char *user, char *pass)
-{
-    D("user_create: user=%s, pass=%s", user, pass);
-	
-    if (append(FILE_USERS, "%s:%s", user, pass) < 0)
-        return -1;
-    D("/nuser")
-    add_user(user,pass);
-	int userId = lines_count(FILE_USERS);
-    D("  OK, assigned userId=%d", userId);
-
-    return userId;
-}
-
 int rooms_get(char **rooms, int size)
 {
     D("rooms_get\r\n");

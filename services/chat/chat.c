@@ -18,9 +18,12 @@
 
 #define MAX_ARGV          5
 #define LEN_ARG         128
+#define ARG_SEPARATORS " \t"
+
 #define ROOMS_MAX     65536
 #define DEFAULT_PORT   5555
 #define BUF_SIZE      32767
+
 
 #define die(message)  { perror(message); exit(1); }
 #define die2(message) { fprintf(stderr, "%s\n",message); exit(1); }
@@ -57,65 +60,7 @@ void print_greeting()
     WriteLn("");
 }
 
-/* Command: \register name pass */
-
-void cmd_register(char *buf)
-{
-    char *cmd, *user, *pass;
-    char space[10] = " ";
-    cmd = strtok (buf, space);
-    user = strtok (NULL, space);
-    pass = strtok (NULL, space);
-    user_create(user, pass);
-}
-
-void cmd_login(char *buf)
-{
-    char *cmd, *user, *pass;
-    char space[10] = " ";
-    cmd = strtok (buf, space);
-    user = strtok (NULL, space);
-    pass = strtok (NULL, space);
-    user_login(user, pass);
-}
-
-void cmd_login_room(char *buf)
-{
-    char *cmd, *room, *pass;
-    char space[10] = " ";
-    cmd = strtok (buf, space);
-    room = strtok (NULL, space);
-    pass = strtok (NULL, space);
-    room_join(room, pass);
-    list_room();
-}
-
-void cmd_creat_room(char *buf)
-{
-    char *cmd, *name, *pass;
-    char space[10] = " ";
-    cmd = strtok (buf, space);
-    name = strtok (NULL, space);
-    pass = strtok (NULL, space);
-    room_create(name, currentUser, pass);
-}
-
-void cmd_say(char *buf)
-{
-    char *cmd, *msg;
-    char space[10] = " ";
-    cmd = strtok (buf, space);
-    msg = strtok (NULL, space);
-    say(msg);
-}
-
-
-void cmd_list()
-{
-    list();
-}
-
-void cmd_help()
+void print_help()
 {
     WriteLn("\\register <name> <pass> - register new user");
     WriteLn("\\login <name> <pass>    - login");
@@ -126,21 +71,22 @@ void cmd_help()
     WriteLn("\\quit                   - quit program");
 }
 
-char *allocate_argv(int count, int length)
+void parse_argv(char buf[], char **argv, int *argc)
 {
-    // TODO
-    return NULL;
-}
-
-void free_argv(int count)
-{
-    // TODO
+    (*argc) = 0;
+    char *c = strtok(buf, ARG_SEPARATORS);
+    while (c != NULL && (*argc) < MAX_ARGV)
+    {
+        argv[(*argc)++] = c;
+        c = strtok(NULL, ARG_SEPARATORS);
+    }
 }
 
 void process_client()
 {
-    int argc;
-    char *argv[MAX_ARGV];
+    char **argv = (char **) malloc(MAX_ARGV * sizeof(char *));
+    int argc = 0;
+    int result = 0;
     char buf[BUF_SIZE] = {0};
 
     print_greeting();
@@ -150,49 +96,62 @@ void process_client()
         Write("> ");
         if (!fgets(buf, BUF_SIZE, stdin))
             break;
-        strtok(buf, "\r\n");
+        strtok(buf, "\r\n");            // Skip everything after "\r" or "\n"
 
-        if (buf == strstr(buf, "\\quit"))
+        if (buf[0] != '\\')             // If not command, then client wants to say something
+        {
+            say(buf);
+            list_room();
+            continue;
+        }
+
+        parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
+        char *cmd = argv[0];             // At least 1 token exists
+
+        if (!strcmp(cmd, "\\quit"))
         {
             break;
         }
-        else if (buf == strstr(buf, "\\register"))
+        else if (!strcmp(cmd, "\\help"))
         {
-            cmd_register(buf);
+            print_help();
+            continue;
         }
-        else if (buf == strstr(buf, "\\login"))
+        else if (!strcmp(cmd, "\\list") && argc == 1)
         {
-            cmd_login(buf);
+            list();
+            continue;
         }
-        else if (buf == strstr(buf, "\\help"))
+        else if (!strcmp(cmd, "\\register") && argc == 3)
         {
-            cmd_help();
+            result = add_user(argv[1], argv[2]);
         }
-        else if (buf == strstr(buf, "\\list"))
+        else if (!strcmp(cmd, "\\login") && argc == 3)
         {
-            cmd_list();
+            result = user_login(argv[1], argv[2]);
         }
-        else if (buf == strstr(buf, "\\create"))
+        else if (!strcmp(cmd, "\\create") && argc == 3)
         {
-            cmd_creat_room(buf);
+            result = room_create(argv[1], currentUser, argv[2]);
         }
-        else if (buf == strstr(buf, "\\join"))
+        else if (!strcmp(cmd, "\\join") && argc == 3)
         {
-            cmd_login_room(buf);
+            result = room_join(argv[1], argv[2]);
+            if (result == 0)
+                list_room();
         }
-        else if (buf == strstr(buf, "\\say"))
-        {
-            cmd_say(buf);
-            list_room();
-        }
-
         else
         {
-            WriteLn("Unknown command (type '\\help' for help)");
+            WriteLn("Unknown command or wrong number of arguments (type '\\help' for commands list)");
+            WriteLn("");
+            continue;
         }
 
+        WriteLn( result == 0 ? "OK" : "Error" );
         WriteLn("");
     }
+
+    free(argv);
 }
 
 void test_mongo_connection()

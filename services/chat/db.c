@@ -5,10 +5,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 #include "debug.h"
 
 #define MONGO_HOST "127.0.0.1"
 #define MONGO_PORT 27017
+
+#define COLLECTION_USERS "chat.users"
 
 mongo conn;
 
@@ -23,48 +26,81 @@ void disconnect_db()
     mongo_destroy(&conn);
 }
 
+bool user_exists(char *user)
+{
+    bson b;
+    mongo_cursor cursor;
+    bson_iterator it;
+
+    bson_init( &b );
+    bson_append_string( &b, "user", user);
+    bson_finish( &b );
+
+    mongo_cursor_init( &cursor, &conn, COLLECTION_USERS );
+    mongo_cursor_set_query( &cursor, &b );
+    bool exists =  mongo_cursor_next( &cursor ) == MONGO_OK;
+    bson_destroy( &b );
+    mongo_cursor_destroy( &cursor );
+
+    return exists;
+}
+
 int add_user(char *user, char *pass)
 {
     bson b;
-    int result;
+
+    if (user_exists(user))
+    {
+        D("add_user: Error: already exists\n");
+        return -1;
+    }
+
     bson_init( &b );
     bson_append_string( &b, "user", user);
     bson_append_string( &b, "pass", pass);
     bson_finish( &b );
-    if ( mongo_insert( &conn, "chat.users", &b, NULL ) != MONGO_OK )
-    {
-        D( "FAIL: Failed to insert document with error %d\n", conn.err );
-        exit( 1 );
-    }
+
+    int result = mongo_insert( &conn, COLLECTION_USERS, &b, NULL );
     bson_destroy( &b );
-    return 0;
+
+    if ( result == MONGO_OK )
+    {
+        D("add_user: OK\n");
+        return 0;
+    }
+    else
+    {
+        D( "add_user: Error: %d\n", conn.err );
+        return -1;
+    }
 }
 
 int user_login(char *user, char *pass)
 {
-    bson query[1];
-    mongo_cursor cursor[1];
-    bson_init( query );
-    bson_append_string( query, "user", user );
-    bson_finish( query );
-    mongo_cursor_init( cursor, &conn, "chat.users" );
-    mongo_cursor_set_query( cursor, query );
-    while ( mongo_cursor_next( cursor ) == MONGO_OK )
+    bool found = false;
+    bson b;
+    mongo_cursor cursor;
+    bson_iterator it;
+
+    bson_init( &b );
+    bson_append_string( &b, "user", user );
+    bson_append_string( &b, "pass", pass );
+    bson_finish( &b );
+
+    mongo_cursor_init( &cursor, &conn, COLLECTION_USERS );
+    mongo_cursor_set_query( &cursor, &b );
+    while ( mongo_cursor_next( &cursor ) == MONGO_OK )
     {
-        bson_iterator iterator[1];
-        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "pass" ))
+        if ( bson_find( &it, mongo_cursor_bson( &cursor ), "_id" ))
         {
-            const char *origPass = bson_iterator_string( iterator ) ;
-            if ( bson_find( iterator, mongo_cursor_bson( cursor ), "_id" ))
-            {
-                char oidhex[25];
-                bson_oid_to_string( bson_iterator_oid( iterator ), currentUser  );
-            }
+            bson_oid_to_string( bson_iterator_oid( &it ), currentUser );
+            found = true;
         }
     }
-    bson_destroy( query );
-    mongo_cursor_destroy( cursor );
-    return 0;
+    bson_destroy( &b );
+    mongo_cursor_destroy( &cursor );
+
+    return found ? 0 : -1;
 }
 
 int say( char *message)

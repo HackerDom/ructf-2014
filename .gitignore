@@ -25,3 +25,4 @@ pip-log.txt
 
 services/chat/chat
 services/chat/users.db
+services/chat/sftp-config.json
