@@ -81,6 +81,21 @@ void cmd_login(char *buf)
 	user_login(user,pass);
 }
 
+void cmd_creat_room(char *buf)
+{
+	 char *cmd,*name,*pass;
+        char space[10]=" ";
+        cmd= strtok (buf,space);
+        name = strtok (NULL,space);
+        pass = strtok (NULL,space);
+	//room_create(name, int ownerId, pass);
+}
+
+void cmd_list()
+{
+	list();
+}
+
 void cmd_help()
 {
 	WriteLn("\\register <name> <pass> - register new user");
@@ -131,7 +146,7 @@ void process_client()
 			cmd_help();
 		}
 		else if (buf == strstr(buf, "\\list")) {
-
+			cmd_list();
 		}
 		else {
 			WriteLn("Unknown command (type '\\help' for help)");

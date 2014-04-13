@@ -55,12 +55,6 @@ int user_create(char *user, char *pass)
     return userId;
 }
 
-/*int user_login(char *user, char *pass)
-{
-    D("user_login: %s, %s", user, pass);
-    return 0;
-}*/
-
 int rooms_get(char **rooms, int size)
 {
     D("rooms_get\r\n");
@@ -71,15 +65,6 @@ int rooms_get(char **rooms, int size)
     return 0;
 }
 
-/*int room_create(char *name, int ownerId, char *pass)
-{
-    D("room_create: %s, %d, %s", name, ownerId, pass);
-
-    append(FILE_ROOMS, "%s:%d:%s", name, ownerId, pass);
-
-    return 0;
-}*/
-
 int room_join(char *name, int userId, char *pass)
 {
     D("room_join: name=%s, userId=%d, pass=%s", name, userId, pass);
@@ -87,11 +72,6 @@ int room_join(char *name, int userId, char *pass)
     return 0;
 }
 
-int say(int roomId, int userId, char *message)
-{
-    D("say: %d, %d, %s", roomId, userId, message);
-    return 0;
-}
 
 int leave(int roomId, int userId)
 {
