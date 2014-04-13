@@ -16,6 +16,10 @@ teams=10.23/19
 any=0/0
 
 iptables -P FORWARD ACCEPT
+iptables -F FORWARD
+
+add_filter='iptables -t filter -A'
+add_nat='iptables -t nat -A'
 
 init_chain() {
     local table=$1 chain=$2
@@ -30,16 +34,21 @@ init_chain_pair() {
 }
 
 init_chain filter ructf2014
+
+init_chain filter accept_new
+$add_filter accept_new -p tcp -m state --state NEW -j ACCEPT
+$add_filter accept_new -p udp -m state --state NEW -j ACCEPT
+
 init_chain_pair filter inet
 for iface in $inet_ifaces; do
-    iptables -t filter -A to_inet -o $iface -j ACCEPT
+    $add_filter to_inet -o $iface -j accept_new
 done
 
 init_network() {
     local name=${1%%:*} network=${1##*:}
     init_chain_pair filter $name
-    iptables -t filter -A ructf2014 -s $network -j from_$name
-    iptables -t filter -A to_$name -d $network -j ACCEPT
+    $add_filter ructf2014 -s $network -j from_$name
+    $add_filter to_$name -d $network -j accept_new
 }
 
 # the order of networks here is important
@@ -57,7 +66,7 @@ iptables -t filter -I to_teams 1 -d $devs -j RETURN
 iptables -t filter -I to_teams 1 -d $checksystem -j RETURN
 
 # and here we go, THE RULES
-can_go() { iptables -t filter -A from_$1 -j to_$2; }
+can_go() { $add_filter from_$1 -j to_$2; }
 
 can_go vpn any
 
@@ -69,6 +78,30 @@ can_go checksystem inet
 can_go checksystem teams
 
 can_go teams inet
+can_go teams devs
 $team2team && can_go teams teams
 
-#iptables -P FORWARD DROP
+$add_filter FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+$add_filter FORWARD -p icmp -j ACCEPT
+$add_filter FORWARD -j ructf2014
+
+# setup NAT rules
+init_chain nat ructf2014
+
+init_chain nat to_teams
+for dst in vpn devs checksystem; do
+    iptables -t nat -A to_teams -d ${!dst} -j ACCEPT
+done
+$add_nat to_teams -d $teams -j MASQUERADE
+$add_nat ructf2014 -j to_teams
+
+init_chain nat to_inet
+for iface in $inet_ifaces; do
+    $add_nat to_inet -o $iface -j MASQUERADE
+done
+$add_nat ructf2014 -j to_inet
+
+iptables -t nat -F POSTROUTING
+$add_nat POSTROUTING -j ructf2014
+
+iptables -P FORWARD DROP
