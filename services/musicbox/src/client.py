@@ -32,9 +32,9 @@ def encode_chunk(data, uuid, direction, chunk_type):
 	assert len(data) <= CHUNK_SIZE
 	return struct.pack("bbh", direction, chunk_type, len(data)) + uuid.bytes + data
 
-def data_to_chunk_sequence(data, uuid, direction, chunk_type):
+def data_to_chunk_sequenece(data, uuid, direction, chunk_type):
 	result = b''
-	for i in range((len(data) + CHUNK_SIZE - 1) // CHUNK_SIZE):
+	for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
 		result += encode_chunk(data[ i * CHUNK_SIZE : i * CHUNK_SIZE + CHUNK_SIZE], uuid, direction, chunk_type)
 	return result + encode_chunk(b'', uuid, direction, chunk_type)
 
@@ -55,7 +55,7 @@ def decode_chunk(chunk):
 def get_response_from_socket(sock):
 	result = b''
 	while True:
-		next_bytes = sock.recv(READING_CHUNK_SIZE)
+		next_bytes = sock.read(READING_CHUNK_SIZE)
 		if not next_bytes:
 			break
 		result += next_bytes
@@ -65,7 +65,7 @@ if len(sys.argv) < 5:
 	show_help()
 	exit(1)
 
-host, port, action, arg = sys.argv[1:]
+host, port, action, arg = sys.argv
 port = int(port)
 
 print("Connecting to %s:%d" % (host, port))
@@ -74,14 +74,14 @@ s = socket(AF_INET, SOCK_STREAM)
 s.connect((host,port))
 
 if action == "get":
-	request_chunk = encode_chunk(b'', UUID(arg), REQUEST_DIRECTION, GET_TYPE)
+	request_chunk = encode_chunk(b'', uuid.UUID(arg), REQUEST_DIRECTION, GET_TYPE)
 	s.sendall(request_chunk)
 	chunks = get_response_from_socket(s)
 	data = data_from_chunk_sequence(chunks)
-	sys.stdout.write(data.decode('utf-8'))
+	sys.stdout.write(data)
 elif action == "put":
 	data = read_binary_file(arg)
-	chunks = data_to_chunk_sequence(data, UUID(int = 0), REQUEST_DIRECTION, PUT_TYPE)
+	chunks = data_to_chunk_sequenece(data, UUID(int = 0), REQUEST_DIRECTION, PUT_TYPE)
 	s.sendall(chunks)
 	response = get_response_from_socket(s)
 	print(decode_chunk(response))
