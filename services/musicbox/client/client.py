@@ -5,9 +5,9 @@ import sys
 import struct
 from uuid import UUID
 
-READING_CHUNK_SIZE = 32 * 1024
+READING_CHUNK_SIZE = 32 * 1024 - 1
 
-CHUNK_SIZE = 32 * 1024
+CHUNK_SIZE = 32 * 1024 - 1
 
 PUT_TYPE = 0
 GET_TYPE = 1
@@ -32,7 +32,7 @@ def encode_chunk(data):
 
 def data_to_chunk_sequenece(data):
 	result = b''
-	for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
+	for i in range((len(data) + CHUNK_SIZE - 1) // CHUNK_SIZE):
 		result += encode_chunk(data[ i * CHUNK_SIZE : i * CHUNK_SIZE + CHUNK_SIZE])
 	return result + encode_chunk(b'')
 
