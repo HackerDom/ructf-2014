@@ -10,13 +10,10 @@ enum MBRequestType {
 };
 
 enum MBResponseType {
-	MB_RESPONSE_PUT_OK,
-	MB_RESPONSE_GET_OK,
-	MB_RESPONSE_UNKNOWN_REQUEST_TYPE_ERROR
+	MB_RESPONSE_SUCCESS,
+	MB_RESPONSE_ERROR
 };
 
-void mb_start_server(int port);
-
-void mb_process_client(int sockfd);
+void mb_start_server(int port, Store *store);
 
 #endif
