@@ -3,16 +3,16 @@
 #include "metadata.h"
 #include "common.h"
 
-void mb_send_response(int sockfd, enum MBResponseType response_type) {
+void mb_send_response(int sockfd, char response_type) {
 	send(sockfd, (void *)&response_type, sizeof(response_type), 0);
 }
 
-void mb_set_ttl(uint8_t *data, int data_size, int ttl) {
+int mb_set_ttl(uint8_t *data, int data_size, int ttl) {
 	struct Tag ttl_tag;
 	char ttl_text[16];
 	sprintf(ttl_text, "%d", ttl);
 	mb_tag_init("TTL", ttl_text, &ttl_tag);
-	mb_set_metadata(data, data_size, data, &ttl_tag, 1);
+	return mb_set_metadata(data, data_size, data, &ttl_tag, 1);
 }
 
 void mb_process_put(int sockfd, struct Store *store) {
@@ -33,7 +33,10 @@ void mb_process_put(int sockfd, struct Store *store) {
 		}
 		ptr += bytes_read;
 	} while (bytes_read != 0);
-	mb_set_ttl(buffer, ptr - buffer, ttl);
+	if (mb_set_ttl(buffer, ptr - buffer, ttl) < 0) {
+		mb_send_response(sockfd, MB_RESPONSE_ERROR);
+		return;
+	}
 	mb_store_put(store, id, buffer, ptr - buffer);
 	mb_send_response(sockfd, MB_RESPONSE_SUCCESS);
 	send(sockfd, (void *)&id, sizeof(id), 0);
@@ -63,7 +66,7 @@ void mb_process_get(int sockfd, struct Store *store) {
 }
 
 void mb_process_client(int sockfd, struct Store *store) {
-	enum MBRequestType request_type;
+	char request_type;
 
 	if (recv(sockfd, &request_type, sizeof(request_type), 0) != sizeof(request_type))
 		error("Failed to receive request type");
