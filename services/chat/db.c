@@ -51,6 +51,24 @@ int add_user(char *user, char *pass) {
 }
 
 int user_login(char *user, char *pass) {
+	bson query[1];
+	mongo_cursor cursor[1];
+	bson_init( query );
+	bson_append_string( query, "user", user );
+	bson_finish( query );
+
+	mongo_cursor_init( cursor, &conn, "chat.users" );
+	mongo_cursor_set_query( cursor, query );
+
+	while( mongo_cursor_next( cursor ) == MONGO_OK ) {
+		bson_iterator iterator[1];
+		if ( bson_find( iterator, mongo_cursor_bson( cursor ), "pass" )) {
+			const char *origPass=bson_iterator_string( iterator ) ;
+			D(origPass);
+		}
+	}
+	bson_destroy( query );
+	mongo_cursor_destroy( cursor );
 	return 0;
 }
 
