@@ -15,11 +15,28 @@ teams=10.23/19
 
 any=0/0
 
-iptables -P FORWARD ACCEPT
-iptables -F FORWARD
-
 add_filter='iptables -t filter -A'
 add_nat='iptables -t nat -A'
+
+# first, INPUT
+iptables -P INPUT ACCEPT
+iptables -F INPUT
+
+$add_filter INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$add_filter INPUT -p icmp -j ACCEPT
+$add_filter INPUT -i lo -j ACCEPT
+
+$add_filter INPUT -s $vpn -j ACCEPT
+for iface in $inet_ifaces; do
+    # only allow SSH on external ifaces
+    $add_filter INPUT -i $iface -m state --state NEW -p tcp --dport 22 -j ACCEPT
+done
+iptables -P INPUT DROP
+
+
+# Forwarding
+iptables -P FORWARD ACCEPT
+iptables -F FORWARD
 
 init_chain() {
     local table=$1 chain=$2
@@ -85,7 +102,10 @@ $add_filter FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 $add_filter FORWARD -p icmp -j ACCEPT
 $add_filter FORWARD -j ructf2014
 
-# setup NAT rules
+iptables -P FORWARD DROP
+
+
+# NAT
 init_chain nat ructf2014
 
 init_chain nat to_teams
@@ -103,5 +123,3 @@ $add_nat ructf2014 -j to_inet
 
 iptables -t nat -F POSTROUTING
 $add_nat POSTROUTING -j ructf2014
-
-iptables -P FORWARD DROP
