@@ -72,10 +72,11 @@ CREATE TABLE stolen_flags (
 );
 
 CREATE TABLE score (
-    round   int NOT NULL,
-    "time"	timestamp without time zone NOT NULL,
-    team	integer NOT NULL,
-    score	double precision NOT NULL
+    round   	INTEGER NOT NULL,
+    "time"		TIMESTAMP without time zone NOT NULL,
+    team_id		INTEGER NOT NULL,
+	service_id 	INTEGER NOT NULL,
+    score		DOUBLE PRECISION NOT NULL
 );
 
 CREATE SEQUENCE adv_seq INCREMENT 1 START 1;
@@ -129,6 +130,7 @@ CREATE TABLE access_checks (
 
 CREATE TABLE sla (
 	team_id		INTEGER,
+	service_id	INTEGER,
 	successed	INTEGER,
 	failed		INTEGER,
 	time		TIMESTAMP		NOT NULL

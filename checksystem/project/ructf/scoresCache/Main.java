@@ -23,10 +23,10 @@ public class Main {
 	
 	private static Logger logger = Logger.getLogger("ructf.scoresCache");
 	
-	private static String sqlGetLastScores = "SELECT score.team, score.score, score.time FROM (SELECT team,MAX(time) AS time FROM score GROUP BY team) qqq INNER JOIN score ON qqq.time=score.time AND qqq.team=score.team";
-	private static String sqlCreateInitState = "INSERT INTO score SELECT 0, '2009-01-01', teams.id, (select 100 * count(*) FROM teams) FROM teams";
-	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
-	private static String sqlInsertScore = "INSERT INTO score (round, time, team, score) VALUES (?,?,?,?)";
+	private static String sqlGetLastScores = "SELECT score.team_id, score.service_id, score.score, score.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM score GROUP BY team_id, service_id) last_times INNER JOIN score ON last_times.time=score.time AND last_times.team_id=score.team_id AND last_times.service_id=score.service_id";
+	private static String sqlCreateInitState = "INSERT INTO score (round, time, team_id, service_id, score) SELECT 0, '2009-01-01', teams.id, services.id, (select 100 * count(*) FROM teams) FROM teams INNER JOIN services";
+	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.victim_service_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
+	private static String sqlInsertScore = "INSERT INTO score (round, time, team_id, service_id, score) VALUES (?,?,?,?,?)";
 		
 	private static PreparedStatement stGetLastScores;	
 	private static PreparedStatement stCreateInitState;
@@ -50,7 +50,7 @@ public class Main {
 			PrepareStatements(conn);
 			
 			logger.info("Getting score state from db");
-			Hashtable<Integer,TeamScore> stateFromDb = GetStateFromDb();
+			Hashtable<TeamService,TeamScore> stateFromDb = GetStateFromDb();
 			if (stateFromDb.isEmpty()) {
 				logger.info("Creating score InitStateInDb");
 				CreateInitStateInDb();
@@ -73,7 +73,7 @@ public class Main {
 	private static List<RottenStolenFlag> GetRottenStolenFlags(Timestamp ts) throws SQLException {
 		List<RottenStolenFlag> result = new LinkedList<RottenStolenFlag>();
 		
-		logger.info(String.format("Getting new score data from time %s with with rottenTime %d", ts.toString(), Constants.flagExpireInterval));
+		logger.info(String.format("Getting new score data from time %s with rottenTime %d", ts.toString(), Constants.flagExpireInterval));
 		stGetStealsOfRottenFlags.setTimestamp(1, ts);
 		stGetStealsOfRottenFlags.setDouble(2, Constants.flagExpireInterval);
 		ResultSet res = stGetStealsOfRottenFlags.executeQuery();
@@ -82,15 +82,16 @@ public class Main {
 			String flagData = res.getString(1);
 			Timestamp time = res.getTimestamp(2);
 			int owner = res.getInt(3);
-			int attacker = res.getInt(4);
+			int service = res.getInt(4);
+			int attacker = res.getInt(5);
 			
-			result.add(new RottenStolenFlag(flagData, time, owner, attacker));
+			result.add(new RottenStolenFlag(flagData, time, owner, attacker, service));
 		}
 		
 		return result;
 	}
 	
-	private static void DoJobLoop(Connection conn, Hashtable<Integer,TeamScore> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {
+	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {
 		Timestamp lastCreationTime = new Timestamp(lastKnownTime.getTime() - Constants.flagExpireInterval*1000);
 		lastCreationTime.setNanos(lastKnownTime.getNanos());
 		
@@ -120,7 +121,8 @@ public class Main {
 				lastCreationTime = flag.time;
 				
 				int owner = flag.owner;
-				double ownerTotalScore = state.get(owner).score;				
+				int service = flag.service;
+				double ownerTotalScore = state.get(new TeamService(owner, service)).score;				
 				
 				ArrayList<RottenStolenFlag> list = grouped.get(flag.flagData);
 				int attackersCount = list.size();				
@@ -138,14 +140,14 @@ public class Main {
 						
 						double attackerOldScore = state.get(attacker).score;
 						double attackerNewScore = attackerOldScore + scoreToEachAttacker;
-						InsertScore(0, rottenTime, attacker, attackerNewScore);
-						state.put(attacker, new TeamScore(attacker, attackerNewScore, rottenTime));
-						logger.info(String.format("Flag %s: attacker %d: score %f -> %f (delta = %f)", flag.flagData, attacker, attackerOldScore, attackerNewScore, scoreToEachAttacker));
+						InsertScore(0, rottenTime, attacker, service, attackerNewScore);
+						state.put(new TeamService(attacker, service), new TeamScore(attacker, attackerNewScore, rottenTime));
+						logger.info(String.format("Flag %s: (attacker, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, attacker, service, attackerOldScore, attackerNewScore, scoreToEachAttacker));
 					}
 					double ownerNewScore = ownerTotalScore - scoreFromOwner;
-					InsertScore(0, rottenTime, owner, ownerNewScore);
-					state.put(owner, new TeamScore(owner, ownerNewScore, rottenTime));
-					logger.info(String.format("Flag %s: owner %d: score %f -> %f (delta = %f)", flag.flagData, owner, ownerTotalScore, ownerNewScore, -scoreFromOwner));
+					InsertScore(0, rottenTime, owner, service, ownerNewScore);
+					state.put(new TeamService(owner, service), new TeamScore(owner, ownerNewScore, rottenTime));
+					logger.info(String.format("Flag %s: (owner, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, owner, service, ownerTotalScore, ownerNewScore, -scoreFromOwner));
 					
 					conn.commit();
 				}
@@ -175,16 +177,17 @@ public class Main {
 		}
 	}
 	
-	private static void InsertScore(int round, Timestamp time, int team, double score) throws SQLException
+	private static void InsertScore(int round, Timestamp time, int team, int service, double score) throws SQLException
 	{
 		stInsertScore.setInt(1, round);
 		stInsertScore.setTimestamp(2, time);
 		stInsertScore.setInt(3, team);
-		stInsertScore.setDouble(4, score);
+		stInsertScore.setInt(4, service);
+		stInsertScore.setDouble(5, score);
 		stInsertScore.execute();
 	}
 
-	private static Timestamp GetLastKnownTime(Hashtable<Integer, TeamScore> stateFromDb) {
+	private static Timestamp GetLastKnownTime(Hashtable<TeamService, TeamScore> stateFromDb) {
 		Timestamp max = null;
 		for (TeamScore ts : stateFromDb.values()) {
 			if (max == null || max.before(ts.time))
@@ -204,17 +207,18 @@ public class Main {
 		stInsertScore = conn.prepareStatement(sqlInsertScore);
 	}
 	
-	private static Hashtable<Integer, TeamScore> GetStateFromDb() throws SQLException{
+	private static Hashtable<TeamService, TeamScore> GetStateFromDb() throws SQLException{
 		ResultSet res = stGetLastScores.executeQuery();
 		
-		Hashtable<Integer, TeamScore> result = new Hashtable<Integer, TeamScore>(); 
+		Hashtable<TeamService, TeamScore> result = new Hashtable<TeamService, TeamScore>(); 
 		
 		while(res.next()){
 			int team = res.getInt(1);
-			double score = res.getDouble(2);			
-			Timestamp time = res.getTimestamp(3);
+			int service = res.getInt(2);
+			double score = res.getDouble(3);			
+			Timestamp time = res.getTimestamp(4);
 			
-			result.put(team, new TeamScore(team, score, time));
+			result.put(new TeamService(team, service), new TeamScore(team, score, time));
 		}
 		return result;		
 	}
