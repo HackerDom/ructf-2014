@@ -24,8 +24,6 @@
 
 #define die(message) { perror(message); exit(1); }
 
-int currentUser = -1;
-int currentRoom = -1;
 
 int create_server_socket (int port)
 {
@@ -81,6 +79,17 @@ void cmd_login(char *buf)
 	user_login(user,pass);
 }
 
+void cmd_login_room(char *buf)
+{
+        char *cmd,*room,*pass;
+        char space[10]=" ";
+        cmd= strtok (buf,space);
+        room = strtok (NULL,space);
+        pass = strtok (NULL,space);
+        room_join(room, pass);
+        list_room();
+}
+
 void cmd_creat_room(char *buf)
 {
 	 char *cmd,*name,*pass;
@@ -88,8 +97,18 @@ void cmd_creat_room(char *buf)
         cmd= strtok (buf,space);
         name = strtok (NULL,space);
         pass = strtok (NULL,space);
-	//room_create(name, int ownerId, pass);
+	room_create(name, currentUser, pass);
 }
+
+void cmd_say(char *buf)
+{
+        char *cmd,*msg;
+        char space[10]=" ";
+        cmd= strtok (buf,space);
+        msg = strtok (NULL,space);
+        say(msg);
+}
+
 
 void cmd_list()
 {
@@ -135,8 +154,7 @@ void process_client()
 
 		if (buf == strstr(buf, "\\quit")) {
 			break;
-		}
-		if (buf == strstr(buf, "\\register")) {
+		} else if (buf == strstr(buf, "\\register")) {
 			cmd_register(buf);
 		}
 		else if (buf == strstr(buf, "\\login")) {
@@ -148,6 +166,18 @@ void process_client()
 		else if (buf == strstr(buf, "\\list")) {
 			cmd_list();
 		}
+		else if (buf == strstr(buf, "\\create")) {
+                        cmd_creat_room(buf);
+                } 
+		else if (buf == strstr(buf, "\\join")) {
+                        cmd_login_room(buf);
+                }
+		else if (buf == strstr(buf, "\\say")) {
+                        cmd_say(buf);
+			list_room();
+
+                }
+
 		else {
 			WriteLn("Unknown command (type '\\help' for help)");
 		}

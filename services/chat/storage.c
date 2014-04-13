@@ -65,13 +65,6 @@ int rooms_get(char **rooms, int size)
     return 0;
 }
 
-int room_join(char *name, int userId, char *pass)
-{
-    D("room_join: name=%s, userId=%d, pass=%s", name, userId, pass);
-
-    return 0;
-}
-
 
 int leave(int roomId, int userId)
 {
