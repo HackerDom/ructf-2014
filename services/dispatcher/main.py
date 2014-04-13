@@ -17,8 +17,6 @@ Frequency = (
 Messages = db.Store('messages.db', Message, 5)
 Frequency = db.Store('freq.db', Frequency, 5)
 
-Messages._memory_dump()
-
 
 @app.route('/')
 def hello_world():

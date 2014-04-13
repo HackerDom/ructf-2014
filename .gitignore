@@ -17,6 +17,7 @@ services/dispatcher/parts/
 services/dispatcher/venv/
 services/dispatcher/messages.db
 services/dispatcher/freq.db
+services/dispatcher/test.db
 
 # IDE
 services/dispatcher/.idea
