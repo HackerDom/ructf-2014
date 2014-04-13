@@ -177,6 +177,10 @@ int list_room()
     while ( mongo_cursor_next( cursor ) == MONGO_OK )
     {
         bson_iterator iterator[1];
+		if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
+        {
+		user_name(bson_iterator_string( iterator))
+			}
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
             WriteLn("%d", bson_iterator_time_t(iterator)) ;
@@ -186,11 +190,19 @@ int list_room()
             WriteLn(bson_iterator_string( iterator) ) ;
         }
     }
-    bson_oid_t oid;
+    
+    return 0;
+}
+
+const char *user_name(char userId)
+{
+	bson query[1];
+    mongo_cursor cursor[1];
+	bson_oid_t oid;
     bson_destroy( query );
     mongo_cursor_destroy( cursor );
     bson_init( query );
-    bson_oid_from_string( &oid, currentUser );
+    bson_oid_from_string( &oid, userId );
     bson_append_oid( query, "_id", &oid );
     bson_finish( query );
 
@@ -202,10 +214,12 @@ int list_room()
         bson_iterator iterator[1];
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "user" ))
         {
-            Write("%s  ", bson_iterator_string(iterator)) ;
+		   bson_destroy( query );
+		   mongo_cursor_destroy( cursor );
+           return bson_iterator_string(iterator) ;
         }
     }
     bson_destroy( query );
     mongo_cursor_destroy( cursor );
-    return 0;
+	return " ";
 }
