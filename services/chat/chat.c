@@ -14,7 +14,6 @@
 #include "db.h"
 #include "io.h"
 #include "debug.h"
-#include "storage.h"
 
 #define MAX_ARGV          5
 #define LEN_ARG         128
@@ -23,7 +22,6 @@
 #define ROOMS_MAX     65536
 #define DEFAULT_PORT   5555
 #define BUF_SIZE      32767
-
 
 #define die(message)  { perror(message); exit(1); }
 #define die2(message) { fprintf(stderr, "%s\n",message); exit(1); }

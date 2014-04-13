@@ -1,13 +1,14 @@
 CC=gcc
 CXXFLAGS=
+SOURCES=chat.c io.c db.c
 
 debug: CXXFLAGS+=-DDEBUG
 debug: all
 
 all: chat
 
-chat: chat.c io.c storage.c  db.c
-	$(CC) --std=c99  $(CXXFLAGS) -I/usr/local/include -L/usr/local/lib -o chat chat.c io.c storage.c db.c  -lmongoc
+chat: $(SOURCES)
+	$(CC) $(SOURCES) --std=c99  $(CXXFLAGS) -I/usr/local/include -L/usr/local/lib -o chat -lmongoc
 
 clean:
 	rm -f chat
