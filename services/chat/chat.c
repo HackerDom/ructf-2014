@@ -15,31 +15,35 @@
 #include "debug.h"
 #include "storage.h"
 
+#define MAX_ARGV          5
+#define LEN_ARG         128
+#define ROOMS_MAX     65536
 #define DEFAULT_PORT   5555
 #define BUF_SIZE      32767
 
 #define die(message) { perror(message); exit(1); }
 
+int currentUser = -1;
+int currentRoom = -1;
+
 int create_server_socket (int port)
 {
-	int sock;
-	struct sockaddr_in name;
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) 
 		die("create socket");
 
 	int optval = 1;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
+	struct sockaddr_in name;
 	name.sin_family = AF_INET;
 	name.sin_addr.s_addr = INADDR_ANY;
 	name.sin_port = htons(port);
 
-	if(bind(sock, (void*) &name, sizeof(name)))
+	if (bind(sock, (void*) &name, sizeof(name)) < 0)
 		die("bind");
 
-	if(listen(sock, 1) == -1)
+	if (listen(sock, 1) < 0)
 		die("listen");
 
 	D("Listening to port: %d\n", port);
@@ -54,18 +58,39 @@ void print_greeting()
 	WriteLn("");
 }
 
-void print_help()
+/* Command: \register name pass */
+
+void cmd_register(char *buf)
 {
-	WriteLn("\\register <name>  - register new user");
-	WriteLn("\\login <name>     - login");
-	WriteLn("\\list             - list all chat rooms");
-	WriteLn("\\join <room>      - join chat room by name");
-	WriteLn("\\leave            - leave current chat room");
-	WriteLn("\\quit             - quit program");
+
+}
+
+void cmd_help()
+{
+	WriteLn("\\register <name> <pass> - register new user");
+	WriteLn("\\login <name> <pass>    - login");
+	WriteLn("\\create <room> [pass]   - create new room (with optional password)");
+	WriteLn("\\list                   - list all chat rooms");
+	WriteLn("\\join <room>            - join chat room by name");
+	WriteLn("\\leave                  - leave current chat room");
+	WriteLn("\\quit                   - quit program");
+}
+
+char* allocate_argv(int count, int length)
+{
+	// TODO
+	return NULL;
+}
+
+void free_argv(int count)
+{
+	// TODO
 }
 
 void process_client()
 {
+	int argc;
+	char * argv[MAX_ARGV];
 	char buf[BUF_SIZE] = {0};
 
 	print_greeting();
@@ -75,14 +100,19 @@ void process_client()
 		Write("> ");
 		if (!fgets(buf, BUF_SIZE, stdin))
 			break;
-		strtok(buf, "\r");
-		strtok(buf, "\n");
+		strtok(buf, "\r\n");
 
-		if (0 == strcmp(buf, "\\quit")) {
+		if (buf == strstr(buf, "\\quit")) {
 			break;
 		}
-		else if (0 == strcmp(buf, "\\help")) {
-			print_help();
+		if (buf == strstr(buf, "\\register")) {
+			cmd_register(buf);
+		}
+		else if (buf == strstr(buf, "\\help")) {
+			cmd_help();
+		}
+		else if (buf == strstr(buf, "\\list")) {
+
 		}
 		else {
 			WriteLn("Unknown command (type '\\help' for help)");
