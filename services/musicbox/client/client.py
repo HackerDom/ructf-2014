@@ -74,7 +74,7 @@ if action == "get":
 	if status == 0:
 		chunks = get_response_from_socket(s)
 		data = data_from_chunk_sequence(chunks)
-		sys.stdout.write(data)
+		sys.stdout.buffer.write(data)
 	else:
 		print('Error =(')
 elif action == "put":
