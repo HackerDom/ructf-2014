@@ -9,12 +9,6 @@ $BASE/../common/setup.sh
 apt-get -y install $(cat $BASE/pkgs)
 
 set +e;
-augtool -s set /files/etc/ssh/sshd_config/ListenAddress[1] 10.23.0.1
-augtool -s set /files/etc/ssh/sshd_config/ListenAddress[2] 172.16.19.178
-set -e;
-/etc/init.d/ssh restart
-
-set +e;
 augtool -s set "/files/etc/aliases/*[name = 'root']/value" andrey.malets@gmail.com
 set -e;
 
