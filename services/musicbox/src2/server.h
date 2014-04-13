@@ -14,6 +14,6 @@ enum MBResponseType {
 	MB_RESPONSE_ERROR
 };
 
-void mb_start_server(int port, Store *store);
+void mb_start_server(int port, struct Store *store);
 
 #endif
