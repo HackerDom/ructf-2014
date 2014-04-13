@@ -186,6 +186,25 @@ int list_room()
             WriteLn(bson_iterator_string( iterator) ) ;
         }
     }
+    bson_oid_t oid;
+    bson_destroy( query );
+    mongo_cursor_destroy( cursor );
+    bson_init( query );
+    bson_oid_from_string( &oid, currentUser );
+    bson_append_oid( query, "_id", &oid );
+    bson_finish( query );
+
+    mongo_cursor_init( cursor, &conn, "chat.users" );
+    mongo_cursor_set_query( cursor, query );
+
+    while ( mongo_cursor_next( cursor ) == MONGO_OK )
+    {
+        bson_iterator iterator[1];
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "user" ))
+        {
+            Write("%s  ", bson_iterator_string(iterator)) ;
+        }
+    }
     bson_destroy( query );
     mongo_cursor_destroy( cursor );
     return 0;
