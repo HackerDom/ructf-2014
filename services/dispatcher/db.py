@@ -95,19 +95,18 @@ class Store(object):
             self.info(u'-- SQL {0} {1} --'.format(method, tail))
 
             if method == 'insert':
-                r = re.compile(r'^.*?values?[ ]*(\(.*?\))$')
+                r = re.compile(r'^.*?values?[ ]*(\(.*?\))$', re.M)
                 z = r.match(tail)
                 if z:
                     self.info('insert!')
                     rez = [self.insert(*z.groups())]
-                else:
-                    self.error('!invalid insertion!' + tail)
+                    if self.auto_sync:
+                        self.sync()
 
             elif method in ['select', 'delete']:
-                r = re.compile(r'^.*?(?:(?:where)[ ]*(.*?))?[ ]*(?:limit[ ]*(\d+))?[ ]*([dD][Ee][Ss][ckCK])?[ ]*$')
+                r = re.compile(r'^.*?(?:(?:where)[ ]*(.*?))?[ ]*(?:limit[ ]*(\d+))?[ ]*([dD][Ee][ScCs][ckCK])?[ ]*$')
                 z = r.match(tail)
                 if z:
-                    # self.info('go_go!' + repr(z.groups()))
                     rez = self.__getattribute__('go_go')(method, z.groups())
                 else:
                     rez = self.__getattribute__(method)()
@@ -122,9 +121,7 @@ class Store(object):
         #     self.error("Invalid SQL syntax detected: {0!r} by {1}".format(row, e))
         #     raise Exception('Invalid SQL syntax!!')
         finally:
-            if self.auto_sync:
-                # self.info('Do auto sync!')
-                self.sync()
+            pass
 
     def go_go(self, method, args):
         return self.__getattribute__(method)(*args)
@@ -208,7 +205,6 @@ class Store(object):
         return rez
 
     def insert(self, insert_obj_row):
-        self.info('')
         if not insert_obj_row.startswith('(') or not insert_obj_row.endswith(')'):
             return
         try:
@@ -308,31 +304,48 @@ if __name__ == "__main__":
 
     import os
 
-    print os.getcwd()
+    os.system('rm test.db')
     s = Store('test.db', schema, 5)
     for x in range(2):
         s.execute("insert values (2, 'privert')")
         s.execute("insert values (3, 'poka')")
         s.execute("insert values (4, 'hohoohoh')")
 
-    print('H!H!HH!')
     s._memory_dump()
 
     z = s.execute('select where id > 2 limit 1')
+    assert z['id'] == 3, 'select limit'
 
-    s._memory_dump()
+    z = s.execute('select where id > 2 limit 1 desk')
+    assert z['id'] == 4, 'select limit desk'
 
-    z1 = s.execute('delete where id > 2 limit 1')
+    z = s.execute('select * where id = 2')
+    assert len(z) == 2, 'select * id = 2'
 
-    s.execute('delete * where id = 2')
+    z = s.execute('delete where id > 2 limit 1')
+    z = s.execute('select where id > 2')
+    assert len(z) == 3, 'select after delete id > 2'
+
+    z = s.execute('delete * where id = 2')
+    z = s.execute('select where id = 2')
+    assert len(z) == 0, 'select after delete'
+
     s.execute("insert values (2, 'HUHUHUHU!')")
+    z = s.execute('select where id = 2')
+    assert z['v'] == 'HUHUHUHU!', 'select after delete'
 
     s._memory_dump()
 
     s.delete()
+
     s._memory_dump()
 
-    print(z, z1)
+    for x in range(20):
+        s.execute("insert values (20, 'www{0}')".format(x))
+
+    z = s.execute('select * from frequency limit 5 deck')
+    print(z)
+    assert len(z) == 5, 'select limit!'
 
     # s._memory[0]['id'] = 22
     # s._memory[0]['value'] = 'adawd'
