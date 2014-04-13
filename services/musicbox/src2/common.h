@@ -3,10 +3,12 @@
 
 #define MAX_FILE (1 * 1024 * 1024)
 #define MAX_CHUNK 0x7fff
+#define min(a, b) ((a) <= (b) ? (a) : (b))
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <string.h>
 #include <stdint.h>
 #include <unistd.h>
 

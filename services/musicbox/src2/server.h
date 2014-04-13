@@ -2,7 +2,7 @@
 #define MUSICBOX_SERVER_H
 
 #include "common.h"
-#include "logging.h"
+#include "store.h"
 
 enum MBRequestType {
 	MB_REQUEST_PUT,

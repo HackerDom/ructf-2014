@@ -7,12 +7,12 @@ struct Store {
 	char *dir;
 };
 
-int mb_store_init(struct Store *store, char *dir);
+void mb_store_init(struct Store *store, const char *dir);
 
-int mb_store_clear(struct Store *store);
+void mb_store_clear(struct Store *store);
 
-int mb_store_put(struct Store *store, uuid_t *id, uint_8 *buffer, int length);
+int mb_store_put(struct Store *store, uuid_t id, uint8_t *buffer, int length);
 
-int mb_store_get(struct Store *store, uuid_t id, uint_8 *buffer, int *length);
+int mb_store_get(struct Store *store, uuid_t id, uint8_t *buffer, int length);
 
 #endif

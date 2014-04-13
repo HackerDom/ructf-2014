@@ -1,7 +1,8 @@
 #include "networking.h"
+#include "logging.h"
 
-int mb_send_all_bytes(int sockfd, uint_8 *buffer, int desired_length) {
-	short length = min(desired_length, CHUNK_SIZE);
+int mb_send_all_bytes(int sockfd, uint8_t *buffer, int desired_length) {
+	short length = min(desired_length, MAX_CHUNK);
 	size_t bytes_sent, total_bytes_sent;
 
 
@@ -9,7 +10,7 @@ int mb_send_all_bytes(int sockfd, uint_8 *buffer, int desired_length) {
 
 	total_bytes_sent = 0;
 	while (total_bytes_sent < length) {
-		bytes_sent = recv(sockfd, buffer + total_bytes_sent, length - total_bytes_sent);
+		bytes_sent = recv(sockfd, buffer + total_bytes_sent, length - total_bytes_sent, 0);
 		if (bytes_sent <= 0)
 			return -1;
 		total_bytes_sent += bytes_sent;
@@ -18,18 +19,18 @@ int mb_send_all_bytes(int sockfd, uint_8 *buffer, int desired_length) {
 	return total_bytes_sent;
 }
 
-int mb_receive_all_bytes(int sockfd, uint_8 *buffer, int capacity) {
+int mb_receive_all_bytes(int sockfd, uint8_t *buffer, int capacity) {
 	short length;
 	size_t bytes_read, total_bytes_read;
 
-	if (recv(sockfd, &length, sizeof(length)) != sizeof(length))
+	if (recv(sockfd, &length, sizeof(length), 0) != sizeof(length))
 		error("Failed to receive chunk length");
 	if (length > capacity)
 		return -1;
 
 	total_bytes_read = 0;
 	while (total_bytes_read < length) {
-		bytes_read = recv(sockfd, buffer + total_bytes_read, length - total_bytes_read);
+		bytes_read = recv(sockfd, buffer + total_bytes_read, length - total_bytes_read, 0);
 		if (bytes_read <= 0)
 			return -1;
 		total_bytes_read += bytes_read;
