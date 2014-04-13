@@ -179,7 +179,7 @@ int list_room()
         bson_iterator iterator[1];
 		if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
         {
-		user_name(bson_iterator_string( iterator))
+		user_name(bson_iterator_string( iterator));
 			}
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
@@ -194,7 +194,7 @@ int list_room()
     return 0;
 }
 
-const char *user_name(char userId)
+const char *user_name(const char *userId)
 {
 	bson query[1];
     mongo_cursor cursor[1];
