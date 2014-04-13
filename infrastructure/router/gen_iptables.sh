@@ -74,6 +74,12 @@ for net in vpn core_switch devs checksystem teams team_switches any; do
     init_network $net:${!net}
 done
 
+init_chain filter to_checksystem_public
+for port in 80 31337; do
+$add_filter to_checksystem_public \
+    -d 10.23.0.2 -p tcp --dport $port -m state --state NEW -j ACCEPT
+done
+
 # and we fix networks here additionally in to_* chains
 # exclude core switch network from team switches
 iptables -t filter -I to_team_switches 1 -d $core_switch -j RETURN
@@ -95,8 +101,10 @@ can_go checksystem inet
 can_go checksystem teams
 
 can_go teams inet
-can_go teams devs
 $team2team && can_go teams teams
+
+can_go any checksystem_public
+
 
 $add_filter FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 $add_filter FORWARD -p icmp -j ACCEPT
