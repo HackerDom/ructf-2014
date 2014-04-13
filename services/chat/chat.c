@@ -22,200 +22,231 @@
 #define DEFAULT_PORT   5555
 #define BUF_SIZE      32767
 
-#define die(message) { perror(message); exit(1); }
-
+#define die(message)  { perror(message); exit(1); }
+#define die2(message) { fprintf(stderr, "%s\n",message); exit(1); }
 
 int create_server_socket (int port)
 {
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) 
-		die("create socket");
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+        die("create socket");
 
-	int optval = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+    int optval = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
-	struct sockaddr_in name;
-	name.sin_family = AF_INET;
-	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port = htons(port);
+    struct sockaddr_in name;
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port = htons(port);
 
-	if (bind(sock, (void*) &name, sizeof(name)) < 0)
-		die("bind");
+    if (bind(sock, (void *) &name, sizeof(name)) < 0)
+        die("bind");
 
-	if (listen(sock, 1) < 0)
-		die("listen");
+    if (listen(sock, 1) < 0)
+        die("listen");
 
-	D("Listening to port: %d\n", port);
-	return sock;
+    D("Listening to port: %d\n", port);
+    return sock;
 }
 
-void print_greeting() 
+void print_greeting()
 {
-	WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
-	WriteLn("");
-	WriteLn("Commands: \\help, \\register, \\login, \\list, \\join <room>, \\leave, \\quit");
-	WriteLn("");
+    WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
+    WriteLn("");
+    WriteLn("Commands: \\help, \\register, \\login, \\list, \\join <room>, \\leave, \\quit");
+    WriteLn("");
 }
 
 /* Command: \register name pass */
 
 void cmd_register(char *buf)
 {
-char *cmd,*user,*pass;
- char space[10]=" ";
- cmd= strtok (buf,space);
- user = strtok (NULL,space);
- pass = strtok (NULL,space);
-user_create(user,pass);
+    char *cmd, *user, *pass;
+    char space[10] = " ";
+    cmd = strtok (buf, space);
+    user = strtok (NULL, space);
+    pass = strtok (NULL, space);
+    user_create(user, pass);
 }
 
 void cmd_login(char *buf)
 {
-	char *cmd,*user,*pass;
-	char space[10]=" ";
-	cmd= strtok (buf,space);
-	user = strtok (NULL,space);
-	pass = strtok (NULL,space);
-	user_login(user,pass);
+    char *cmd, *user, *pass;
+    char space[10] = " ";
+    cmd = strtok (buf, space);
+    user = strtok (NULL, space);
+    pass = strtok (NULL, space);
+    user_login(user, pass);
 }
 
 void cmd_login_room(char *buf)
 {
-        char *cmd,*room,*pass;
-        char space[10]=" ";
-        cmd= strtok (buf,space);
-        room = strtok (NULL,space);
-        pass = strtok (NULL,space);
-        room_join(room, pass);
-        list_room();
+    char *cmd, *room, *pass;
+    char space[10] = " ";
+    cmd = strtok (buf, space);
+    room = strtok (NULL, space);
+    pass = strtok (NULL, space);
+    room_join(room, pass);
+    list_room();
 }
 
 void cmd_creat_room(char *buf)
 {
-	 char *cmd,*name,*pass;
-        char space[10]=" ";
-        cmd= strtok (buf,space);
-        name = strtok (NULL,space);
-        pass = strtok (NULL,space);
-	room_create(name, currentUser, pass);
+    char *cmd, *name, *pass;
+    char space[10] = " ";
+    cmd = strtok (buf, space);
+    name = strtok (NULL, space);
+    pass = strtok (NULL, space);
+    room_create(name, currentUser, pass);
 }
 
 void cmd_say(char *buf)
 {
-        char *cmd,*msg;
-        char space[10]=" ";
-        cmd= strtok (buf,space);
-        msg = strtok (NULL,space);
-        say(msg);
+    char *cmd, *msg;
+    char space[10] = " ";
+    cmd = strtok (buf, space);
+    msg = strtok (NULL, space);
+    say(msg);
 }
 
 
 void cmd_list()
 {
-	list();
+    list();
 }
 
 void cmd_help()
 {
-	WriteLn("\\register <name> <pass> - register new user");
-	WriteLn("\\login <name> <pass>    - login");
-	WriteLn("\\create <room> [pass]   - create new room (with optional password)");
-	WriteLn("\\list                   - list all chat rooms");
-	WriteLn("\\join <room>            - join chat room by name");
-	WriteLn("\\leave                  - leave current chat room");
-	WriteLn("\\quit                   - quit program");
+    WriteLn("\\register <name> <pass> - register new user");
+    WriteLn("\\login <name> <pass>    - login");
+    WriteLn("\\create <room> [pass]   - create new room (with optional password)");
+    WriteLn("\\list                   - list all chat rooms");
+    WriteLn("\\join <room>            - join chat room by name");
+    WriteLn("\\leave                  - leave current chat room");
+    WriteLn("\\quit                   - quit program");
 }
 
-char* allocate_argv(int count, int length)
+char *allocate_argv(int count, int length)
 {
-	// TODO
-	return NULL;
+    // TODO
+    return NULL;
 }
 
 void free_argv(int count)
 {
-	// TODO
+    // TODO
 }
 
 void process_client()
 {
-	int argc;
-	char * argv[MAX_ARGV];
-	char buf[BUF_SIZE] = {0};
+    int argc;
+    char *argv[MAX_ARGV];
+    char buf[BUF_SIZE] = {0};
 
-	print_greeting();
+    print_greeting();
 
-	while (1)
-	{
-		Write("> ");
-		if (!fgets(buf, BUF_SIZE, stdin))
-			break;
-		strtok(buf, "\r\n");
+    while (1)
+    {
+        Write("> ");
+        if (!fgets(buf, BUF_SIZE, stdin))
+            break;
+        strtok(buf, "\r\n");
 
-		if (buf == strstr(buf, "\\quit")) {
-			break;
-		} else if (buf == strstr(buf, "\\register")) {
-			cmd_register(buf);
-		}
-		else if (buf == strstr(buf, "\\login")) {
-			cmd_login(buf);
-		}
-		else if (buf == strstr(buf, "\\help")) {
-			cmd_help();
-		}
-		else if (buf == strstr(buf, "\\list")) {
-			cmd_list();
-		}
-		else if (buf == strstr(buf, "\\create")) {
-                        cmd_creat_room(buf);
-                } 
-		else if (buf == strstr(buf, "\\join")) {
-                        cmd_login_room(buf);
-                }
-		else if (buf == strstr(buf, "\\say")) {
-                        cmd_say(buf);
-			list_room();
+        if (buf == strstr(buf, "\\quit"))
+        {
+            break;
+        }
+        else if (buf == strstr(buf, "\\register"))
+        {
+            cmd_register(buf);
+        }
+        else if (buf == strstr(buf, "\\login"))
+        {
+            cmd_login(buf);
+        }
+        else if (buf == strstr(buf, "\\help"))
+        {
+            cmd_help();
+        }
+        else if (buf == strstr(buf, "\\list"))
+        {
+            cmd_list();
+        }
+        else if (buf == strstr(buf, "\\create"))
+        {
+            cmd_creat_room(buf);
+        }
+        else if (buf == strstr(buf, "\\join"))
+        {
+            cmd_login_room(buf);
+        }
+        else if (buf == strstr(buf, "\\say"))
+        {
+            cmd_say(buf);
+            list_room();
+        }
 
-                }
+        else
+        {
+            WriteLn("Unknown command (type '\\help' for help)");
+        }
 
-		else {
-			WriteLn("Unknown command (type '\\help' for help)");
-		}
-
-		WriteLn("");
-	}
+        WriteLn("");
+    }
 }
 
-int main(int argc, char ** argv)
+void test_mongo_connection()
 {
-	int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;
-	int server = create_server_socket(port);
-	connect_db();
-	signal(SIGCHLD, SIG_IGN);
+    int connect = connect_db();
+    if (connect < 0) die2("db connection failed");
+    disconnect_db();
+}
 
-	while (1) {
-		struct sockaddr cli_addr;
-		int cli_len = sizeof(cli_addr);
-		int client = accept(server, &cli_addr, &cli_len);
-		if (client < 0)
-			die("accept");
+int main(int argc, char **argv)
+{
+    signal(SIGCHLD, SIG_IGN);
 
-		int pid = fork();
-		if (pid < 0)
-			die("fork");
+    test_mongo_connection();
 
-		if (pid == 0) {
-			if (dup2(client, STDIN_FILENO) < 0) die("dup2 stdin");
-			if (dup2(client, STDOUT_FILENO) < 0) die("dup2 stdout");
+    int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;
+    int server = create_server_socket(port);
 
-			D("  [%d] process started\n", getpid());
-			process_client();
-			D("  [%d] process finished\n", getpid());
+    while (1)
+    {
+        struct sockaddr cli_addr;
+        int cli_len = sizeof(cli_addr);
+        int client = accept(server, &cli_addr, &cli_len);
+        if (client < 0)
+            die("accept");
 
-			shutdown(client, 2);
-			exit(0);
-		}
-	}
-	close(server);
-	return 0;
+        int pid = fork();
+        if (pid < 0)
+            die("fork");
+
+        if (pid == 0)
+        {
+            if (dup2(client, STDIN_FILENO) < 0) die("dup2 stdin");
+            if (dup2(client, STDOUT_FILENO) < 0) die("dup2 stdout");
+
+            D("  [%d] process started\n", getpid());
+
+            if (connect_db() == 0)
+            {
+                process_client();
+                disconnect_db();
+            }
+            else
+            {
+                WriteLn("DB connection problem, sorry");
+                D("  [%d] cannot connect to db\n", getpid());
+            }
+
+            D("  [%d] process finished\n", getpid());
+
+            shutdown(client, 2);
+            exit(0);
+        }
+    }
+    close(server);
+    return 0;
 }
