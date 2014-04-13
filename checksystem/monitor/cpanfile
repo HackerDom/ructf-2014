@@ -1,4 +1,5 @@
 requires 'EV';
 requires 'DBI';
-requires 'DBD::Pg';
-requires 'Mojolicious';
+requires 'DBD::Pg', '>= 3';
+requires 'Mojolicious', '>= 4.90';
+requires 'Mojolicious::Plugin::PgAsync';

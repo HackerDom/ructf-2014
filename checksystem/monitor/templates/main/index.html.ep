@@ -1,5 +1,5 @@
 % layout 'default';
-% title 'RuCTFE Monitor > Scoreboard';
+% title 'RuCTF > скорборд';
 
 <div class="content" style="width: 1230px">
   <table class="top">
@@ -16,12 +16,12 @@
       <th>Flag Points</th>
       <th>SLA</th>
       <th>Score</th>
-      % for my $service (keys %$services) {
+      % for my $service (@{$self->app->services}) {
       <th class="service_name"><%= $service %></th>
       % }
     </tr>
     % my $pos = 0;
-    % for my $team (@$teams) {
+    % for my $team ($self->app->scoreboard) {
       <tr>
         <td class="team__cell">
           <div class="team__cell__inner team_position">
