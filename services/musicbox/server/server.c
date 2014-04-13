@@ -48,10 +48,12 @@ void mb_process_get(int sockfd, struct Store *store) {
 	int data_length, bytes_sent;
 	uuid_t id;
 
+	debug("mb_process_get: reading %d bytes", sizeof(id));
 	if (recv(sockfd, &id, sizeof(id), 0) != sizeof(id))
 		error("Failed to receive file ID");
 
 	data_length = mb_store_get(store, id, buffer, sizeof(buffer));
+	debug("mb_process_get: data length = %d", data_length);
 	if (data_length < 0) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
 		return;

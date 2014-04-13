@@ -48,7 +48,7 @@ def data_from_chunk_sequence(chunks):
 def get_response_from_socket(sock):
 	result = b''
 	while True:
-		next_bytes = sock.read(READING_CHUNK_SIZE)
+		next_bytes = sock.recv(READING_CHUNK_SIZE)
 		if not next_bytes:
 			break
 		result += next_bytes
