@@ -22,3 +22,6 @@ services/dispatcher/.idea
 
 # Installer logs
 pip-log.txt
+
+services/chat/chat
+services/chat/users.db
