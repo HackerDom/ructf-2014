@@ -9,7 +9,7 @@
             box-sizing: border-box;
         }
 
-        h1, h2 {
+        h1, h2, div {
             text-align: center;
         }
 
@@ -51,6 +51,13 @@
     <input name="message" placeholder="message" type="text" />
     <input type="submit" />
 </form>
+{% endblock %}
+
+{% block live %}
+<h2>WATCH LIVE</h2>
+{% for x in freq %}
+    <div><a href="{{ url_for('dialog', frequency=x.frequency) }}">{{ x.frequency }}</a></div>
+{% endfor %}
 {% endblock %}
 
 </body>
