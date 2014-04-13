@@ -1,3 +1,3 @@
-pragma once
+#pragma once
 
 int connect_db();
