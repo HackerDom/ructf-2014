@@ -10,7 +10,7 @@ int mb_send_all_bytes(int sockfd, uint8_t *buffer, int desired_length) {
 
 	total_bytes_sent = 0;
 	while (total_bytes_sent < length) {
-		bytes_sent = recv(sockfd, buffer + total_bytes_sent, length - total_bytes_sent, 0);
+		bytes_sent = send(sockfd, buffer + total_bytes_sent, length - total_bytes_sent, 0);
 		if (bytes_sent <= 0)
 			return -1;
 		total_bytes_sent += bytes_sent;
