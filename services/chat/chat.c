@@ -68,10 +68,17 @@ char *cmd,*user,*pass;
  cmd= strtok (buf,space);
  user = strtok (NULL,space);
  pass = strtok (NULL,space);
-
-D(user);
-D(pass);
 user_create(user,pass);
+}
+
+void cmd_login(char *buf)
+{
+	char *cmd,*user,*pass;
+	char space[10]=" ";
+	cmd= strtok (buf,space);
+	user = strtok (NULL,space);
+	pass = strtok (NULL,space);
+	user_login(user,pass);
 }
 
 void cmd_help()
@@ -116,6 +123,9 @@ void process_client()
 		}
 		if (buf == strstr(buf, "\\register")) {
 			cmd_register(buf);
+		}
+		else if (buf == strstr(buf, "\\login")) {
+			cmd_login(buf);
 		}
 		else if (buf == strstr(buf, "\\help")) {
 			cmd_help();

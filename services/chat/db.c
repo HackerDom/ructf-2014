@@ -50,6 +50,10 @@ int add_user(char *user, char *pass) {
     return 0;
 }
 
+int user_login(char *user, char *pass) {
+	return 0;
+}
+
 int room_create(char *name, int ownerId, char *pass)
 {
     D("room_create: %s, %d, %s", name, ownerId, pass);
@@ -59,7 +63,7 @@ int room_create(char *name, int ownerId, char *pass)
     bson_init( &b );
     bson_append_new_oid( &b, "room_id" );
 
-    bson_append_string( &b, "room", user);
+    bson_append_string( &b, "room", name);
     bson_append_string( &b, "pass",pass);
     /* Finish the BSON obj. */
     bson_finish( &b );
