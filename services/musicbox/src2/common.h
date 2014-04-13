@@ -1,6 +1,9 @@
 #ifndef MUSICBOX_COMMON_H
 #define MUSICBOX_COMMON_H
 
+#define MAX_FILE (1 * 1024 * 1024)
+#define MAX_CHUNK 0x7fff
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>

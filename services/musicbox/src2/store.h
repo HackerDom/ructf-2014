@@ -4,10 +4,12 @@
 #include "common.h"
 
 struct Store {
-	char *folder;
+	char *dir;
 };
 
-int mb_store_init(struct Store *store, char *folder);
+int mb_store_init(struct Store *store, char *dir);
+
+int mb_store_clear(struct Store *store);
 
 int mb_store_put(struct Store *store, uuid_t *id, uint_8 *buffer, int length);
 
