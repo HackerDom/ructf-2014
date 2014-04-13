@@ -1,14 +1,13 @@
 #pragma once
 
-char currentUser[25];
-char currentRoom[25];
+#include <stdbool.h>
 
-int connect_db();
-void disconnect_db();
+int db_connect();
+void db_disconnect();
 
-int add_user(char *user, char *pass);
+int user_create(char *user, char *pass);
 int user_login(char *user, char *pass);
-int room_create(char *name, char *ownerId, char *pass);
+int room_create(char *name, char *pass);
 int list();
 const char *user_name(const char *userId);
 int list_room();

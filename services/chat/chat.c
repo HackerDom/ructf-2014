@@ -82,10 +82,10 @@ void parse_argv(char buf[], char **argv, int *argc)
 
 void process_client()
 {
-    char **argv = (char **) malloc(MAX_ARGV * sizeof(char *));
+    char *argv[MAX_ARGV];
+    char buf[BUF_SIZE];
     int argc = 0;
     int result = 0;
-    char buf[BUF_SIZE] = {0};
 
     print_greeting();
 
@@ -122,19 +122,19 @@ void process_client()
         }
         else if (!strcmp(cmd, "\\register") && argc == 3)
         {
-            result = add_user(argv[1], argv[2]);
+            result = user_create(argv[1], argv[2]);            // (user,pass)
         }
         else if (!strcmp(cmd, "\\login") && argc == 3)
         {
-            result = user_login(argv[1], argv[2]);
+            result = user_login(argv[1], argv[2]);             // (user,pass)
         }
-        else if (!strcmp(cmd, "\\create") && argc == 3)
+        else if (!strcmp(cmd, "\\create") && argc >= 2 && argc <= 3)
         {
-            result = room_create(argv[1], currentUser, argv[2]);
+            result = room_create(argv[1], argc == 3 ? argv[2] : NULL);
         }
-        else if (!strcmp(cmd, "\\join") && argc == 3)
+        else if (!strcmp(cmd, "\\join") && argc >= 2 && argc <= 3)
         {
-            result = room_join(argv[1], argv[2]);
+            result = room_join(argv[1], argc == 3 ? argv[2] : NULL);
             if (result == 0)
                 list_room();
         }
@@ -148,15 +148,13 @@ void process_client()
         WriteLn( result == 0 ? "OK" : "Error" );
         WriteLn("");
     }
-
-    free(argv);
 }
 
 void test_mongo_connection()
 {
-    int connect = connect_db();
+    int connect = db_connect();
     if (connect < 0) die2("db connection failed");
-    disconnect_db();
+    db_disconnect();
 }
 
 int main(int argc, char **argv)
@@ -187,10 +185,10 @@ int main(int argc, char **argv)
 
             D("  [%d] process started\n", getpid());
 
-            if (connect_db() == 0)
+            if (db_connect() == 0)
             {
                 process_client();
-                disconnect_db();
+                db_disconnect();
             }
             else
             {
