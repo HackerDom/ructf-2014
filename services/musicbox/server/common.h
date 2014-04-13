@@ -5,6 +5,7 @@
 #define MAX_CHUNK 0x7fff
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
