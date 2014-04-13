@@ -11,6 +11,7 @@
 
 #include <signal.h>
 
+#include "db.h"
 #include "io.h"
 #include "debug.h"
 #include "storage.h"
@@ -126,7 +127,7 @@ int main(int argc, char ** argv)
 {
 	int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;
 	int server = create_server_socket(port);
-
+	connect_db();
 	signal(SIGCHLD, SIG_IGN);
 
 	while (1) {
