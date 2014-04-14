@@ -1,2 +1,2 @@
-DROP DATABASE ructfe;
-DROP ROLE ructfe;
+DROP DATABASE ructf2014;
+DROP ROLE ructf2014;

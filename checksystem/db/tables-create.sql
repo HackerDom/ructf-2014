@@ -281,7 +281,7 @@ CREATE INDEX idx_sla_time ON sla(time);
 CREATE INDEX idx_sla_teamid ON sla(team_id);
 
 CREATE INDEX idx_score_time ON score(time);
-CREATE INDEX idx_score_team ON score(team);
+CREATE INDEX idx_score_team ON score(team_id);
 
 -- Views
 
