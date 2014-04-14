@@ -292,11 +292,11 @@ int list_room()
         bson_iterator iterator[1];
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
         {
-            user_name(bson_iterator_string( iterator));
+           Write("%s - ", user_name(bson_iterator_string( iterator)));
         }
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
-            WriteLn("%d", bson_iterator_time_t(iterator)) ;
+            WriteLn("%d:", bson_iterator_time_t(iterator)) ;
         }
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "message" ))
         {
@@ -312,8 +312,6 @@ const char *user_name(const char *userId)
     bson query[1];
     mongo_cursor cursor[1];
     bson_oid_t oid;
-    bson_destroy( query );
-    mongo_cursor_destroy( cursor );
     bson_init( query );
     bson_oid_from_string( &oid, userId );
     bson_append_oid( query, "_id", &oid );
