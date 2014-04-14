@@ -15,22 +15,22 @@
     % }
   </tr>
   % my $pos = 0;
-  % for my $team (@{$self->app->scoreboard}) {
+  % for my $score (@{$self->app->scoreboard}) {
   <tr>
     <td><%= ++$pos %>.</td>
     <td>
-      % my $name = $team->{name};
+      % my $name = $score->{team}{name};
       <img src="" width="64" height="64">
     </td>
-    <td><%= $team->{name} %></td>
-    <td><%= sprintf '%.2f', $team->{fp} %></td>
-    <td><%= sprintf '%.2f', $team->{sla} %></td>
-    <td><%= sprintf '%.2f', $team->{score} %></td>
+    <td><%= $score->{team}{name} %></td>
+    <td><%= sprintf '%.2f', $score->{fp} %></td>
+    <td><%= sprintf '%.2f', $score->{sla} %></td>
+    <td><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $service (@{$self->app->services}) {
-      % # my $status = $services->{$service}{$team->{tid}}{status};
+      % my $status = $self->app->status->{$service}{$score->{team}{tid}}{status};
       % # my $statuses = {101 => 'up', 102 => 'corrupt', 103 => 'mumble', 104 => 'down'};
-      <td>x</td>
+      <td><%= $status %></td>
     % }
   </tr>
   % }

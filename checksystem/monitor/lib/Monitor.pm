@@ -5,6 +5,7 @@ has services   => sub { [] };
 has teams      => sub { {} };
 has scoreboard => sub { [] };
 has round      => sub { {} };
+has status     => sub { {} };
 
 sub startup {
   my $self = shift;
@@ -67,9 +68,11 @@ sub startup {
             FROM rounds ORDER BY n DESC LIMIT 1;'
               => $delay->begin
           );
+          $self->pg(
+            'SELECT team_id, service, status, fail_comment FROM service_status;' => $delay->begin);
         },
         sub {
-          my ($delay, $fh, $sh, $rh) = @_;
+          my ($delay, $fh, $sh, $rh, $ssh) = @_;
           my ($flag_points, $sla_points);
 
           while (my $row = $sh->sth->fetchrow_hashref()) {
@@ -103,6 +106,10 @@ sub startup {
 
           my $row = $rh->sth->fetchrow_hashref;
           $self->round({n => $row->{n}, time => scalar localtime int $row->{time}});
+
+          while (my $row = $ssh->sth->fetchrow_hashref()) {
+            $self->app->status->{$row->{service}}{$row->{team_id}} = $row;
+          }
         });
     });
 }
