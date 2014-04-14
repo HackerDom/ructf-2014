@@ -52,6 +52,11 @@ bool exists(char *collection, char *name, char *value)
     return exists;
 }
 
+void leave()
+{
+    roomSet = false;
+    *currentRoom=0;
+}
 bool test_password(const char *expected, const char *actual)
 {
     char len_actual = strlen(actual);

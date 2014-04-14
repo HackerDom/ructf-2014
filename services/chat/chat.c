@@ -95,14 +95,6 @@ void process_client()
             break;
         strtok(buf, "\r\n");            // Skip everything after "\r" or "\n"
 
-        if (buf[0] != '\\')             // If not command, then client wants to say something
-        {
-            say(buf);
-            room_history();
-            WriteLn("");
-            continue;
-        }
-
         parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
         char *cmd = argv[0];             // At least 1 token exists
 
@@ -110,7 +102,23 @@ void process_client()
         {
             break;
         }
-        else if (!strcmp(cmd, "\\help"))
+        else  if (!strcmp(cmd, "\\leave"))
+        {
+  	      leave();
+              WriteLn("Room close");
+	      continue;
+
+	}
+        else if (buf[0] != '\\')             // If not command, then client wants to say something
+        {
+            say(buf);
+            room_history();
+            WriteLn("");
+            continue;
+        }
+
+   
+        if (!strcmp(cmd, "\\help"))
         {
             print_help();
         }
