@@ -14,9 +14,9 @@ import ructf.main.DatabaseManager;
 
 public class SLAworker extends Thread{
 	
-	private static String sqlGetLastSla = "SELECT sla.team_id, sla.successed, sla.failed, sla.time FROM (SELECT team_id, MAX(time) AS time FROM sla GROUP BY team_id) last_times INNER JOIN sla ON last_times.time=sla.time AND last_times.team_id=sla.team_id";
-	private static String sqlGetLastAccessChecks = "SELECT team_id, status, count(*), max(time) FROM access_checks WHERE time > ? GROUP BY team_id, status";
-	private static String sqlInsertSla = "INSERT INTO sla (team_id, successed, failed, time) VALUES (?, ?, ?, ?)";
+	private static String sqlGetLastSla = "SELECT sla.team_id, sla.service_id, sla.successed, sla.failed, sla.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM sla GROUP BY team_id, service_id) last_times INNER JOIN sla ON last_times.time=sla.time AND last_times.team_id=sla.team_id AND last_times.service_id=sla.service_id";
+	private static String sqlGetLastAccessChecks = "SELECT team_id, service_id, status, count(*), max(time) FROM access_checks WHERE time > ? GROUP BY team_id, service_id, status";
+	private static String sqlInsertSla = "INSERT INTO sla (team_id, service_id, successed, failed, time) VALUES (?, ?, ?, ?, ?)";
 	private static PreparedStatement stGetLastSla;
 	private static PreparedStatement stGetLastAccessChecks;
 	private static PreparedStatement stInsertSla;
@@ -30,18 +30,19 @@ public class SLAworker extends Thread{
 		PrepareStatements(conn);		
 	}
 	
-	private Hashtable<Integer, SLA> GetStateFromDb() throws SQLException {
+	private Hashtable<TeamService, SLA> GetStateFromDb() throws SQLException {
 		ResultSet res = stGetLastSla.executeQuery();
 		
-		Hashtable<Integer, SLA> result = new Hashtable<Integer, SLA>(); 
+		Hashtable<TeamService, SLA> result = new Hashtable<TeamService, SLA>(); 
 		
 		while(res.next()){
 			int team = res.getInt(1);
-			int successed = res.getInt(2);			
-			int failed = res.getInt(3);
-			Timestamp time = res.getTimestamp(4);
+			int service = res.getInt(2);
+			int successed = res.getInt(3);			
+			int failed = res.getInt(4);
+			Timestamp time = res.getTimestamp(5);
 			
-			result.put(team, new SLA(team, successed, failed, time));
+			result.put(new TeamService(team, service), new SLA(team, service, successed, failed, time));
 		}
 		return result;	
 	}
@@ -50,7 +51,7 @@ public class SLAworker extends Thread{
 		try
 		{
 			logger.info("Getting SLA state from db");
-			Hashtable<Integer,SLA> stateFromDb = GetStateFromDb();
+			Hashtable<TeamService,SLA> stateFromDb = GetStateFromDb();
 			Timestamp lastKnownTime = GetLastKnownTime(stateFromDb);
 			if (lastKnownTime == null)
 			{
@@ -68,7 +69,7 @@ public class SLAworker extends Thread{
 		}		
 	}
 	
-	private void DoJobLoop(Hashtable<Integer, SLA> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {		
+	private void DoJobLoop(Hashtable<TeamService, SLA> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {		
 		conn.setAutoCommit(false);		
 		
 		while (true) {
@@ -76,54 +77,57 @@ public class SLAworker extends Thread{
 			stGetLastAccessChecks.setTimestamp(1, lastKnownTime);
 			ResultSet res = stGetLastAccessChecks.executeQuery();
 			
-			Hashtable<Integer, SLA> stateDelta = new Hashtable<Integer, SLA>();
+			Hashtable<TeamService, SLA> stateDelta = new Hashtable<TeamService, SLA>();
 			
 			while (res.next()) {				
 				int team = res.getInt(1);
-				int status = res.getInt(2);
+				int service = res.getInt(2);
+				int status = res.getInt(3);
 				if(CheckerExitCode.isUnknown(status))
 					status = CheckerExitCode.Down.toInt();				
-				int count = res.getInt(3);
-				Timestamp time = res.getTimestamp(4);
+				int count = res.getInt(4);
+				Timestamp time = res.getTimestamp(5);
 				
-				if(!stateDelta.containsKey(team))
-					stateDelta.put(team, new SLA(team, 0, 0, time));
+				TeamService key = new TeamService(team, service);
+				if(!stateDelta.containsKey(key))
+					stateDelta.put(key, new SLA(team, service, 0, 0, time));
 				SLA slaDelta = stateDelta.get(team);
 
 				if(status == CheckerExitCode.OK.toInt())
-					slaDelta.successed+=count;
+					slaDelta.succeeded+=count;
 				else
 					slaDelta.failed+=count;
 				slaDelta.time = Max(slaDelta.time, time);
 			}			
 			
-			for (int team : stateDelta.keySet()) {
-				SLA slaDelta = stateDelta.get(team);
-				if(!state.containsKey(team))
-					state.put(team, slaDelta);
+			for (TeamService key : stateDelta.keySet()) {
+				SLA slaDelta = stateDelta.get(key);
+				if(!state.containsKey(key))
+					state.put(key, slaDelta);
 				else {
-					SLA sla = state.get(team);					 
-					sla.successed += slaDelta.successed;
+					SLA sla = state.get(key);					 
+					sla.succeeded += slaDelta.succeeded;
 					sla.failed += slaDelta.failed;
 					sla.time = slaDelta.time;					
 				}
-				lastKnownTime = Max(state.get(team).time, lastKnownTime);
-				logger.info(String.format("Team %d delta: successed = %d, failed = %d, time = %s)", slaDelta.team, slaDelta.successed, slaDelta.failed, slaDelta.time.toString()));
+				lastKnownTime = Max(state.get(key).time, lastKnownTime);
+				logger.info(String.format("(Team, service) (%d, %d) delta: succeeded = %d, failed = %d, time = %s)", slaDelta.team, slaDelta.service, slaDelta.succeeded, slaDelta.failed, slaDelta.time.toString()));
 			}
 			
 			try {
-				for (int team : stateDelta.keySet()) {
-					SLA sla = state.get(team);
+				for (TeamService key : stateDelta.keySet()) {
+					SLA sla = state.get(key);
 					
 					stInsertSla.setInt(1, sla.team);
-					stInsertSla.setInt(2, sla.successed);
-					stInsertSla.setInt(3, sla.failed);
-					stInsertSla.setTimestamp(4, sla.time);
+					stInsertSla.setInt(2, sla.service);
+					stInsertSla.setInt(3, sla.succeeded);
+					stInsertSla.setInt(4, sla.failed);
+					stInsertSla.setTimestamp(5, sla.time);
 					stInsertSla.execute();					
 					
-					int total = sla.successed + sla.failed;
+					int total = sla.succeeded + sla.failed;
 					
-					logger.info(String.format("Team %d result: successed = %d, failed = %d (SLA %f), time = %s)", sla.team, sla.successed, sla.failed, total > 0 ? ((double) sla.successed) / total : 0.0d, sla.time.toString()));
+					logger.info(String.format("(Team, service) (%d, %d) result: succeeded = %d, failed = %d (SLA %f), time = %s)", sla.team, sla.service, sla.succeeded, sla.failed, total > 0 ? ((double) sla.succeeded) / total : 1.0d, sla.time.toString()));
 				}				
 				
 				conn.commit();
@@ -151,7 +155,7 @@ public class SLAworker extends Thread{
 		return t1;
 	}
 
-	private static Timestamp GetLastKnownTime(Hashtable<Integer, SLA> stateFromDb) {
+	private static Timestamp GetLastKnownTime(Hashtable<TeamService, SLA> stateFromDb) {
 		Timestamp max = null;
 		for (SLA ts : stateFromDb.values()) {
 			if (max == null || max.before(ts.time))
