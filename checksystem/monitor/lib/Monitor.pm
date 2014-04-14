@@ -53,8 +53,8 @@ sub startup {
 
           $self->log->info('Fetch SLA and FP for all team');
           $self->pg(
-            'SELECT DISTINCT ON (team) team AS team_id, score
-            FROM score ORDER BY team, time DESC;'
+            'SELECT DISTINCT ON (team_id) team_id AS team_id, score
+            FROM score ORDER BY team_id, time DESC;'
               => $delay->begin
           );
           $self->pg(
