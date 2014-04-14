@@ -1,0 +1,21 @@
+h1 {
+	font-size:24px;
+}
+h2 {
+	font-size:20px;
+}
+.container {
+	width:800px;
+	margin: 0 auto;
+}
+.container > * {
+	width: 100%;
+}
+.form-control {
+	font-size:18px;
+	margin:5px 0;
+	padding:4px;
+}
+.votes-login {width:10%;}
+.votes-title {width:30%;}
+.votes-text {width:60%;}
