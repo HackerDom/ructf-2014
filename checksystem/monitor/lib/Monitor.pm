@@ -1,7 +1,7 @@
 package Monitor;
 use Mojo::Base 'Mojolicious';
 
-has services   => sub { [] };
+has services   => sub { {} };
 has teams      => sub { {} };
 has scoreboard => sub { [] };
 has round      => sub { {} };
@@ -24,13 +24,13 @@ sub startup {
   $r->get('/flags')->to('main#flags');
 
   $self->pg(
-    'SELECT name FROM services;',
+    'SELECT id, name FROM services;',
     sub {
       my $db = shift;
 
       $self->log->info('Fetch services at startup');
       while (my $row = $db->sth->fetchrow_hashref()) {
-        push @{$self->services}, $row->{name};
+        $self->services->{$row->{id}} = $row->{name};
       }
     });
 
@@ -54,13 +54,13 @@ sub startup {
 
           $self->log->info('Fetch SLA and FP for all team');
           $self->pg(
-            'SELECT DISTINCT ON (team_id) team_id AS team_id, score
-            FROM score ORDER BY team_id, time DESC;'
+            'SELECT DISTINCT ON (team_id, service_id) team_id, service_id, score
+            FROM score ORDER BY team_id, service_id, time DESC;'
               => $delay->begin
           );
           $self->pg(
-            'SELECT DISTINCT ON (team_id) team_id, successed, failed
-            FROM sla ORDER BY team_id, time DESC;'
+            'SELECT DISTINCT ON (team_id, service_id) team_id, service_id, successed, failed
+            FROM sla ORDER BY team_id, service_id, time DESC;'
               => $delay->begin
           );
           $self->pg(
@@ -76,26 +76,26 @@ sub startup {
           my ($flag_points, $sla_points);
 
           while (my $row = $sh->sth->fetchrow_hashref()) {
-            my ($sla, $sum) = (0, $row->{successed} + $row->{failed});
+            my ($sla, $sum) = (1, $row->{successed} + $row->{failed});
             $sla = $row->{successed} / $sum if $sum > 0;
-            $sla_points->{$row->{team_id}} = $sla;
+            $sla_points->{$row->{team_id}}{$row->{service_id}} = $sla;
           }
           while (my $row = $fh->sth->fetchrow_hashref) {
-            $flag_points->{$row->{team_id}} = $row->{score};
+            $flag_points->{$row->{team_id}}{$row->{service_id}} = $row->{score};
           }
 
           my @data;
           for my $tid (keys %{$self->teams}) {
             my $team = $self->teams->{$tid};
-            my $fp   = $flag_points->{$tid} // 0;
-            my $sla  = $sla_points->{$tid} // 0;
+
+            my $score = 0;
+            $score += $sla_points->{$tid}{$_} * $flag_points->{$tid}{$_}
+              for keys %{$self->services};
 
             push @data,
               {
               team  => {id => $tid, name => $team->{name}, vuln_box => $team->{vuln_box}},
-              sla   => $sla,
-              fp    => $fp,
-              score => $fp * $sla
+              score => $score
               };
           }
 
