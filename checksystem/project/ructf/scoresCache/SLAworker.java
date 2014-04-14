@@ -91,7 +91,7 @@ public class SLAworker extends Thread{
 				TeamService key = new TeamService(team, service);
 				if(!stateDelta.containsKey(key))
 					stateDelta.put(key, new SLA(team, service, 0, 0, time));
-				SLA slaDelta = stateDelta.get(team);
+				SLA slaDelta = stateDelta.get(key);
 
 				if(status == CheckerExitCode.OK.toInt())
 					slaDelta.succeeded+=count;
