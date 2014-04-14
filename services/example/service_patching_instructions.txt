@@ -1,0 +1,2 @@
+1. Use enter_devel_image.sh to test your patch.
+2. Change service and launch build_simple_service.sh to rebuild the service image.
