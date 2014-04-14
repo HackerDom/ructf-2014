@@ -137,38 +137,33 @@ void user_login(char *user, char *pass)
     WriteLn("Login %s", userSet ? "OK" : "error");
 }
 
-int say( char *message)
+void say( char *message)
 {
     if (!roomSet)
     {
         D("say: not in room\n");
         WriteLn("Please, log in first");
-        return -1;
+        return;
     }
 
-    D("say\n");
-
     bson b;
-    int result;
-    time_t tp;
-    tp = time(NULL);
-    D("%d", tp);
+    time_t tp = time(NULL);
+    tp = mktime(localtime(&tp));
+
     bson_init( &b );
     bson_append_string( &b, "roomId", currentRoom);
     bson_append_string( &b, "userId", currentUser);
     bson_append_string( &b, "message", message);
-    bson_append_time_t(&b, "time", tp);
-    /* Finish the BSON obj. */
+    bson_append_int( &b, "time", tp);
     bson_finish( &b );
-    /* Insert the sample BSON document. */
+
     if ( mongo_insert( &conn, COLLECTION_MESSAGES, &b, NULL ) != MONGO_OK )
     {
-        D( "FAIL: Failed to insert document with error %d\n", conn.err );
-        exit( 1 );
+        D( "mongo_insert: %d\n", conn.err );
+        WriteLn("Warning: cannot send your message");
     }
 
     bson_destroy( &b );
-    return 0;
 }
 
 void room_create(char *name, char *pass)
@@ -303,6 +298,8 @@ int list()
 
 void room_history()
 {
+    char stime[32];
+
     bson query[1];
     mongo_cursor cursor[1];
     bson_init( query );
@@ -315,17 +312,21 @@ void room_history()
     while ( mongo_cursor_next( cursor ) == MONGO_OK )
     {
         bson_iterator iterator[1];
-        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
-        {
-            Write("%s - ", user_name(bson_iterator_string( iterator)));
-        }
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
-            WriteLn("%d:", bson_iterator_time_t(iterator)) ;
+            time_t t = bson_iterator_int(iterator);
+            strftime(stime, 32, "%F %H:%M:%S", localtime(&t));
+            Write("[ %s ] ", stime);
         }
+
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
+        {
+            Write("%s: ", user_name(bson_iterator_string( iterator)));
+        }
+
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "message" ))
         {
-            WriteLn(bson_iterator_string( iterator) ) ;
+            WriteLn(bson_iterator_string(iterator) ) ;
         }
     }
 }
