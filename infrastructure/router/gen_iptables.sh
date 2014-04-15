@@ -2,6 +2,7 @@
 
 N=${1?no teams count}
 inet_ifaces=${2? no inet ifaces}
+switch_iface=eth0
 team2team=$([ -n "$3" ] && echo true || echo false)
 
 vpn=172.16.19/24
@@ -31,6 +32,9 @@ for iface in $inet_ifaces; do
     # only allow SSH on external ifaces
     $add_filter INPUT -i $iface -m state --state NEW -p tcp --dport 22 -j ACCEPT
 done
+
+$add_filter INPUT -i $switch_iface -p udp --dport 69 -m state --state NEW -j ACCEPT
+
 iptables -P INPUT DROP
 
 
