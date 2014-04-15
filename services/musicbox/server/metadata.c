@@ -187,11 +187,11 @@ int mb_set_metadata(void *input, size_t input_size, void *output, struct Tag *ta
 
 		found = 0;
 		for (j = 0; j < vc.comments; ++j) {
-			if (memcmp(tags[i].key, vc.user_comments[i], tag_length) == 0) {
+			if (memcmp(tags[i].key, vc.user_comments[j], tag_length) == 0) {
 				found = 1;
-				free(vc.user_comments[i]);
-				vc.user_comments[i] = new_comment;
-				vc.comment_lengths[i] = new_comment_length;
+				free(vc.user_comments[j]);
+				vc.user_comments[j] = new_comment;
+				vc.comment_lengths[j] = new_comment_length;
 				break;
 			}
 		}
