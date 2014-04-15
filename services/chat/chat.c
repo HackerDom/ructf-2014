@@ -102,22 +102,11 @@ void process_client()
         {
             break;
         }
-        else  if (!strcmp(cmd, "\\leave"))
-        {
-  	      leave();
-              WriteLn("Room close");
-	      continue;
-
-	}
         else if (buf[0] != '\\')             // If not command, then client wants to say something
         {
             say(buf);
             room_history();
-            WriteLn("");
-            continue;
         }
-
-   
         if (!strcmp(cmd, "\\help"))
         {
             print_help();
@@ -141,6 +130,10 @@ void process_client()
         else if (!strcmp(cmd, "\\join") && argc >= 2 && argc <= 3)
         {
             room_join(argv[1], argc == 3 ? argv[2] : NULL);
+        }
+        else if (!strcmp(cmd, "\\leave"))
+        {
+            room_leave();
         }
         else
         {

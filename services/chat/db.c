@@ -52,11 +52,20 @@ bool exists(char *collection, char *name, char *value)
     return exists;
 }
 
-void leave()
+void room_leave()
 {
-    roomSet = false;
-    *currentRoom=0;
+    if (roomSet)
+    {
+        roomSet = false;
+        *currentRoom = 0;
+        WriteLn("Goodbye");
+    }
+    else
+    {
+        WriteLn("You are not in room");
+    }
 }
+
 bool test_password(const char *expected, const char *actual)
 {
     char len_actual = strlen(actual);

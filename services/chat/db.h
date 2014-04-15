@@ -11,7 +11,7 @@ void user_login(char *user, char *pass);
 void room_create(char *name, char *pass);
 void room_join(char *name, char *pass);
 void room_history();
-void leave();
+void room_leave();
 
 int list();
 void say(char *message);
