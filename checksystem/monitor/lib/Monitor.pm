@@ -86,15 +86,19 @@ sub startup {
 
           my @data;
           for my $tid (keys %{$self->teams}) {
-            my $team = $self->teams->{$tid};
 
             my $score = 0;
             $score += $sla_points->{$tid}{$_} * $flag_points->{$tid}{$_}
               for keys %{$self->services};
 
-            push @data,
-              {
-              team  => {id => $tid, name => $team->{name}, vuln_box => $team->{vuln_box}},
+            push @data, {
+              team => {
+                id       => $tid,
+                name     => $self->teams->{$tid}{name},
+                vuln_box => $self->teams->{$tid}{vuln_box}
+              },
+              sla   => $sla_points->{$tid},
+              fp    => $flag_points->{$tid},
               score => $score
               };
           }
