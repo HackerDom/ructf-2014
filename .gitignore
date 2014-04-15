@@ -16,9 +16,15 @@ services/dispatcher/eggs/
 services/dispatcher/parts/
 services/dispatcher/venv/
 services/dispatcher/messages.db
+services/dispatcher/freq.db
+services/dispatcher/test.db
 
 # IDE
 services/dispatcher/.idea
 
 # Installer logs
 pip-log.txt
+
+services/chat/chat
+services/chat/users.db
+services/chat/sftp-config.json

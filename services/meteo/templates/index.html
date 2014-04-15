@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Meteo database service for RuCTF 2014">
+    <meta name="author" content="(c) Andrew Gein, Hackerdom, RuCTF 2014">
+
+    <title>Meteo database</title>
+
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/tablesorter.theme.bootstrap.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Meteo database</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="#">Action</a></li>
+                <li><a href="#">Another action</a></li>
+                <li><a href="#">Something else here</a></li>
+                <li class="divider"></li>
+                <li class="dropdown-header">Nav header</li>
+                <li><a href="#">Separated link</a></li>
+                <li><a href="#">One more separated link</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="../navbar/">Default</a></li>
+            <li><a href="../navbar-static-top/">Static top</a></li>
+            <li class="active"><a href="./">Fixed top</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="jumbotron">
+        <h1>Meteo database</h1>
+        <p>This service collects meteo data from meteorological towers and allows analyse it. Feel free to use our filters!</p>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Latitude</th>
+            <th>Longtitude</th>
+            <th>Place</th>
+            <th>METAR</th>
+          </tr>
+        </theaD>
+        <tfoot>
+          <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Latitude</th>
+            <th>Longtitude</th>
+            <th>Place</th>
+            <th>METAR</th>
+          </tr>
+          <tr>
+            <th colspan="6" class="ts-pager form-horizontal">
+              <button type="button" class="btn first"><i class="icon-step-backward glyphicon glyphicon-step-backward"></i></button>
+              <button type="button" class="btn prev"><i class="icon-arrow-left glyphicon glyphicon-backward"></i></button>
+              <span class="pagedisplay"></span> <!-- this can be any element, including an input -->
+              <button type="button" class="btn next"><i class="icon-arrow-right glyphicon glyphicon-forward"></i></button>
+              <button type="button" class="btn last"><i class="icon-step-forward glyphicon glyphicon-step-forward"></i></button>
+              <select class="pagesize input-mini" title="Select page size">
+                <option selected="selected" value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
+              </select>
+              <select class="pagenum input-mini" title="Select page number"></select>
+            </th>
+          </tr>
+        </tfoot>
+        <% rows.forEach(function(row){ %>
+          <tr>
+            <td> <%= row.id %> </td>
+            <td> <%= row.timestamp %> </td>
+            <td> <%= row.lat %> </td>
+            <td> <%= row.long %> </td>
+            <td> <%= row.what %> <%= row.place %> </td>
+            <td> <%= row.metar %> </td>
+          </tr>
+        <% }) %>
+      </table>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/jquery.tablesorter.js"></script>
+    <script src="/static/js/jquery.tablesorter.widgets.js"></script>
+    <script>
+      $(document).ready(function(){
+          $.extend($.tablesorter.themes.bootstrap, {
+            table      : 'table table-bordered',
+            caption    : 'caption',
+            header     : 'bootstrap-header', // give the header a gradient background
+            footerRow  : '',
+            footerCells: '',
+            icons      : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+            sortNone   : 'bootstrap-icon-unsorted',
+            sortAsc    : 'icon-chevron-up glyphicon glyphicon-chevron-up',     // includes classes for Bootstrap v2 & v3
+            sortDesc   : 'icon-chevron-down glyphicon glyphicon-chevron-down', // includes classes for Bootstrap v2 & v3
+            active     : '', // applied when column is sorted
+            hover      : '', // use custom css here - bootstrap class may not override it
+            filterRow  : '', // filter row class
+            even       : '', // odd row zebra striping
+            odd        : ''  // even row zebra striping
+          });        
+      });
+
+      $("table").tablesorter({
+          // this will apply the bootstrap theme if "uitheme" widget is included
+          // the widgetOptions.uitheme is no longer required to be set
+          theme : "bootstrap",
+
+          widthFixed: true,
+
+          headerTemplate : '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+
+          // widget code contained in the jquery.tablesorter.widgets.js file
+          // use the zebra stripe widget if you plan on hiding any rows (filter widget)
+          widgets : [ "uitheme", "filter", "zebra" ],
+
+          widgetOptions : {
+            // using the default zebra striping class name, so it actually isn't included in the theme variable above
+            // this is ONLY needed for bootstrap theming if you are using the filter widget, because rows are hidden
+            zebra : ["even", "odd"],
+
+            // reset filters button
+            filter_reset : ".reset"
+
+            // set the uitheme widget to use the bootstrap theme class names
+            // this is no longer required, if theme is set
+            // ,uitheme : "bootstrap"
+
+          }
+        })
+        .tablesorterPager({
+
+          // target the pager markup - see the HTML block below
+          container: $(".ts-pager"),
+
+          // target the pager page select dropdown - choose a page
+          cssGoto  : ".pagenum",
+
+          // remove rows from the table to speed up the sort of large tables.
+          // setting this to false, only hides the non-visible rows; needed if you plan to add/remove rows with the pager enabled.
+          removeRows: false,
+
+          // output string - default is '{page}/{totalPages}';
+          // possible variables: {page}, {totalPages}, {filteredPages}, {startRow}, {endRow}, {filteredRows} and {totalRows}
+          output: '{startRow} - {endRow} / {filteredRows} ({totalRows})'
+
+        });
+    </script>
+  </body>
+</html>
+

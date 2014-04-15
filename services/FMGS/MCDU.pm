@@ -4,7 +4,16 @@ use Term::ANSIColor;
 require Exporter;
 
 our @ISA = qw/Exporter/;
-our @EXPORT_OK = qw/set_title set_status set_action put_line draw/;
+our @EXPORT_OK = qw/
+    set_title
+    set_status
+    set_action
+    do_action
+    select_line
+    read_line
+    put_line
+    draw
+    clean/;
 our $VERSION = 1.0;
 
 use constant {
@@ -20,7 +29,7 @@ my %cls = (
     INFO => 'bright_yellow'
 );
 
-my %dsp;
+my (%dsp, %act, $sel);
 
 sub set_title {
     $dsp{'TITLE'} = shift;
@@ -32,22 +41,47 @@ sub set_status {
 
 sub set_action {
     my ($btn, $ref, @params) = @_;
-    $dsp{$btn} = [ $ref, \@params ];
+    $act{$btn} = [$ref, \@params];
+}
+
+sub do_action {
+    &{$act{$_[0]}->[0]}(@{$act{$_[0]}->[1]}) if exists $act{$_[0]}
+}
+
+sub select_line {
+    $dsp{$sel}->[0] = (split /#/, $dsp{$sel}->[0], 2)[1] if $sel;
+    $sel = $_[1] ? $_[0] : undef;
+    $dsp{$sel}->[0] = 'ACTIVE#' . $dsp{$sel}->[0] if $sel;
+}
+
+sub read_line {
+    my ($f, @btn) = @_;
+
+    for (@btn) {
+        next if length != 1;
+        set_action($_, sub { $dsp{$sel}->[1] .= $_ });
+        set_action('CLN', sub { $dsp{$sel}->[1] = ''; 1 });
+        set_action('OK', sub {
+            delete $act{$_} for (@btn, 'CLN', 'OK');
+            $f->($dsp{$sel}->[1]) if $f;
+            select_line($sel, 0); 1
+        });
+    }
 }
 
 sub put_line {
     my ($line, $pos, $text, $subtext) = @_;
 
-    $dsp{"$line$pos"} = [ $text, $subtext ];
+    $dsp{"$line$pos"} = [$text, $subtext];
 }
 
 sub _color {
-    return (/#/ ? $cls{[ split /#/ ]->[0]} : $_[1]) for $_[0];
+    return (/#/ ? $cls{[split /#/]->[0]} : $_[1]) for $_[0];
 }
 
 sub _align {
     my ($text, $len, $pos) = @_;
-    my $text = [ split /#/, $text ]->[-1];
+    my $text = [split /#/, $text]->[-1];
     for ($text) {
         my $delta = $len - length;
         if ($delta <= 0) {
@@ -86,6 +120,12 @@ sub draw {
     $scr .= '    ' . colored(_align($dsp{'STATUS'}, SW, 'l'), 'yellow') . "\n";
 
     return $scr;
+}
+
+sub clean {
+    set_title;
+    set_status;
+    map { for my $p ('L', 'R') { put_line($_, $p, '', '') } } 1..RWS;
 }
 
 1;
