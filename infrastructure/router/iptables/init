@@ -1,0 +1,154 @@
+#!/bin/sh
+
+set -e
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+default=/etc/default/iptables
+if test -f $default; then
+  . $default
+fi
+
+have_a_cow_man () {
+  for i in $@; do
+    if ! command -v "$i" >/dev/null 2>&1; then
+      echo "Aborting iptables initd: no $i executable."
+      exit 0
+    fi
+  done
+}
+
+iptables="/sbin/${iptables_command-iptables}"
+iptables_save="${iptables}-save"
+iptables_restore="${iptables}-restore"
+
+have_a_cow_man "$iptables_save" "$iptables_restore"
+
+libdir=/var/lib/iptables
+autosave="${libdir}/autosave"
+initd="$0"
+
+initd_clear () {
+  rm -f "$autosave"
+  echo -n "Clearing iptables ruleset: default ACCEPT policy"
+  $iptables_save | sed "/-/d;/^#/d;s/DROP/ACCEPT/" | $iptables_restore
+  echo "."
+}
+
+initd_halt () {
+  rm -f $autosave
+  echo -n "Clearing iptables ruleset: default DROP policy"
+  $iptables_save | sed "/-/d;/^#/d;s/ACCEPT/DROP/" | $iptables_restore
+  echo "."
+}
+
+initd_load () {
+  ruleset="$libdir/$@"
+  if ! test -f "$ruleset"; then
+    echo "Aborting iptables load: unknown ruleset, \"$@\"."
+    if  ! test "${ruleset#${libdir}/}" = active -o inactive; then
+        usage
+    fi
+    exit 0
+  fi
+  if test "${ruleset#${libdir}/}" = inactive; then
+    initd_autosave
+  fi
+  rm -f "$autosave"
+  echo -n "Loading iptables ruleset: load \"$@\""
+  $iptables_restore < "$ruleset"
+  echo "."
+}
+
+initd_counters () {
+  if test "${enable_save_counters:-false}" = true; then
+    echo -n " with counters"
+    $iptables_save -c > "$ruleset"
+  else
+    $iptables_save | sed '/^:/s@\[[0-9]\{1,\}:[0-9]\{1,\}\]@[0:0]@g' \
+      > "$ruleset"
+  fi
+}
+
+initd_save () {
+  rm -f $autosave
+  ruleset="${libdir}/$@"
+  echo -n "Saving iptables ruleset: save \"$@\""
+   initd_counters
+  echo "."
+}
+
+initd_autosave () {
+  if test -f $autosave -a ${enable_autosave-false} = true; then
+    ruleset="${libdir}/active"
+    echo -n "Autosaving iptables ruleset: save \"active\""
+    initd_counters
+    echo "."
+  fi
+}
+
+usage () {
+  current="$(ls -m /var/lib/iptables \
+    | sed 's/ \{0,1\}autosave,\{0,1\} \{0,1\}//')"
+cat << END
+$initd options:
+  start|restart|reload|force-reload
+     load the "active" ruleset
+  save <ruleset>
+     save the current ruleset
+  load <ruleset>
+     load a ruleset
+  stop
+     load the "inactive" ruleset
+  clear
+     remove all rules and user-defined chains, set default policy to ACCEPT
+  halt
+     remove all rules and user-defined chains, set default policy to DROP
+
+Saved rulesets:
+  $current
+
+Please read: $default
+
+END
+}
+
+case "$1" in
+  start|restart|reload|force-reload)
+    initd_load active
+    if test ${enable_autosave-false} = true; then
+      touch $autosave
+    fi
+    ;;
+  stop)
+    initd_load inactive
+    ;;
+  clear)
+    initd_clear
+    ;;
+  halt)
+    initd_halt
+    ;;
+  save)
+    shift
+    initd_save "$@"
+    ;;
+  load)
+    shift
+    initd_load "$@"
+    ;;
+  save_active) #legacy option
+    initd_save active
+    ;;
+  save_inactive) #legacy option
+    initd_save inactive
+    ;;
+  *)
+    if test "$@"; then
+      echo "Aborting iptables initd: unknown command(s): \"$@\"."
+    fi
+    usage
+    ;;
+esac
+
+exit 0

@@ -1,8 +1,9 @@
 #!/bin/bash
 
-N=${1?no teams count}
-inet_ifaces=${2? no inet ifaces}
-team2team=$([ -n "$3" ] && echo true || echo false)
+N=16
+inet_ifaces='eth0.300 wlan0'
+switch_iface=eth0
+team2team=$([ -n "$1" ] && echo true || echo false)
 
 vpn=172.16.19/24
 
@@ -15,11 +16,32 @@ teams=10.23/19
 
 any=0/0
 
-iptables -P FORWARD ACCEPT
-iptables -F FORWARD
-
 add_filter='iptables -t filter -A'
 add_nat='iptables -t nat -A'
+
+# first, INPUT
+iptables -P INPUT ACCEPT
+iptables -F INPUT
+
+$add_filter INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$add_filter INPUT -p icmp -j ACCEPT
+$add_filter INPUT -i lo -j ACCEPT
+
+$add_filter INPUT -s $vpn -j ACCEPT
+for iface in $inet_ifaces; do
+    # only allow SSH on external ifaces
+    $add_filter INPUT -i $iface -m state --state NEW -p tcp --dport 22 -j ACCEPT
+done
+
+$add_filter INPUT -i $switch_iface -p udp --dport 69 -m state --state NEW -j ACCEPT
+
+iptables -P INPUT DROP
+
+
+# Forwarding
+iptables -P FORWARD ACCEPT
+iptables -F FORWARD
+#iptables -A FORWARD -j ULOG
 
 init_chain() {
     local table=$1 chain=$2
@@ -57,6 +79,12 @@ for net in vpn core_switch devs checksystem teams team_switches any; do
     init_network $net:${!net}
 done
 
+init_chain filter to_checksystem_public
+for port in 80 31337; do
+$add_filter to_checksystem_public \
+    -d 10.23.0.2 -p tcp --dport $port -m state --state NEW -j ACCEPT
+done
+
 # and we fix networks here additionally in to_* chains
 # exclude core switch network from team switches
 iptables -t filter -I to_team_switches 1 -d $core_switch -j RETURN
@@ -78,14 +106,50 @@ can_go checksystem inet
 can_go checksystem teams
 
 can_go teams inet
-can_go teams devs
 $team2team && can_go teams teams
 
+can_go any checksystem_public
+
+init_mon_network() {
+    local name=${1%%:*} network=${1##*:}
+    init_chain filter mon_from_$name
+    $add_filter monitoring -s $network -j mon_from_$name
+
+    init_chain filter mon_to_$name
+    $add_filter mon_to_$name -j RETURN
+}
+
+init_chain filter monitoring
+
+for i in $(seq 1 $((N-1))); do
+    init_mon_network team$i:10.23.$i/24
+done
+
+for net in vpn checksystem devs any; do
+    init_mon_network $net:${!net}
+done
+
+for src in $(seq -f 'team%.0f' 1 $((N-1))) \
+           vpn checksystem devs any; do
+    for dst in $(seq 1 $((N-1))); do
+        $add_filter mon_from_$src -d 10.23.$dst/24 -j mon_to_team$dst
+    done
+
+    for dst in vpn checksystem devs any; do
+        $add_filter mon_from_$src -d ${!dst} -j mon_to_$dst
+    done
+done
+
+
+$add_filter FORWARD -j monitoring
 $add_filter FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 $add_filter FORWARD -p icmp -j ACCEPT
 $add_filter FORWARD -j ructf2014
 
-# setup NAT rules
+iptables -P FORWARD DROP
+
+
+# NAT
 init_chain nat ructf2014
 
 init_chain nat to_teams
@@ -103,5 +167,3 @@ $add_nat ructf2014 -j to_inet
 
 iptables -t nat -F POSTROUTING
 $add_nat POSTROUTING -j ructf2014
-
-iptables -P FORWARD DROP

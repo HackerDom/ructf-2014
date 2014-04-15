@@ -80,12 +80,23 @@ void parse_argv(char buf[], char **argv, int *argc)
     }
 }
 
+void melting(int parameter) {
+    room_history();
+    Write(">");
+}
+
+void set_signal()
+{
+void (*originalInterruptSignal)(int); 
+ originalInterruptSignal = signal(SIGUSR1, melting);
+}
+
 void process_client()
 {
     char *argv[MAX_ARGV];
     char buf[BUF_SIZE];
     int argc = 0;
-
+    set_signal();
     print_greeting();
 
     while (1)
@@ -105,7 +116,8 @@ void process_client()
         else if (buf[0] != '\\')             // If not command, then client wants to say something
         {
             say(buf);
-            room_history();
+            kill(-1,SIGUSR1);
+            //room_history();
         }
         if (!strcmp(cmd, "\\help"))
         {
@@ -154,7 +166,7 @@ void test_mongo_connection()
 int main(int argc, char **argv)
 {
     signal(SIGCHLD, SIG_IGN);
-
+    signal(SIGUSR1, SIG_IGN);
     test_mongo_connection();
 
     int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;
