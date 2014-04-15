@@ -59,7 +59,7 @@ public class Main {
 			}
 								
 			Timestamp lastKnownTime = GetLastKnownTime(stateFromDb);
-			logger.info(String.format("Score LastKnownTime: %s", lastKnownTime.toString()));
+			logger.info(String.format("Score LastKnownTime: %s", lastKnownTime != null ? lastKnownTime.toString() : "unknown"));
 			
 			DoJobLoop(conn, stateFromDb, lastKnownTime);
 						
