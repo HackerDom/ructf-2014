@@ -1,1 +1,0 @@
-../../../checkers/chat.checker.pl
