@@ -48,7 +48,7 @@ class MusicboxChecker(CheckerBase):
 			self.debug('No songs to use')
 			exit(EXITCODE_CHECKER_ERROR)
 
-		not_played_songs = songs #[ track for track in songs if not track in self.data['played'] ]
+		not_played_songs = [ track for track in songs if not track in self.data['played'] ]
 
 		if len(not_played_songs) == 0:
 			self.data['played'] = []
