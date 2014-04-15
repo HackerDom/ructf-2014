@@ -5,14 +5,25 @@ var http = require("http"),
     fs = require('fs'),
     ejs = require('ejs');
 
+String.prototype.endsWith = function(suffix) {
+  return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};
+
 function index(request, response) {
-  data.get_data(0, function(raws){
+  data.get_data(0, function(rows){
     response.writeHead(200, {"Content-type": "text/html"});
-    response.write("Hello world! You are on the index page");
-    response.write(ejs.render(fs.readFileSync('templates/index.html', 'utf8'), {}));
-    response.write(JSON.stringify(raws));
+    response.write(ejs.render(fs.readFileSync('templates/index.html', 'utf8'), {'rows': rows}));
     response.end();
   });
+}
+
+function get_mime_type(filename) {
+  if (filename.endsWith(".css")) return "text/css";
+  if (filename.endsWith(".html")) return "text/html";
+  if (filename.endsWith(".js")) return "text/javascript";
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+  if (filename.endsWith(".png")) return "image/png";
+  return "text/html";
 }
 
 function static_files(request, response) {
@@ -33,7 +44,7 @@ function static_files(request, response) {
     }
     console.log("Get static file: " + pathname);
     // TODO: correct Content-Type
-    response.writeHead(202, {"Content-Type": "text/html"});
+    response.writeHead(200, {"Content-Type": get_mime_type(pathname)});
     response.write(content);
     response.end();
   });
