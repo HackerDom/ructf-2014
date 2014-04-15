@@ -2,21 +2,22 @@
 
 N=${1?no team count}
 [ -n "$2" ] && clean=true || clean=false
-cat <<END
-config ipif system ipaddress 10.24.0.1/24 vlan default 
-create iproute default 10.24.0.254
-create snmp community public view Default read_only
-END
 
-$clean || echo "delete vlan JURY"
-echo "create vlan JURY tag 100"
-echo "config vlan JURY add untagged 1:(23)"
-echo "config vlan JURY add tagged 1:(24)"
+echo 'config ipif system ipaddress 10.24.0.1/24 vlan default'
 
-$clean || echo "delete vlan EXTERNAL"
-echo "create vlan EXTERNAL tag 300"
-echo "config vlan EXTERNAL add untagged 1:(21-22)"
-echo "config vlan EXTERNAL add tagged 1:(24)"
+$clean || echo 'delete iproute default'
+echo 'create iproute default 10.24.0.254'
+echo 'create snmp community public view Default read_only'
+
+$clean || echo 'delete vlan JURY'
+echo 'create vlan JURY tag 100'
+echo 'config vlan JURY add untagged 1:(21,22,23)'
+echo 'config vlan JURY add tagged 1:(24)'
+
+$clean || echo 'delete vlan EXTERNAL'
+echo 'create vlan EXTERNAL tag 300'
+echo 'config vlan EXTERNAL add untagged 1:(19,20)'
+echo 'config vlan EXTERNAL add tagged 1:(24)'
 
 for i in $(seq 1 $N); do
     $clean || echo "delete vlan TEAM$i"
