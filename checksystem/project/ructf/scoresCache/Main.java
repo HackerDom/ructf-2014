@@ -43,23 +43,28 @@ public class Main {
 			
 			DatabaseManager.Initialize();
 			
-			SLAworker slaWorker = new SLAworker();
-			slaWorker.start();
-			
 			Connection conn = DatabaseManager.CreateConnection();
 			PrepareStatements(conn);
 			
 			logger.info("Getting score state from db");
 			Hashtable<TeamService,TeamScore> stateFromDb = GetStateFromDb();
 			if (stateFromDb.isEmpty()) {
-				logger.info("Creating score InitStateInDb");
+				logger.info("Creating init score in db");
 				CreateInitStateInDb();
 				logger.info("Score CreateInitStateInDb completed");
 				stateFromDb = GetStateFromDb();
 			}
-								
+			
+			if(stateFromDb.size() == 0){
+				logger.error("Still empty state. Possible empty 'teams' or 'services' tables? Exiting");
+				return;
+			}
+							
 			Timestamp lastKnownTime = GetLastKnownTime(stateFromDb);
-			logger.info(String.format("Score LastKnownTime: %s", lastKnownTime != null ? lastKnownTime.toString() : "unknown"));
+			logger.info(String.format("Score LastKnownTime: %s", lastKnownTime.toString()));
+			
+			SLAworker slaWorker = new SLAworker();
+			slaWorker.start();
 			
 			DoJobLoop(conn, stateFromDb, lastKnownTime);
 						
