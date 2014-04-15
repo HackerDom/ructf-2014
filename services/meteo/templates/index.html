@@ -24,32 +24,33 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Meteo database</a>
+          <a class="navbar-brand" href="/">Meteo database</a>
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <li class="active"><a href="/">Home</a></li>
             <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">By city <b class="caret"></b></a>
               <ul class="dropdown-menu">
-                <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
-                <li class="divider"></li>
-                <li class="dropdown-header">Nav header</li>
-                <li><a href="#">Separated link</a></li>
-                <li><a href="#">One more separated link</a></li>
+                <% for (var country in countries) { %>
+                  <li class="dropdown-header"> <%= country %> </li>
+                  <% countries[country].forEach(function(city) { %>
+                    <li><a href="/city/<%= country %>/<%= city %>"><%= city %></a></li>
+                  <% }) %>
+                  <li class="divider"></li>
+                <% } %>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Users filters <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <% filters.forEach(function(filter) { %>
+                  <li><a href="/filter/<%= filter.id %>"><%= filter.city ? filter.city : "None" %></a></li>
+                <% }) %>
               </ul>
             </li>
           </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="../navbar/">Default</a></li>
-            <li><a href="../navbar-static-top/">Static top</a></li>
-            <li class="active"><a href="./">Fixed top</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </div>
 
@@ -67,10 +68,10 @@
             <th>Timestamp</th>
             <th>Latitude</th>
             <th>Longtitude</th>
-            <th>Place</th>
+            <th class="filter-exact" data-value="<%= city ? 'city ' + city : '' %>">City</th>
             <th>METAR</th>
           </tr>
-        </theaD>
+        </thead>
         <tfoot>
           <tr>
             <th>ID</th>
@@ -79,22 +80,6 @@
             <th>Longtitude</th>
             <th>Place</th>
             <th>METAR</th>
-          </tr>
-          <tr>
-            <th colspan="6" class="ts-pager form-horizontal">
-              <button type="button" class="btn first"><i class="icon-step-backward glyphicon glyphicon-step-backward"></i></button>
-              <button type="button" class="btn prev"><i class="icon-arrow-left glyphicon glyphicon-backward"></i></button>
-              <span class="pagedisplay"></span> <!-- this can be any element, including an input -->
-              <button type="button" class="btn next"><i class="icon-arrow-right glyphicon glyphicon-forward"></i></button>
-              <button type="button" class="btn last"><i class="icon-step-forward glyphicon glyphicon-step-forward"></i></button>
-              <select class="pagesize input-mini" title="Select page size">
-                <option selected="selected" value="10">10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-                <option value="40">40</option>
-              </select>
-              <select class="pagenum input-mini" title="Select page number"></select>
-            </th>
           </tr>
         </tfoot>
         <% rows.forEach(function(row){ %>
@@ -136,48 +121,13 @@
       });
 
       $("table").tablesorter({
-          // this will apply the bootstrap theme if "uitheme" widget is included
-          // the widgetOptions.uitheme is no longer required to be set
           theme : "bootstrap",
-
           widthFixed: true,
-
           headerTemplate : '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
-
-          // widget code contained in the jquery.tablesorter.widgets.js file
-          // use the zebra stripe widget if you plan on hiding any rows (filter widget)
           widgets : [ "uitheme", "filter", "zebra" ],
-
           widgetOptions : {
-            // using the default zebra striping class name, so it actually isn't included in the theme variable above
-            // this is ONLY needed for bootstrap theming if you are using the filter widget, because rows are hidden
             zebra : ["even", "odd"],
-
-            // reset filters button
-            filter_reset : ".reset"
-
-            // set the uitheme widget to use the bootstrap theme class names
-            // this is no longer required, if theme is set
-            // ,uitheme : "bootstrap"
-
           }
-        })
-        .tablesorterPager({
-
-          // target the pager markup - see the HTML block below
-          container: $(".ts-pager"),
-
-          // target the pager page select dropdown - choose a page
-          cssGoto  : ".pagenum",
-
-          // remove rows from the table to speed up the sort of large tables.
-          // setting this to false, only hides the non-visible rows; needed if you plan to add/remove rows with the pager enabled.
-          removeRows: false,
-
-          // output string - default is '{page}/{totalPages}';
-          // possible variables: {page}, {totalPages}, {filteredPages}, {startRow}, {endRow}, {filteredRows} and {totalRows}
-          output: '{startRow} - {endRow} / {filteredRows} ({totalRows})'
-
         });
     </script>
   </body>
