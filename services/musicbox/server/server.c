@@ -37,7 +37,10 @@ void mb_process_put(int sockfd, struct Store *store) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
 		return;
 	}
-	mb_store_put(store, id, buffer, ptr - buffer);
+	if (mb_store_put(store, id, buffer, ptr - buffer) < 0) {
+		mb_send_response(sockfd, MB_RESPONSE_ERROR);
+		return;
+	}
 	mb_send_response(sockfd, MB_RESPONSE_SUCCESS);
 	send(sockfd, (void *)&id, sizeof(id), 0);
 }

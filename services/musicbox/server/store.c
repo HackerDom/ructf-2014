@@ -14,15 +14,21 @@ int mb_store_put(struct Store *store, uuid_t id, uint8_t *buffer, int length) {
 	char id_text[37];
 	char path[256];
 	FILE *file;
+	size_t bytes_written;
 
 	uuid_generate_random(id);
 	uuid_unparse(id, id_text);
 	sprintf(path, "%s/%s", store->dir, id_text);
 	file = fopen(path, "w");
-	if (file == NULL)
+	if (file == NULL) {
+		warn("Failed to open location %s", path);
 		return -1;
-	fwrite(buffer, 1, length, file);
+	}
+	bytes_written = fwrite(buffer, 1, length, file);
+	if (bytes_written != length)
+		return -1;
 	fclose(file);
+	return bytes_written;
 }
 
 int mb_store_get(struct Store *store, uuid_t id, uint8_t *buffer, int capacity) {
