@@ -7,8 +7,6 @@
     <td>#</td>
     <td>Логотип</td>
     <td>Команда</td>
-    <td>Flag Points</td>
-    <td>SLA</td>
     <td>Score</td>
     % for my $service (values %{$self->app->services}) {
     <td><%= $service %></td>
@@ -22,15 +20,16 @@
       % my $name = $score->{team}{name};
       <img src="" width="64" height="64">
     </td>
-    <td><%= $score->{team}{name} %></td>
-    <td><%= sprintf '%.2f', $score->{fp} %></td>
-    <td><%= sprintf '%.2f', $score->{sla} %></td>
+    <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
 
-    % for my $service (values %{$self->app->services}) {
-      % my $status = $self->app->status->{$service}{$score->{team}{tid}}{status};
-      % # my $statuses = {101 => 'up', 102 => 'corrupt', 103 => 'mumble', 104 => 'down'};
-      <td><%= $status %></td>
+    % for my $sid (keys %{$self->app->services}) {
+      % my $status = $self->app->status->{$self->app->services->{$sid}}{$score->{team}{tid}}{status};
+      <td>
+        S: <%= $status %> <br/>
+        SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
+        FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
+      </td>
     % }
   </tr>
   % }
