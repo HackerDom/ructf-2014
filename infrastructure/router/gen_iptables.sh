@@ -1,9 +1,9 @@
 #!/bin/bash
 
-N=${1?no teams count}
-inet_ifaces=${2? no inet ifaces}
+N=16
+inet_ifaces='eth0.300 wlan0'
 switch_iface=eth0
-team2team=$([ -n "$3" ] && echo true || echo false)
+team2team=$([ -n "$1" ] && echo true || echo false)
 
 vpn=172.16.19/24
 
