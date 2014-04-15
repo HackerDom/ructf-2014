@@ -100,7 +100,7 @@ void process_client()
         parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
         char *cmd = argv[0];             // At least 1 token exists
 
-        if (buf[0] != '\\')         // If not command, then client wants to say something
+        if (buf[0] != '\\')              // If not command, then client wants to say something
         {
             say(buf);
             room_history();
