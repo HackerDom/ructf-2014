@@ -4,6 +4,7 @@ import random
 import socket
 import re
 import os
+import string
 from checker import *
 from glob import glob
 from uuid import UUID
@@ -23,10 +24,13 @@ SERVICE_PORT = 4242
 
 SOCKET_TIMEOUT = 2
 
-FLAG_TAG_NAME = 'TAG'
-CHECK_TTL = 2 * 60
+FLAG_TAG_NAME = 'FLAG'
+CHECK_TTL = 60
+FLAG_TTL = 90 * 60
 
 MUSIC_DIRECTORY = 'music'
+
+TEMP_FILE = '.musicbox.temp'
 
 class MusicboxChecker(CheckerBase):
 	def init_data(self):
@@ -41,13 +45,13 @@ class MusicboxChecker(CheckerBase):
 		songs = self.get_avaliable_songs()
 
 		if len(songs) == 0:
-			debug('No songs to use')
+			self.debug('No songs to use')
 			exit(EXITCODE_CHECKER_ERROR)
 
 		not_played_songs = [ track for track in songs if not track in self.data['played'] ]
 
-		if len(songs) == 0:
-			self.data['played'].clear()
+		if len(not_played_songs) == 0:
+			self.data['played'] = []
 			not_played_songs = songs
 
 		chosen = random.choice(not_played_songs)
@@ -58,7 +62,7 @@ class MusicboxChecker(CheckerBase):
 	def send_chunked_data(self, sock, data):
 		for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
 			chunk_offset = i * CHUNK_SIZE
-			chunk_length = min(CHUNK_SIZE, len - chunk_offset)
+			chunk_length = min(CHUNK_SIZE, len(data) - chunk_offset)
 			sock.sendall(pack('h', chunk_length))
 			sock.sendall(data[chunk_offset: chunk_offset + chunk_length])
 		sock.sendall(pack('h', 0))
@@ -67,24 +71,48 @@ class MusicboxChecker(CheckerBase):
 		result = b''
 		while True:
 			chunk_length = unpack('h', sock.recv(2))[0]
+
 			if chunk_length == 0:
 				break
-			result += sock.recv(chunk_length)
+			next_chunk = b''
+			while len(next_chunk) < chunk_length:
+				next_chunk += sock.recv(chunk_length - len(next_chunk))
+
+			result += next_chunk
 		return result
 
 	def put_song(self, sock, data):
+		self.debug('Putting song...')
+
 		sock.sendall(pack('B', REQUEST_PUT))
-		sock.sendall(pack('h', CHECK_TTL))
+		sock.sendall(pack('h', FLAG_TTL))
 		self.send_chunked_data(sock, data)
+
+		self.debug('All data sent')
+
 		status = unpack('B', sock.recv(1))[0]
+
 		if status == RESPONSE_ERROR:
 			return None
-		return UUID(bytes=sock.recv(16))
 
-	def get_song(sock, uuid):
+		uuid = UUID(bytes=sock.recv(16))
+
+		self.debug('Uuid: %s' % str(uuid))
+
+		return uuid
+
+	def get_song(self, sock, uuid):
+		self.debug('Getting song...')
+
 		sock.sendall(pack('B', REQUEST_GET))
 		sock.sendall(uuid.bytes)
+
+		self.debug("All data sent")
+
 		status = unpack('B', sock.recv(1))[0]
+
+		self.debug("Response: %d" % status)
+
 		if status == RESPONSE_ERROR:
 			return None
 		return self.recv_chunked_data(sock)
@@ -96,25 +124,23 @@ class MusicboxChecker(CheckerBase):
 		return sock
 
 	def check(self, addr):
-		sock = self.create_socket(addr, SERVICE_PORT)
+		flag = ''.join([ random.choice(string.ascii_uppercase + string.digits) for e in range(31) ]) + '='
+		global FLAG_TTL
+		old_ttl = FLAG_TTL
+		try:
+			FLAG_TTL = CHECK_TTL
 
-		song = self.pick_song()
-		with open(song, 'rb') as f:
-			song_data = f.read()
-
-		uuid = self.put_song(sock, song_data)
-		if not uuid:
-			return False
-
-		recieved_song_data = self.get_song(sock, uuid)
-
-		return recieved_song_data == song_data
+			if not self.put(addr, None, flag):
+				return False
+			return self.get(addr, None, flag)
+		finally:
+			FLAG_TTL = old_ttl
 
 	def get(self, addr, flag_id, flag):
 		sock = self.create_socket(addr, SERVICE_PORT)
 
 		if not flag in self.data['planted']:
-			debug("Didn't planted this flag: %s" % flag)
+			self.debug("Didn't planted this flag: %s" % flag)
 			exit(EXITCODE_CHECKER_ERROR)
 
 		uuid = UUID(self.data['planted'][flag])
@@ -146,7 +172,8 @@ class MusicboxChecker(CheckerBase):
 			uuid = self.put_song(sock, song_data)
 			if not uuid:
 				return False
-			self.data['planted'][flag] = UUID(bytes=uuid)
+			self.data['planted'][flag] = str(uuid)
+			return True
 		finally:
 			del ogg_file[FLAG_TAG_NAME]
 			ogg_file.save()

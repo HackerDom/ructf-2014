@@ -4,6 +4,7 @@ import sys
 import socket
 import json
 import os.path
+import traceback
 
 EXITCODE_OK            = 101
 EXITCODE_CORRUPT       = 102
@@ -66,7 +67,7 @@ class CheckerBase(object):
 				self.debug('Not enough arguments')
 				exit(EXITCODE_CHECKER_ERROR)
 
-			flag_id, flag = argv[3:5]
+			flag_id, flag = sys.argv[3:5]
 
 			if command == 'get':
 				if self.get(addr, flag_id, flag):
@@ -89,6 +90,7 @@ class CheckerBase(object):
 			exit(EXITCODE_MUMBLE)
 		except Exception as e:
 			self.debug('Error during execution')
+			traceback.print_exc(100, sys.stderr)
 			self.debug(e)
 			exit(EXITCODE_CHECKER_ERROR)
 		finally:
