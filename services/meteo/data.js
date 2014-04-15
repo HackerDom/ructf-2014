@@ -23,5 +23,32 @@ exports.get_data = function(start, callback){
   connection.query('SELECT * FROM data ORDER BY id DESC LIMIT ' + start + ', 50', function(err, rows, fields){
     if (err) throw err;
     callback(rows);
-  })
+  });
+}
+
+exports.add_filter = function(city, theme, callback) {
+  if (! connection)
+    throw 'Can\'t add filter until connection established';
+  connection.query('INSERT INTO filters (city, theme) VALUES (?, ?)', [city, theme], function(err) {
+    if (err) throw err;
+    callback();
+  });
+}
+
+exports.get_filters = function(callback) {
+  if (! connection)
+    throw 'Can\'t get filters until connection established';
+  connection.query('SELECT * FROM filters ORDER BY id DESC LIMIT 10', function(err, rows) {
+    if (err) throw err;
+    callback(rows);
+  });
+}
+
+exports.get_filter = function(filter_id, callback) {
+  if (! connection)
+    throw 'Can\'t get filters until connection established';
+  connection.query('SELECT * FROM filters WHERE id = ?', [filter_id], function(err, rows) {
+    if (err) throw err;
+    callback(rows[0]);
+  });
 }
