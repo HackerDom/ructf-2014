@@ -72,6 +72,8 @@ void print_help()
 void parse_argv(char buf[], char **argv, int *argc)
 {
     (*argc) = 0;
+    memset(argv, 0, MAX_ARGV * sizeof(char *));
+
     char *c = strtok(buf, ARG_SEPARATORS);
     while (c != NULL && (*argc) < MAX_ARGV)
     {
@@ -93,21 +95,21 @@ void process_client()
         Write("> ");
         if (!fgets(buf, BUF_SIZE, stdin))
             break;
-        strtok(buf, "\r\n");            // Skip everything after "\r" or "\n"
+        strtok(buf, "\r\n");             // Skip everything after "\r" or "\n"
 
         parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
         char *cmd = argv[0];             // At least 1 token exists
 
-        if (!strcmp(cmd, "\\quit"))
-        {
-            break;
-        }
-        else if (buf[0] != '\\')             // If not command, then client wants to say something
+        if (buf[0] != '\\')         // If not command, then client wants to say something
         {
             say(buf);
             room_history();
         }
-        if (!strcmp(cmd, "\\help"))
+        else if (!strcmp(cmd, "\\quit"))
+        {
+            break;
+        }
+        else if (!strcmp(cmd, "\\help"))
         {
             print_help();
         }
@@ -117,19 +119,19 @@ void process_client()
         }
         else if (!strcmp(cmd, "\\register") && argc == 3)
         {
-            user_create(argv[1], argv[2]);            // (user,pass)
+            user_create(argv[1], argv[2]);            // args: user, pass
         }
         else if (!strcmp(cmd, "\\login") && argc == 3)
         {
-            user_login(argv[1], argv[2]);             // (user,pass)
+            user_login(argv[1], argv[2]);             // args: user, pass
         }
         else if (!strcmp(cmd, "\\create") && argc >= 2 && argc <= 3)
         {
-            room_create(argv[1], argc == 3 ? argv[2] : NULL);
+            room_create(argv[1], argv[2]);            // args: name, [pass]
         }
         else if (!strcmp(cmd, "\\join") && argc >= 2 && argc <= 3)
         {
-            room_join(argv[1], argc == 3 ? argv[2] : NULL);
+            room_join(argv[1], argv[2]);              // args: name, [pass]
         }
         else if (!strcmp(cmd, "\\leave"))
         {
@@ -139,7 +141,6 @@ void process_client()
         {
             WriteLn("Unknown command or wrong number of arguments (type '\\help' for commands list)");
         }
-
         WriteLn("");
     }
 }
