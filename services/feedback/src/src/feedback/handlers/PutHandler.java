@@ -8,6 +8,7 @@ import feedback.http.HttpListenerResponse;
 import feedback.index.LuceneIndex;
 import feedback.index.data.Vote;
 import feedback.index.data.VoteType;
+import feedback.utils.StringUtils;
 import org.joda.time.DateTime;
 
 import java.io.IOException;
@@ -25,6 +26,12 @@ public class PutHandler extends AjaxHandler<Vote> {
 		if(vote == null)
 			return AjaxResult.createError("Vote is empty");
 
+		if(StringUtils.isBlank(vote.title) || StringUtils.isBlank(vote.text))
+			return AjaxResult.createError("Not all required fields are set");
+
+		if(!(vote.type.equals(VoteType.VISIBLE) || vote.type.equals(VoteType.INVISIBLE)))
+			return AjaxResult.createError("Invalid type");
+
 		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
 		index.addOrUpdateSubject(preprocess(vote, authToken));
 
@@ -34,7 +41,6 @@ public class PutHandler extends AjaxHandler<Vote> {
 	private Vote preprocess(Vote vote, AuthToken authToken) {
 		vote.id = UUID.randomUUID().toString().replaceAll("-", "");
 		vote.date = DateTime.now();
-		vote.type = VoteType.VISIBLE;
 		vote.login = authToken != null ? authToken.getLogin() : "anonymous";
 		return vote;
 	}
