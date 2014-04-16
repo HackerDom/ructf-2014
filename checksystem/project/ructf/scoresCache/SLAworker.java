@@ -144,9 +144,10 @@ public class SLAworker extends Thread{
 				logger.error("Failed to insert sla data in database", exception);
 			}					
 			
-			logger.info("Sleeping SLA ... ");
-			
-			Thread.sleep(updateTimeout);
+			if(stateDelta.size() == 0){
+				logger.info("No news in SLA. Sleeping ... ");
+				Thread.sleep(updateTimeout);				
+			}			
 		}
 	}
 	
