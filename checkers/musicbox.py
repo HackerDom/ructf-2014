@@ -33,11 +33,6 @@ MUSIC_DIRECTORY = 'music'
 TEMP_FILE = '.musicbox.temp'
 
 class MusicboxChecker(CheckerBase):
-	def init_data(self):
-		self.data = dict()
-		self.data['played'] = []
-		self.data['planted'] = dict()
-
 	def get_avaliable_songs(self):
 		return glob('%s/*' % MUSIC_DIRECTORY)
 
@@ -48,16 +43,7 @@ class MusicboxChecker(CheckerBase):
 			self.debug('No songs to use')
 			exit(EXITCODE_CHECKER_ERROR)
 
-		not_played_songs = [ track for track in songs if not track in self.data['played'] ]
-
-		if len(not_played_songs) == 0:
-			self.data['played'] = []
-			not_played_songs = songs
-
-		chosen = random.choice(not_played_songs)
-		self.data['played'].append(chosen)
-
-		return chosen
+		return random.choice(songs)
 
 	def send_chunked_data(self, sock, data):
 		for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
@@ -129,21 +115,17 @@ class MusicboxChecker(CheckerBase):
 		old_ttl = FLAG_TTL
 		try:
 			FLAG_TTL = CHECK_TTL
-
-			if not self.put(addr, None, flag):
+			uuid = self.put(addr, None, flag)
+			if not uuid:
 				return False
-			return self.get(addr, None, flag)
+			return self.get(addr, uuid, flag)
 		finally:
 			FLAG_TTL = old_ttl
 
 	def get(self, addr, flag_id, flag):
 		sock = self.create_socket(addr, SERVICE_PORT)
 
-		if not flag in self.data['planted']:
-			self.debug("Didn't planted this flag: %s" % flag)
-			exit(EXITCODE_CHECKER_ERROR)
-
-		uuid = UUID(self.data['planted'][flag])
+		uuid = UUID(flag_id)
 		song_data = self.get_song(sock, uuid)
 
 		if not song_data:
@@ -172,8 +154,8 @@ class MusicboxChecker(CheckerBase):
 			uuid = self.put_song(sock, song_data)
 			if not uuid:
 				return False
-			self.data['planted'][flag] = str(uuid)
-			return True
+			print(uuid)
+			return str(uuid)
 		finally:
 			del ogg_file[FLAG_TAG_NAME]
 			ogg_file.save()
