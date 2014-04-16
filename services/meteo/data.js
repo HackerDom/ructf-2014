@@ -26,6 +26,15 @@ exports.get_data = function(start, callback){
   });
 }
 
+exports.get_by_hash = function(hash, callback) {
+  if (! connection)
+    throw 'Can\'t get data until connection established';
+  connection.query('SELECT * FROM data WHERE hash = ?', [hash], function(err, rows) {
+    if (err) throw err;
+    callback(rows[0]);
+  });
+}
+
 exports.add_filter = function(city, theme, callback) {
   if (! connection)
     throw 'Can\'t add filter until connection established';

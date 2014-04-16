@@ -15,7 +15,6 @@ var countries = {'Russia': ['Yekaterinburg', 'Moscow', 'Saint-Petersburg', 'Sama
 function show_filter_index(response, filter) {
   data.get_data(0, function(rows){
     data.get_filters(function(filters) {
-      response.writeHead(200, {'Content-type': 'text/html'});
       response.write(ejs.render(fs.readFileSync('templates/index.html', 'utf8'),
         {'rows': rows,
          'countries': countries,
@@ -28,6 +27,7 @@ function show_filter_index(response, filter) {
 }
 
 function index(request, response) {
+  response.writeHead(200, {'Content-Type': 'text/html'});
   show_filter_index(response, {});
 }
 
@@ -67,22 +67,41 @@ function create_filter(request, response, post) {
 function city(request, response) {
   var city = url.parse(request.url).pathname.split("/")
   city = city[city.length - 1];
+  response.writeHead(200, {'Content-Type': 'text/html'});
   show_filter_index(response, {'city': city});
 }
 
 function filter(request, response) {
-  var filter_id = parseInt(url.parse(request.url).pathname.substr(8)) || 0;
+  var filter_id = parseInt(url.parse(request.url).pathname.substr("/filter/".length)) || 0;
   console.log("Get filter: " + filter_id);
   data.get_filter(filter_id, function(filter) {
     if (! filter || !('theme' in filter) || !('city' in filter)) {
       error500(response, 'invalid request');
       return;
     }
-    response.writeHead(200, {'Content-Type': 'text/html', 'Link': filter.theme});
+    response.writeHead(200, {'Content-Type': 'text/html', 'Link': '<' + filter.theme + '.css>; rel=stylesheet'});
     show_filter_index(response, {'city': filter.city});
   });
 }
 
+function hash(request, response) {
+  h = url.parse(request.url).pathname.substr("/hash/".length);
+  data.get_filters(function(filters){
+    data.get_by_hash(h, function(data) {
+      if (! data) {
+        error500(response, 'invalid request');
+        return;
+      }
+      response.writeHead(200, {'Content-Type': 'text/html'});
+      response.write(ejs.render(fs.readFileSync('templates/data.html', 'utf8'),
+        {'data': data,
+         'countries': countries,
+         'filters': filters
+        }));
+      response.end();
+    });
+  });
+}
 
 function get_mime_type(filename) {
   if (filename.endsWith(".css")) return "text/css";
@@ -127,6 +146,7 @@ router.add_route("/static/", static_files);
 router.add_route("/create_filter", create_filter);
 router.add_route("/filter/", filter);
 router.add_route("/city/", city);
+router.add_route("/hash/", hash);
 router.add_route("/", index);
 
 data.init_db(function(){
