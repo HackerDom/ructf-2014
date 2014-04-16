@@ -80,9 +80,9 @@ for net in vpn core_switch devs checksystem teams team_switches any; do
 done
 
 init_chain filter to_checksystem_public
-for port in 80 31337; do
-$add_filter to_checksystem_public \
-    -d 10.23.0.2 -p tcp --dport $port -m state --state NEW -j ACCEPT
+for cs_host in 10.23.0.{2..4}; do
+    $add_filter to_checksystem_public -d $cs_host -p tcp -m multiport \
+        --dports 80,31337 -m state --state NEW -j ACCEPT
 done
 
 # and we fix networks here additionally in to_* chains
