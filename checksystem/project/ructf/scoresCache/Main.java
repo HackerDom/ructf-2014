@@ -97,8 +97,7 @@ public class Main {
 	}
 	
 	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {
-		Timestamp lastCreationTime = new Timestamp(lastKnownTime.getTime() - Constants.flagExpireInterval*1000);
-		lastCreationTime.setNanos(lastKnownTime.getNanos());
+		Timestamp lastCreationTime = TimestampUtils.AddMillis(lastKnownTime, - Constants.flagExpireInterval*1000);				
 		
 		int totalTeamsCount = DatabaseManager.getTeams().size();
 		
@@ -135,9 +134,7 @@ public class Main {
 				double scoreFromOwner = Math.min(totalTeamsCount, ownerTotalScore);
 				double scoreToEachAttacker = scoreFromOwner / attackersCount;
 				
-				Timestamp rottenTime = new Timestamp(flag.time.getTime() + Constants.flagExpireInterval*1000);
-				rottenTime.setNanos(flag.time.getNanos());				
-				
+				Timestamp rottenTime = TimestampUtils.AddMillis(flag.time, Constants.flagExpireInterval*1000);
 				try {
 					conn.setAutoCommit(false);
 					for (RottenStolenFlag attackerFlag : list) {

@@ -15,7 +15,7 @@ import ructf.main.DatabaseManager;
 public class SLAworker extends Thread{
 	
 	private static String sqlGetLastSla = "SELECT sla.team_id, sla.service_id, sla.successed, sla.failed, sla.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM sla GROUP BY team_id, service_id) last_times INNER JOIN sla ON last_times.time=sla.time AND last_times.team_id=sla.team_id AND last_times.service_id=sla.service_id";
-	private static String sqlGetLastAccessChecks = "SELECT team_id, service_id, status, count(*), max(time) FROM access_checks WHERE time > ? GROUP BY team_id, service_id, status";
+	private static String sqlGetLastAccessChecks = "SELECT team_id, service_id, status, count(*), max(time) FROM access_checks WHERE (time > ? AND time <= ?) OR time = (SELECT MIN(time) FROM access_checks) GROUP BY team_id, service_id, status";
 	private static String sqlInsertSla = "INSERT INTO sla (team_id, service_id, successed, failed, time) VALUES (?, ?, ?, ?, ?)";
 	private static PreparedStatement stGetLastSla;
 	private static PreparedStatement stGetLastAccessChecks;
@@ -75,6 +75,7 @@ public class SLAworker extends Thread{
 		while (true) {
 			logger.info(String.format("Getting new SLA data from time %s", lastKnownTime.toString()));
 			stGetLastAccessChecks.setTimestamp(1, lastKnownTime);
+			stGetLastAccessChecks.setTimestamp(2, TimestampUtils.AddMillis(lastKnownTime, updateTimeout));
 			ResultSet res = stGetLastAccessChecks.executeQuery();
 			
 			Hashtable<TeamService, SLA> stateDelta = new Hashtable<TeamService, SLA>();
@@ -145,9 +146,11 @@ public class SLAworker extends Thread{
 			
 			logger.info("Sleeping SLA ... ");
 			
-			Thread.sleep(10000);
+			Thread.sleep(updateTimeout);
 		}
 	}
+	
+	private final int updateTimeout = 1000;
 	
 	private static Timestamp Max(Timestamp t1, Timestamp t2){
 		if (t1.before(t2))
