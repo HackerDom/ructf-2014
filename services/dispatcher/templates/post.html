@@ -3,7 +3,11 @@
 
 <form method="POST" action="/ack/">
     <h1>{{ added }}</h1>
+    <a href="{{ url_for('dialog', frequency=last_frequency) }}"><h2>view frequency</h2></a>
     <input type="submit" value="check" />
 </form>
 
+{% endblock %}
+
+{% block live %}
 {% endblock %}

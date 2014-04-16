@@ -1,0 +1,11 @@
+service simple
+{
+        disable = no
+        type = UNLISTED
+        socket_type = stream
+        protocol = tcp
+        user = simple
+        wait = no
+        server = /home/simple/simple.py
+        port = 10000
+}
