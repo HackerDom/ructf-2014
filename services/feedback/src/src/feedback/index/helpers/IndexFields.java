@@ -17,6 +17,10 @@ public class IndexFields {
 		boosts = new HashMap<>();
 		for(String field : fields)
 			boosts.put(field, defaultBoost);
+
+		boosts.put(id, 10.0f);
+		boosts.put(login, 5.0f);
+		boosts.put(title, 5.0f);
 	}
 
 	public static final String id = "id";

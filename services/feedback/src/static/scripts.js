@@ -42,6 +42,6 @@ $.get = function(url, data, success, error) {
 		}, error);
 };
 
-$.put = function(url, data, success, error) {
-	$.ajax('PUT', url, JSON.stringify(data), success, error);
+$.post = function(url, data, success, error) {
+	$.ajax('POST', url, JSON.stringify(data), success, error);
 }

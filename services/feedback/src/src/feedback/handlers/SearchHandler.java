@@ -1,5 +1,8 @@
-package feedback;
+package feedback.handlers;
 
+import feedback.auth.AuthToken;
+import feedback.auth.TokenCrypt;
+import feedback.auth.TokenHelper;
 import feedback.http.HttpListenerRequest;
 import feedback.http.HttpListenerResponse;
 import feedback.http.IHttpListenerHandler;
@@ -16,8 +19,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class SearchHandler implements IHttpListenerHandler {
-	public SearchHandler(LuceneIndex index) {
+	public SearchHandler(LuceneIndex index, TokenCrypt tokenCrypt) {
 		this.index = index;
+		this.tokenCrypt = tokenCrypt;
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
 		this.writer = mapper.writer();
@@ -35,8 +39,10 @@ public class SearchHandler implements IHttpListenerHandler {
 			top = MAX_ITEMS;
 		}
 
+		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
+
 		try {
-			SearchResults results = index.search(query, top);
+			SearchResults results = index.search(query, top, authToken != null && authToken.isAdmin());
 			byte[] buffer = writer.writeValueAsBytes(results);
 			response.setContentLength(buffer.length);
 			response.setHeader("Content-Type", "application/json");
@@ -50,4 +56,5 @@ public class SearchHandler implements IHttpListenerHandler {
 	private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
 	private final ObjectWriter writer;
 	private final LuceneIndex index;
+	private TokenCrypt tokenCrypt;
 }

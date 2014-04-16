@@ -49,22 +49,19 @@ public class LuceneIndex {
 		reopenThread.setDaemon(true);
 		reopenThread.start();
 
-		Thread commitThread = new Thread("commit-thread") {
-			@Override
-			public void run() {
-				boolean stop = false;
-				while(!stop) {
-					try {
-						Thread.sleep(30000);
-						commit();
-					}
-					catch(Exception ignored) {
-						if(ignored instanceof ThreadInterruptedException)
-							stop = true;
-					}
+		Thread commitThread = new Thread(() -> {
+			boolean stop = false;
+			while(!stop) {
+				try {
+					Thread.sleep(30000);
+					commit();
+				}
+				catch(Exception ignored) {
+					if(ignored instanceof ThreadInterruptedException)
+						stop = true;
 				}
 			}
-		};
+		}, "commit-thread");
 		commitThread.setPriority(Math.max(Thread.currentThread().getPriority() - 2, Thread.MIN_PRIORITY));
 		commitThread.setDaemon(true);
 		commitThread.start();
@@ -72,7 +69,7 @@ public class LuceneIndex {
 		highlighter = new SearchHighlighter(analyzer);
 	}
 
-	public SearchResults search(String text, int top) throws ParseException, IOException, InvalidTokenOffsetsException {
+	public SearchResults search(String text, int top, boolean all) throws ParseException, IOException, InvalidTokenOffsetsException {
 		if(StringUtils.isBlank(text))
 			return new SearchResults(0, null);
 
@@ -83,7 +80,7 @@ public class LuceneIndex {
 		IndexSearcher searcher = searcherManager.acquire();
 
 		try {
-			String filter = String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
+			String filter = all ? "" : String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
 
 			Query query = parser.parse(filter + " " + text); //WARN! Filter concatenation and no special characters escaping!
 			TopDocs hits = searcher.search(query, top);

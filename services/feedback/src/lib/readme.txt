@@ -9,6 +9,5 @@ lucene-highlighter-4.7.1.jar
 lucene-memory-4.7.1.jar
 lucene-queries-4.7.1.jar
 lucene-queryparser-4.7.1.jar
-readme.txt
 slf4j-api-1.6.4.jar
 slf4j-log4j12-1.6.4.jar

@@ -47,6 +47,8 @@
                 <% filters.forEach(function(filter) { %>
                   <li><a href="/filter/<%= filter.id %>"><%= filter.city ? filter.city : "None" %></a></li>
                 <% }) %>
+                <li class="divider"></li>
+                <li><a href="/create_filter">Create your own filter</a></li>
               </ul>
             </li>
           </ul>
