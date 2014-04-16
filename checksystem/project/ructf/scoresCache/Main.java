@@ -23,17 +23,19 @@ public class Main {
 	
 	private static Logger logger = Logger.getLogger("ructf.scoresCache");
 	
+	private static String sqlGetRoundTimes = "SELECT time FROM rounds ORDER BY n";
 	private static String sqlGetLastScores = "SELECT score.team_id, score.service_id, score.score, score.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM score GROUP BY team_id, service_id) last_times INNER JOIN score ON last_times.time=score.time AND last_times.team_id=score.team_id AND last_times.service_id=score.service_id";
 	private static String sqlCreateInitState = "INSERT INTO score (round, time, team_id, service_id, score) SELECT 0, '2009-01-01', teams.id, services.id, (select 100 * count(*) FROM teams) FROM teams CROSS JOIN services";
 	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.victim_service_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
 	private static String sqlInsertScore = "INSERT INTO score (round, time, team_id, service_id, score) VALUES (?,?,?,?,?)";
 		
+	private static PreparedStatement stGetRoundTimes;
 	private static PreparedStatement stGetLastScores;	
 	private static PreparedStatement stCreateInitState;
 	private static PreparedStatement stGetStealsOfRottenFlags;
 	private static PreparedStatement stInsertScore;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {			
 		PropertyConfigurator.configure(Constants.log4jConfigFile);
 		logger.info("Started");
 		try
@@ -96,13 +98,26 @@ public class Main {
 		return result;
 	}
 	
+	private static Timestamp[] GetRoundTimes() throws SQLException{
+		ResultSet res = stGetRoundTimes.executeQuery();		
+		ArrayList<Timestamp> al = new ArrayList<Timestamp>();		
+		while(res.next()) {
+			Timestamp time = res.getTimestamp(1);
+			al.add(time);
+		}		
+		Timestamp[] result = new Timestamp[al.size()];
+		al.toArray(result);		
+		return result;		
+	}
+	
 	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {
 		Timestamp lastCreationTime = TimestampUtils.AddMillis(lastKnownTime, - Constants.flagExpireInterval*1000);				
 		
-		int totalTeamsCount = DatabaseManager.getTeams().size();
+		int totalTeamsCount = DatabaseManager.getTeams().size();		 
 		
 		while (true) {
 			List<RottenStolenFlag> flags = GetRottenStolenFlags(lastCreationTime);
+			Timestamp[] roundTimes = GetRoundTimes();
 			
 			Hashtable<String, ArrayList<RottenStolenFlag>> grouped = new Hashtable<String, ArrayList<RottenStolenFlag>>();
 			for (RottenStolenFlag flag : flags) {
@@ -140,14 +155,15 @@ public class Main {
 					for (RottenStolenFlag attackerFlag : list) {
 						int attacker = attackerFlag.attacker;
 						
-						double attackerOldScore = state.get(attacker).score;
+						double attackerOldScore = state.get(new TeamService(attacker, service)).score;
 						double attackerNewScore = attackerOldScore + scoreToEachAttacker;
-						InsertScore(0, rottenTime, attacker, service, attackerNewScore);
+						InsertScore(BinarySearch(roundTimes, rottenTime), rottenTime, attacker, service, attackerNewScore);
 						state.put(new TeamService(attacker, service), new TeamScore(attacker, attackerNewScore, rottenTime));
 						logger.info(String.format("Flag %s: (attacker, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, attacker, service, attackerOldScore, attackerNewScore, scoreToEachAttacker));
 					}
+					
 					double ownerNewScore = ownerTotalScore - scoreFromOwner;
-					InsertScore(0, rottenTime, owner, service, ownerNewScore);
+					InsertScore(BinarySearch(roundTimes, rottenTime), rottenTime, owner, service, ownerNewScore);
 					state.put(new TeamService(owner, service), new TeamScore(owner, ownerNewScore, rottenTime));
 					logger.info(String.format("Flag %s: (owner, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, owner, service, ownerTotalScore, ownerNewScore, -scoreFromOwner));
 					
@@ -179,6 +195,22 @@ public class Main {
 		}
 	}
 	
+	//-1 if array is empty or less than smallest
+	private static int BinarySearch(Timestamp[] rounds, Timestamp t){
+		int left = 0;
+		int right = rounds.length;
+		
+		while(left < right && rounds[left].compareTo(t) <= 0)
+		{
+			int mid = left + (right - left) / 2;
+			if (rounds[mid].compareTo(t) <= 0)
+	            left = mid + 1;
+			else
+				right = mid;
+		}
+		return left - 1;
+	}
+	
 	private static void InsertScore(int round, Timestamp time, int team, int service, double score) throws SQLException
 	{
 		stInsertScore.setInt(1, round);
@@ -202,7 +234,8 @@ public class Main {
 		stCreateInitState.execute();
 	}
 
-	private static void PrepareStatements(Connection conn) throws SQLException{		
+	private static void PrepareStatements(Connection conn) throws SQLException{
+		stGetRoundTimes = conn.prepareStatement(sqlGetRoundTimes);
 		stGetLastScores = conn.prepareStatement(sqlGetLastScores);
 		stCreateInitState = conn.prepareStatement(sqlCreateInitState);
 		stGetStealsOfRottenFlags = conn.prepareStatement(sqlGetStealsOfRottenFlags);

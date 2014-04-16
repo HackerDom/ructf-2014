@@ -1,7 +1,7 @@
 -- Configuration
 
 CREATE TABLE rounds (
-	time		TIMESTAMP  with time zone	NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	n		INTEGER			PRIMARY KEY
 );
 
@@ -38,7 +38,7 @@ CREATE TABLE tasks (
 
 CREATE TABLE flags (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	flag_id		VARCHAR(1024)		NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE flags (
 
 CREATE TABLE delayed_flags (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	flag_id		VARCHAR(1024)		NOT NULL,
@@ -56,14 +56,14 @@ CREATE TABLE delayed_flags (
 );
 
 CREATE TABLE secret_flags (
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	flag_fata	CHAR(32),
 	score_secret	INTEGER
 );
 
 CREATE TABLE stolen_flags (
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	flag_data	CHAR(32),
 	victim_team_id	INTEGER,
@@ -95,7 +95,7 @@ CREATE TABLE advisories
   "number" character varying(100),
   rejected boolean DEFAULT false,
   max_score integer NOT NULL,
-  open_time timestamp with time zone,
+  open_time TIMESTAMP without time zone,
   CONSTRAINT advisories_team_id_fkey FOREIGN KEY (team_id)
       REFERENCES teams (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -107,8 +107,8 @@ WITH (
 CREATE SEQUENCE stask_seq INCREMENT 1 START 1;
 CREATE TABLE solved_tasks (
 	id              INTEGER                 default nextval('stask_seq'),
-	time		TIMESTAMP		NOT NULL,
-	check_time	TIMESTAMP		DEFAULT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
+	check_time	TIMESTAMP without time zone	DEFAULT NULL,
 	team_id		INTEGER			REFERENCES teams(id),
 	task_id		INTEGER			REFERENCES tasks(id),
 	status          BOOLEAN                 default(NULL),
@@ -118,7 +118,7 @@ CREATE TABLE solved_tasks (
 
 CREATE TABLE access_checks (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	status		INTEGER			NOT NULL,
@@ -129,15 +129,16 @@ CREATE TABLE access_checks (
 );
 
 CREATE TABLE sla (
+	round		INTEGER,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	successed	INTEGER,
 	failed		INTEGER,
-	time		TIMESTAMP		NOT NULL
+	time		TIMESTAMP without time zone	NOT NULL
 );
 
 CREATE TABLE news (
-    time TIMESTAMP,
+    time TIMESTAMP without time zone,
     text TEXT,
     author VARCHAR(256)
 );
@@ -146,7 +147,7 @@ CREATE TABLE news (
 
 CREATE TABLE rounds_cache (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	team_id		INTEGER			REFERENCES teams(id),
 	privacy		INTEGER,
 	availability	INTEGER,
@@ -160,7 +161,7 @@ CREATE TABLE rounds_cache (
 
 CREATE TABLE checker_run_log (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	duration	NUMERIC(6,2)		NOT NULL CHECK( duration >= 0 ),
 	team_id		INTEGER,
 	service_id	INTEGER,
