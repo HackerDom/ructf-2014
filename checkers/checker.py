@@ -25,27 +25,6 @@ class CheckerBase(object):
 	def debug(self, msg):
 		sys.stderr.write('%s\n' % msg)
 
-	def init_data(self):
-		self.data = None
-
-	def restore_state(self, filename):
-		self.data = None
-		data_filename = '%s.data' % filename
-		if os.path.exists(data_filename):
-			try:
-				with open(data_filename, 'r') as f:
-					self.data = json.load(f)
-			except:
-				self.init_data()
-		else:
-			self.init_data()
-
-	def save_state(self, filename):
-		if not self.data:
-			return
-		with open('%s.data' % filename, 'w') as f:
-			json.dump(self.data, f)
-
 	def run(self):
 		if len(sys.argv) < 3:
 			self.debug('Not enough arguments')
@@ -55,8 +34,6 @@ class CheckerBase(object):
 
 
 		try:
-			self.restore_state(script_name)
-
 			if command == 'check':
 				if self.check(addr):
 					exit(EXITCODE_OK)
@@ -93,6 +70,4 @@ class CheckerBase(object):
 			traceback.print_exc(100, sys.stderr)
 			self.debug(e)
 			exit(EXITCODE_CHECKER_ERROR)
-		finally:
-			self.save_state(script_name)
 
