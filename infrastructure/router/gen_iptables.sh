@@ -33,6 +33,8 @@ for iface in $inet_ifaces; do
     $add_filter INPUT -i $iface -m state --state NEW -p tcp --dport 22 -j ACCEPT
 done
 
+# allow DHCP and TFTP requests to router
+$add_filter INPUT -p udp --dport 67 -m state --state NEW -j ACCEPT
 $add_filter INPUT -i $switch_iface -p udp --dport 69 -m state --state NEW -j ACCEPT
 
 iptables -P INPUT DROP
