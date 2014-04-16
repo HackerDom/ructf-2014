@@ -80,13 +80,23 @@ void parse_argv(char buf[], char **argv, int *argc)
     }
 }
 
+void melting(int parameter) {
+    room_history();
+    Write(">");
+}
+
+void set_signal()
+{
+void (*originalInterruptSignal)(int); 
+ originalInterruptSignal = signal(SIGUSR1, melting);
+}
+
 void process_client()
 {
     char *argv[MAX_ARGV];
     char buf[BUF_SIZE];
     int argc = 0;
-    int result = 0;
-
+    set_signal();
     print_greeting();
 
     while (1)
@@ -96,13 +106,6 @@ void process_client()
             break;
         strtok(buf, "\r\n");            // Skip everything after "\r" or "\n"
 
-        if (buf[0] != '\\')             // If not command, then client wants to say something
-        {
-            say(buf);
-            list_room();
-            continue;
-        }
-
         parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
         char *cmd = argv[0];             // At least 1 token exists
 
@@ -110,42 +113,45 @@ void process_client()
         {
             break;
         }
-        else if (!strcmp(cmd, "\\help"))
+        else if (buf[0] != '\\')             // If not command, then client wants to say something
+        {
+            say(buf);
+            kill(-1,SIGUSR1);
+            //room_history();
+        }
+        if (!strcmp(cmd, "\\help"))
         {
             print_help();
-            continue;
         }
         else if (!strcmp(cmd, "\\list") && argc == 1)
         {
             list();
-            continue;
         }
         else if (!strcmp(cmd, "\\register") && argc == 3)
         {
-            result = user_create(argv[1], argv[2]);            // (user,pass)
+            user_create(argv[1], argv[2]);            // (user,pass)
         }
         else if (!strcmp(cmd, "\\login") && argc == 3)
         {
-            result = user_login(argv[1], argv[2]);             // (user,pass)
+            user_login(argv[1], argv[2]);             // (user,pass)
         }
         else if (!strcmp(cmd, "\\create") && argc >= 2 && argc <= 3)
         {
-            result = room_create(argv[1], argc == 3 ? argv[2] : NULL);
+            room_create(argv[1], argc == 3 ? argv[2] : NULL);
         }
         else if (!strcmp(cmd, "\\join") && argc >= 2 && argc <= 3)
         {
-            result = room_join(argv[1], argc == 3 ? argv[2] : NULL);
-            if (result == 0)
-                list_room();
+            room_join(argv[1], argc == 3 ? argv[2] : NULL);
+        }
+        else if (!strcmp(cmd, "\\leave"))
+        {
+            room_leave();
         }
         else
         {
             WriteLn("Unknown command or wrong number of arguments (type '\\help' for commands list)");
-            WriteLn("");
-            continue;
         }
 
-        WriteLn( result == 0 ? "OK" : "Error" );
         WriteLn("");
     }
 }
@@ -160,7 +166,7 @@ void test_mongo_connection()
 int main(int argc, char **argv)
 {
     signal(SIGCHLD, SIG_IGN);
-
+    signal(SIGUSR1, SIG_IGN);
     test_mongo_connection();
 
     int port = argc >= 2 ? atoi(argv[1]) : DEFAULT_PORT;

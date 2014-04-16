@@ -1,0 +1,36 @@
+% layout 'default';
+% title 'RuCTF > скорборд';
+
+<p id="round">Round <%= $self->app->round->{n} %> (started at <%= $self->app->round->{time} %>)</p>
+<table border="1">
+  <tr>
+    <td>#</td>
+    <td>Логотип</td>
+    <td>Команда</td>
+    <td>Score</td>
+    % for my $service (values %{$self->app->services}) {
+    <td><%= $service %></td>
+    % }
+  </tr>
+  % my $pos = 0;
+  % for my $score (@{$self->app->scoreboard}) {
+  <tr>
+    <td><%= ++$pos %>.</td>
+    <td>
+      % my $name = $score->{team}{name};
+      <img src="" width="64" height="64">
+    </td>
+    <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
+    <td><%= sprintf '%.2f', $score->{score} %></td>
+
+    % for my $sid (keys %{$self->app->services}) {
+      % my $status = $self->app->status->{$self->app->services->{$sid}}{$score->{team}{tid}}{status};
+      <td>
+        S: <%= $status %> <br/>
+        SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
+        FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
+      </td>
+    % }
+  </tr>
+  % }
+</table>

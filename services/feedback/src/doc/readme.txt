@@ -1,0 +1,10 @@
+commons-io-2.4-javadoc.jar
+joda-time-2.3-javadoc.jar
+lucene-analyzers-common-4.7.1-javadoc.zip
+lucene-core-4.7.1-javadoc.zip
+lucene-highlighter-4.7.1-javadoc.zip
+lucene-memory-4.7.1-javadoc.zip
+lucene-queries-4.7.1-javadoc.zip
+lucene-queryparser-4.7.1-javadoc.zip
+slf4j-api-1.6.4-javadoc.jar
+slf4j-log4j12-1.6.4-javadoc.jar

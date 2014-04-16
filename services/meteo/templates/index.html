@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Meteo database service for RuCTF 2014">
+    <meta name="author" content="(c) Andrew Gein, Hackerdom, RuCTF 2014">
+
+    <title>Meteo database</title>
+
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/tablesorter.theme.bootstrap.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">Meteo database</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="/">Home</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">By city <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <% for (var country in countries) { %>
+                  <li class="dropdown-header"> <%= country %> </li>
+                  <% countries[country].forEach(function(city) { %>
+                    <li><a href="/city/<%= country %>/<%= city %>"><%= city %></a></li>
+                  <% }) %>
+                  <li class="divider"></li>
+                <% } %>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Users filters <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <% filters.forEach(function(filter) { %>
+                  <li><a href="/filter/<%= filter.id %>"><%= filter.city ? filter.city : "None" %></a></li>
+                <% }) %>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="jumbotron">
+        <h1>Meteo database</h1>
+        <p>This service collects meteo data from meteorological towers and allows analyse it. Feel free to use our filters!</p>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Latitude</th>
+            <th>Longtitude</th>
+            <th class="filter-exact" data-value="<%= city ? 'city ' + city : '' %>">City</th>
+            <th>METAR</th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Latitude</th>
+            <th>Longtitude</th>
+            <th>Place</th>
+            <th>METAR</th>
+          </tr>
+        </tfoot>
+        <% rows.forEach(function(row){ %>
+          <tr>
+            <td> <%= row.id %> </td>
+            <td> <%= row.timestamp %> </td>
+            <td> <%= row.lat %> </td>
+            <td> <%= row.long %> </td>
+            <td> <%= row.what %> <%= row.place %> </td>
+            <td> <%= row.metar %> </td>
+          </tr>
+        <% }) %>
+      </table>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/jquery.tablesorter.js"></script>
+    <script src="/static/js/jquery.tablesorter.widgets.js"></script>
+    <script>
+      $(document).ready(function(){
+          $.extend($.tablesorter.themes.bootstrap, {
+            table      : 'table table-bordered',
+            caption    : 'caption',
+            header     : 'bootstrap-header', // give the header a gradient background
+            footerRow  : '',
+            footerCells: '',
+            icons      : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+            sortNone   : 'bootstrap-icon-unsorted',
+            sortAsc    : 'icon-chevron-up glyphicon glyphicon-chevron-up',     // includes classes for Bootstrap v2 & v3
+            sortDesc   : 'icon-chevron-down glyphicon glyphicon-chevron-down', // includes classes for Bootstrap v2 & v3
+            active     : '', // applied when column is sorted
+            hover      : '', // use custom css here - bootstrap class may not override it
+            filterRow  : '', // filter row class
+            even       : '', // odd row zebra striping
+            odd        : ''  // even row zebra striping
+          });        
+      });
+
+      $("table").tablesorter({
+          theme : "bootstrap",
+          widthFixed: true,
+          headerTemplate : '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+          widgets : [ "uitheme", "filter", "zebra" ],
+          widgetOptions : {
+            zebra : ["even", "odd"],
+          }
+        });
+    </script>
+  </body>
+</html>
+

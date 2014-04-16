@@ -52,6 +52,20 @@ bool exists(char *collection, char *name, char *value)
     return exists;
 }
 
+void room_leave()
+{
+    if (roomSet)
+    {
+        roomSet = false;
+        *currentRoom = 0;
+        WriteLn("Goodbye");
+    }
+    else
+    {
+        WriteLn("You are not in room");
+    }
+}
+
 bool test_password(const char *expected, const char *actual)
 {
     char len_actual = strlen(actual);
@@ -69,14 +83,15 @@ bool test_password(const char *expected, const char *actual)
     return true;
 }
 
-int user_create(char *user, char *pass)
+void user_create(char *user, char *pass)
 {
     bson b;
 
     if (exists(COLLECTION_USERS, "user", user))
     {
         D("add_user: Error: already exists\n");
-        return -1;
+        WriteLn("Register: error (user already exists)");
+        return;
     }
 
     bson_init( &b );
@@ -90,16 +105,17 @@ int user_create(char *user, char *pass)
     if ( result == MONGO_OK )
     {
         D("add_user: OK\n");
-        return user_login(user, pass);
+        WriteLn("Register: OK");
+        user_login(user, pass);
     }
     else
     {
-        D( "add_user: Error: %d\n", conn.err );
-        return -1;
+        D("add_user: Error: %d\n", conn.err);
+        WriteLn("Register: error");
     }
 }
 
-int user_login(char *user, char *pass)
+void user_login(char *user, char *pass)
 {
     userSet = false;
 
@@ -132,43 +148,39 @@ int user_login(char *user, char *pass)
     mongo_cursor_destroy( &cursor );
 
     D("user_login(%s): %s\n", user, userSet ? "OK" : "error");
-    return userSet ? 0 : -1;
+    WriteLn("Login %s", userSet ? "OK" : "error");
 }
 
-int say( char *message)
+void say( char *message)
 {
     if (!roomSet)
     {
         D("say: not in room\n");
-        return -1;
+        WriteLn("Please, log in first");
+        return;
     }
 
-    D("say\n");
-
     bson b;
-    int result;
-    time_t tp;
-    tp = time(NULL);
-    D("%d", tp);
+    time_t tp = time(NULL);
+    tp = mktime(localtime(&tp));
+
     bson_init( &b );
     bson_append_string( &b, "roomId", currentRoom);
     bson_append_string( &b, "userId", currentUser);
     bson_append_string( &b, "message", message);
-    bson_append_time_t(&b, "time", tp);
-    /* Finish the BSON obj. */
+    bson_append_int( &b, "time", tp);
     bson_finish( &b );
-    /* Insert the sample BSON document. */
+
     if ( mongo_insert( &conn, COLLECTION_MESSAGES, &b, NULL ) != MONGO_OK )
     {
-        D( "FAIL: Failed to insert document with error %d\n", conn.err );
-        exit( 1 );
+        D( "mongo_insert: %d\n", conn.err );
+        WriteLn("Warning: cannot send your message");
     }
 
     bson_destroy( &b );
-    return 0;
 }
 
-int room_create(char *name, char *pass)
+void room_create(char *name, char *pass)
 {
     int result;
     bson b;
@@ -176,13 +188,15 @@ int room_create(char *name, char *pass)
     if (!userSet)
     {
         D("room_create: denied: user not logged in\n");
-        return -1;
+        WriteLn("Error: not logged in");
+        return;
     }
 
     if ( exists( COLLECTION_ROOMS, "room", name ) )
     {
         D("room_create: denied: room already exists\n");
-        return -1;
+        WriteLn("Error: room already exists");
+        return;
     }
 
     bson_init( &b );
@@ -204,17 +218,25 @@ int room_create(char *name, char *pass)
     if ( result == MONGO_OK )
     {
         D( "room_create: OK\n" );
-        return room_join(name, pass);
+        WriteLn("OK: created %s room", pass == NULL ? "public" : "private");
+        room_join(name, pass);
     }
     else
     {
         D( "room_create: error: %d\n", conn.err );
-        return -1;
+        WriteLn("Error");
     }
 }
 
-int room_join(char *name, char *pass)
+void room_join(char *name, char *pass)
 {
+    if ( !exists( COLLECTION_ROOMS, "room", name ) )
+    {
+        D("room_join(%s): failed: no such room\n");
+        WriteLn("Error: no such room");
+        return;
+    }
+
     roomSet = false;
 
     bson b;
@@ -237,7 +259,10 @@ int room_join(char *name, char *pass)
 
             const char *origPass = bson_iterator_string( &it );
             if ( !test_password(origPass, pass) )
+            {
+                WriteLn("Error: invalid password");
                 break;
+            }
         }
 
         if ( !bson_find( &it, mongo_cursor_bson( &cursor ), "_id" ))
@@ -250,7 +275,16 @@ int room_join(char *name, char *pass)
     mongo_cursor_destroy( &cursor );
 
     D("room_join(%s): %s\n", name, roomSet ? "OK" : "error");
-    return roomSet ? 0 : -1;
+    if (roomSet)
+    {
+        WriteLn("Welcome to %s room '%s' !", pass == NULL ? "public" : "private", name);
+    }
+    else
+    {
+        WriteLn("Error: cannot join room");
+    }
+
+    room_history();
 }
 
 int list()
@@ -276,8 +310,10 @@ int list()
     return 0;
 }
 
-int list_room()
+void room_history()
 {
+    char stime[32];
+
     bson query[1];
     mongo_cursor cursor[1];
     bson_init( query );
@@ -290,21 +326,23 @@ int list_room()
     while ( mongo_cursor_next( cursor ) == MONGO_OK )
     {
         bson_iterator iterator[1];
-        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
-        {
-            user_name(bson_iterator_string( iterator));
-        }
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
-            WriteLn("%d", bson_iterator_time_t(iterator)) ;
+            time_t t = bson_iterator_int(iterator);
+            strftime(stime, 32, "%F %H:%M:%S", localtime(&t));
+            Write("[ %s ] ", stime);
         }
+
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
+        {
+            Write("%s: ", user_name(bson_iterator_string( iterator)));
+        }
+
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "message" ))
         {
-            WriteLn(bson_iterator_string( iterator) ) ;
+            WriteLn(bson_iterator_string(iterator) ) ;
         }
     }
-
-    return 0;
 }
 
 const char *user_name(const char *userId)
@@ -312,8 +350,6 @@ const char *user_name(const char *userId)
     bson query[1];
     mongo_cursor cursor[1];
     bson_oid_t oid;
-    bson_destroy( query );
-    mongo_cursor_destroy( cursor );
     bson_init( query );
     bson_oid_from_string( &oid, userId );
     bson_append_oid( query, "_id", &oid );

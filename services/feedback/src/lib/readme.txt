@@ -1,0 +1,13 @@
+commons-io-2.4.jar
+jackson-core-asl-1.9.13.jar
+jackson-mapper-asl-1.9.13.jar
+joda-time-2.3.jar
+log4j-1.2.17.jar
+lucene-analyzers-common-4.7.1.jar
+lucene-core-4.7.1.jar
+lucene-highlighter-4.7.1.jar
+lucene-memory-4.7.1.jar
+lucene-queries-4.7.1.jar
+lucene-queryparser-4.7.1.jar
+slf4j-api-1.6.4.jar
+slf4j-log4j12-1.6.4.jar
