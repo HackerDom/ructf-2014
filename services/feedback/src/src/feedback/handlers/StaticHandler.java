@@ -1,4 +1,4 @@
-package feedback;
+package feedback.handlers;
 
 import feedback.http.HttpException;
 import feedback.http.HttpListenerRequest;

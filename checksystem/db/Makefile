@@ -3,19 +3,19 @@ help:
 
 main-db:
 	psql -f game-databases-create.sql
-	./run.sh -W ructf2014 ructf2014 tables-create.sql
-	./run.sh -W ructf2014 ructf2014 ructf2014-services.sql
-	./run.sh -W ructf2014 ructf2014 game-teams-add.sql
+	./run.sh ructf2014 ructf2014 tables-create.sql
+	./run.sh ructf2014 ructf2014 ructf2014-services.sql
+	./run.sh ructf2014 ructf2014 game-teams-add.sql
 	./change-owner.sh ructf2014 ructf2014
 
 test-db:
 	psql -f test-databases-create.sql
-	./run.sh -W testuser ructfetest tables-create.sql
-	./run.sh -W testuser ructfetest ructf2014-services.sql
-	./run.sh -W testuser ructfetest test-teams-add.sql
+	./run.sh testuser ructfetest tables-create.sql
+	./run.sh testuser ructfetest ructf2014-services.sql
+	./run.sh testuser ructfetest test-teams-add.sql
 	./change-owner.sh ructfetest testuser
 
 clean:
-	./run.sh -W ructf2014 ructf2014 tables-clear.sql
-	./run.sh -W ructf2014 ructf2014 ructf2014-services.sql
-	./run.sh -W ructf2014 ructf2014 game-teams-add.sql
+	./run.sh ructf2014 ructf2014 tables-clear.sql
+	./run.sh ructf2014 ructf2014 ructf2014-services.sql
+	./run.sh ructf2014 ructf2014 game-teams-add.sql

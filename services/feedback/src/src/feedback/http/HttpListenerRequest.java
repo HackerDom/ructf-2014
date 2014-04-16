@@ -45,12 +45,12 @@ public class HttpListenerRequest {
 	}
 
 	private static Map<String, String> parseQueryString(String query) {
+		Map<String, String> map = new HashMap<>();
 		if(query == null)
-			return null;
+			return map;
 		String[] parts = query.split("&");
 		if(parts.length == 0)
-			return null;
-		Map<String, String> map = new HashMap<>();
+			return map;
 		for(String part : parts) {
 			String[] pair = part.split("=");
 			map.put(pair[0], pair.length > 1 ? pair[1] : null);

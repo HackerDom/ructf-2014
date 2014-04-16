@@ -1,6 +1,7 @@
 package feedback.index.data;
 
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.joda.time.DateTime;
 
@@ -21,6 +22,7 @@ public class Vote {
 	public String text;
 
 	@JsonProperty("date")
-	@JsonSerialize(using=SortableDateTimeSerializer.class)
+	@JsonSerialize(using=DateTimeSerializer.class)
+	@JsonDeserialize(using=DateTimeDeserializer.class)
 	public DateTime date;
 }
