@@ -3,6 +3,8 @@
 #include "metadata.h"
 #include "common.h"
 
+uint8_t file_buffer[MAX_FILE];
+
 void mb_send_response(int sockfd, char response_type) {
 	send(sockfd, (void *)&response_type, sizeof(response_type), 0);
 }
@@ -10,9 +12,16 @@ void mb_send_response(int sockfd, char response_type) {
 int mb_set_ttl(uint8_t *data, int data_size, int ttl) {
 	struct Tag ttl_tag;
 	char ttl_text[16];
+	int result;
+	uint8_t out_buffer[MAX_FILE];
+
 	sprintf(ttl_text, "%d", ttl);
 	mb_tag_init("TTL", ttl_text, &ttl_tag);
-	return mb_set_metadata(data, data_size, data, &ttl_tag, 1);
+	result = mb_set_metadata(data, data_size, out_buffer, &ttl_tag, 1);
+	if (result < 0)
+		return -1;
+	memcpy(data, out_buffer, MAX_FILE);
+	return 0;
 }
 
 void mb_process_put(int sockfd, struct Store *store) {
@@ -89,11 +98,15 @@ void mb_process_client(int sockfd, struct Store *store) {
 	}
 }
 
+void sigchld_handler(int sig) {
+	while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) ;
+}
+
 void mb_setup_sigchld() {
 	struct sigaction sa;
-	sa.sa_handler = SIG_IGN;
+	sa.sa_handler = &sigchld_handler;
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_NOCLDWAIT;
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &sa, 0) == -1)
 		error("Error on sigaction");
 }

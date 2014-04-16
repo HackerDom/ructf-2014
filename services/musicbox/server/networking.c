@@ -5,7 +5,6 @@ int mb_send_all_bytes(int sockfd, uint8_t *buffer, int desired_length) {
 	short length = min(desired_length, MAX_CHUNK);
 	size_t bytes_sent, total_bytes_sent;
 
-
 	send(sockfd, (void *)&length, sizeof(length), 0);
 
 	total_bytes_sent = 0;
@@ -19,9 +18,10 @@ int mb_send_all_bytes(int sockfd, uint8_t *buffer, int desired_length) {
 	return total_bytes_sent;
 }
 
-int mb_receive_all_bytes(int sockfd, uint8_t *buffer, int capacity) {
+int mb_receive_all_bytes(int sockfd, uint8_t *file_buffer, int capacity) {
 	short length;
 	size_t bytes_read, total_bytes_read;
+	uint8_t buffer[MAX_CHUNK];
 
 	if (recv(sockfd, &length, sizeof(length), 0) != sizeof(length))
 		error("Failed to receive chunk length");
@@ -35,6 +35,8 @@ int mb_receive_all_bytes(int sockfd, uint8_t *buffer, int capacity) {
 			return -1;
 		total_bytes_read += bytes_read;
 	}
+
+	memcpy(file_buffer, buffer, total_bytes_read);
 
 	return total_bytes_read;
 }
