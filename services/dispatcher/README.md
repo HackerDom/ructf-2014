@@ -24,3 +24,9 @@ Hacks
  - /ack/ - open for all last flags.
  - /post/ - blind python injection!
  - /post/ - db store format error, can add 2 rows.
+
+interesting
+-----------
+
+
+   [c for c in ().__class__.__base__.__subclasses__() if c.__name__ == 'catch_warnings'][0]()._module.__builtins__
