@@ -10,8 +10,6 @@ import org.apache.lucene.search.postingshighlight.DefaultPassageFormatter;
 import org.apache.lucene.search.postingshighlight.PassageFormatter;
 import org.apache.lucene.search.postingshighlight.PostingsHighlighter;
 
-import java.io.IOException;
-
 public class SearchHighlighter {
 	public SearchHighlighter(Analyzer analyzer) {
 		this.analyzer = analyzer;
@@ -60,17 +58,22 @@ public class SearchHighlighter {
 		};
 	}
 
-	public void highlight(Vote[] votes, Query query, IndexSearcher searcher, TopDocs topDocs) throws IOException {
-		String[] texts = postingsHighlighter.highlight(IndexFields.text, query, searcher, topDocs, 2);
-		for(int i = 0; i < votes.length; i++) {
-			Vote vote = votes[i];
-			vote.text = texts[i];
+	public void highlight(Vote[] votes, Query query, IndexSearcher searcher, TopDocs topDocs) {
+		if(votes == null || votes.length == 0 || query == null)
+			return;
+		try {
+			String[] texts = postingsHighlighter.highlight(IndexFields.text, query, searcher, topDocs, 2);
+			for(int i = 0; i < votes.length; i++) {
+				votes[i].text = texts[i];
+			}
+		} catch(Exception ignored) {}
+		for(Vote vote : votes) {
 			vote.title = getFieldHighlighted(query, IndexFields.title, vote.title);
 			vote.login = getFieldHighlighted(query, IndexFields.login, vote.login);
 		}
 	}
 
-	private String getFieldHighlighted(Query query, String fieldName, String fieldValue) throws IOException {
+	private String getFieldHighlighted(Query query, String fieldName, String fieldValue) {
 		try {
 			QueryScorer queryScorer = new QueryScorer(query, fieldName);
 			Highlighter highlighter = new Highlighter(formatter, encoder, queryScorer);
@@ -78,7 +81,7 @@ public class SearchHighlighter {
 			String highlighted = highlighter.getBestFragment(analyzer, fieldName, fieldValue);
 			return highlighted != null ? highlighted : encoder.encodeText(fieldValue);
 		}
-		catch(InvalidTokenOffsetsException e) {
+		catch(Exception ignored) {
 			return encoder.encodeText(fieldValue);
 		}
 	}

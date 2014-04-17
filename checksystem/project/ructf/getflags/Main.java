@@ -9,7 +9,7 @@ import org.apache.log4j.*;
 public class Main
 {
 	private static ServerSocket s;
-	private static String startupMessage = "RuCTF Get-Flags service";
+	private static String startupMessage = "RuCTF Get-Flags service started";
 	private static Logger logger;
 
 	public static void main(String[] args)

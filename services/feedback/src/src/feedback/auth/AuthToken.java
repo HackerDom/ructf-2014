@@ -15,6 +15,9 @@ public class AuthToken {
 		this.dateTime = dateTime;
 	}
 
+	//Stream header: STREAM_MAGIC + STREAM_VERSION = 4 bytes
+	//Block data header: TC_BLOCKDATA + len = 2 bytes
+	//UTF: len + bytes = 2 + N bytes
 	public byte[] serialize() throws IOException {
 		try(ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
 			try(ObjectOutputStream writer = new ObjectOutputStream(stream)) {
@@ -28,6 +31,7 @@ public class AuthToken {
 	}
 
 	public static AuthToken deserialize(byte[] value) throws IOException {
+		if(value == null) return null;
 		try(ByteArrayInputStream stream = new ByteArrayInputStream(value)) {
 			try(ObjectInputStream reader = new ObjectInputStream(stream)) {
 				String login = reader.readUTF();

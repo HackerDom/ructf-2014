@@ -1,7 +1,7 @@
 -- Configuration
 
 CREATE TABLE rounds (
-	time		TIMESTAMP  with time zone	NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	n		INTEGER			PRIMARY KEY
 );
 
@@ -38,7 +38,7 @@ CREATE TABLE tasks (
 
 CREATE TABLE flags (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	flag_id		VARCHAR(1024)		NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE flags (
 
 CREATE TABLE delayed_flags (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	flag_id		VARCHAR(1024)		NOT NULL,
@@ -56,14 +56,14 @@ CREATE TABLE delayed_flags (
 );
 
 CREATE TABLE secret_flags (
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	flag_fata	CHAR(32),
 	score_secret	INTEGER
 );
 
 CREATE TABLE stolen_flags (
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone		NOT NULL,
 	team_id		INTEGER,
 	flag_data	CHAR(32),
 	victim_team_id	INTEGER,
@@ -95,7 +95,7 @@ CREATE TABLE advisories
   "number" character varying(100),
   rejected boolean DEFAULT false,
   max_score integer NOT NULL,
-  open_time timestamp with time zone,
+  open_time TIMESTAMP without time zone,
   CONSTRAINT advisories_team_id_fkey FOREIGN KEY (team_id)
       REFERENCES teams (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -107,8 +107,8 @@ WITH (
 CREATE SEQUENCE stask_seq INCREMENT 1 START 1;
 CREATE TABLE solved_tasks (
 	id              INTEGER                 default nextval('stask_seq'),
-	time		TIMESTAMP		NOT NULL,
-	check_time	TIMESTAMP		DEFAULT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
+	check_time	TIMESTAMP without time zone	DEFAULT NULL,
 	team_id		INTEGER			REFERENCES teams(id),
 	task_id		INTEGER			REFERENCES tasks(id),
 	status          BOOLEAN                 default(NULL),
@@ -118,7 +118,7 @@ CREATE TABLE solved_tasks (
 
 CREATE TABLE access_checks (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	status		INTEGER			NOT NULL,
@@ -129,15 +129,16 @@ CREATE TABLE access_checks (
 );
 
 CREATE TABLE sla (
+	round		INTEGER,
 	team_id		INTEGER,
 	service_id	INTEGER,
 	successed	INTEGER,
 	failed		INTEGER,
-	time		TIMESTAMP		NOT NULL
+	time		TIMESTAMP without time zone	NOT NULL
 );
 
 CREATE TABLE news (
-    time TIMESTAMP,
+    time TIMESTAMP without time zone,
     text TEXT,
     author VARCHAR(256)
 );
@@ -146,7 +147,7 @@ CREATE TABLE news (
 
 CREATE TABLE rounds_cache (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	team_id		INTEGER			REFERENCES teams(id),
 	privacy		INTEGER,
 	availability	INTEGER,
@@ -160,7 +161,7 @@ CREATE TABLE rounds_cache (
 
 CREATE TABLE checker_run_log (
 	round		INTEGER,
-	time		TIMESTAMP		NOT NULL,
+	time		TIMESTAMP without time zone	NOT NULL,
 	duration	NUMERIC(6,2)		NOT NULL CHECK( duration >= 0 ),
 	team_id		INTEGER,
 	service_id	INTEGER,
@@ -284,6 +285,43 @@ CREATE INDEX idx_score_time ON score(time);
 CREATE INDEX idx_score_team ON score(team_id);
 
 -- Views
+
+
+CREATE VIEW points_history AS
+	SELECT
+		round, SUM(score_history.score * sla_history.sla)
+	FROM
+		score_history
+	INNER JOIN
+		sla_history
+	ON
+		score_history.team_id = sla_history.team_id AND score_history.service_id = sla_history.service_id AND score_history.round = sla_history.round
+	GROUP BY
+		round, score_history.team_id
+
+
+CREATE VIEW score_history AS
+	SELECT
+		score.round, score.service_id, score.team_id, score.score, score.time
+	FROM
+		score 
+	INNER JOIN
+		(select round, service_id, team_id, MAX(time) as time from score GROUP BY round, service_id, team_id) last_round_times
+	ON
+		last_round_times.time=score.time AND last_round_times.team_id=score.team_id AND last_round_times.service_id=score.service_id
+	
+	
+CREATE VIEW sla_history AS
+	SELECT
+		sla.round, sla.team_id, sla.service_id, (sla.successed + 0.000001) / (sla.successed + sla.failed + 0.000001) as sla, sla.time
+	FROM
+		sla
+	INNER JOIN
+		(select round, service_id, team_id, MAX(time) as time from sla group by round, service_id, team_id) last_round_times
+	ON
+		last_round_times.time=sla.time AND last_round_times.team_id=sla.team_id AND last_round_times.service_id=sla.service_id
+
+
 
 CREATE VIEW service_status AS
 	SELECT 
