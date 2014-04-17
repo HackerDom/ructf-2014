@@ -62,7 +62,7 @@ class CheckerBase(object):
 			exit(EXITCODE_CHECKER_ERROR)
 		except socket.error as e:
 			self.debug(e)
-			if 'errno' in dir(e) and e.errno == 111:
+			if isinstance(e, socket.timeout) or 'errno' in dir(e) and e.errno == 111:
 				exit(EXITCODE_DOWN)
 			exit(EXITCODE_MUMBLE)
 		except Exception as e:
