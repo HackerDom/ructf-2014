@@ -287,9 +287,27 @@ CREATE INDEX idx_score_team ON score(team_id);
 -- Views
 
 
+CREATE VIEW score_history AS
+	SELECT DISTINCT ON (service_id, team_id, round)
+		round, service_id, team_id, score, time
+	FROM
+		score 
+	ORDER BY
+		service_id, team_id, round, time DESC;
+
+		
+CREATE VIEW sla_history AS
+	SELECT DISTINCT ON (service_id, team_id, round)
+		round, team_id, service_id, (successed + 0.000001) / (successed + failed + 0.000001) as sla, time
+	FROM
+		sla
+	ORDER BY
+		service_id, team_id, round, time DESC;
+
+		
 CREATE VIEW points_history AS
 	SELECT
-		round, SUM(score_history.score * sla_history.sla)
+		score_history.team_id, score_history.round, SUM(score_history.score * sla_history.sla)
 	FROM
 		score_history
 	INNER JOIN
@@ -297,32 +315,8 @@ CREATE VIEW points_history AS
 	ON
 		score_history.team_id = sla_history.team_id AND score_history.service_id = sla_history.service_id AND score_history.round = sla_history.round
 	GROUP BY
-		round, score_history.team_id
-
-
-CREATE VIEW score_history AS
-	SELECT
-		score.round, score.service_id, score.team_id, score.score, score.time
-	FROM
-		score 
-	INNER JOIN
-		(select round, service_id, team_id, MAX(time) as time from score GROUP BY round, service_id, team_id) last_round_times
-	ON
-		last_round_times.time=score.time AND last_round_times.team_id=score.team_id AND last_round_times.service_id=score.service_id
-	
-	
-CREATE VIEW sla_history AS
-	SELECT
-		sla.round, sla.team_id, sla.service_id, (sla.successed + 0.000001) / (sla.successed + sla.failed + 0.000001) as sla, sla.time
-	FROM
-		sla
-	INNER JOIN
-		(select round, service_id, team_id, MAX(time) as time from sla group by round, service_id, team_id) last_round_times
-	ON
-		last_round_times.time=sla.time AND last_round_times.team_id=sla.team_id AND last_round_times.service_id=sla.service_id
-
-
-
+		score_history.round, score_history.team_id;
+		
 CREATE VIEW service_status AS
 	SELECT 
 		last_check.time as "time", a.team_id, t.name as team, a.service_id, s.name as service, a.status, a.fail_comment
