@@ -71,7 +71,10 @@ class FeedbackChecker(HttpCheckerBase):
 		if not title:
 			self.debug('no "title" field')
 			return False
-		return title.find(flag) >= 0
+		if title.find(flag) < 0:
+			self.debug('flag not found in "title"')
+			return False
+		return True
 
 	def put(self, addr, flag_id, flag):
 		s = self.session(addr)
