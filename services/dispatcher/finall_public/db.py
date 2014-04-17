@@ -1,10 +1,10 @@
 import numbers
 import re
 from filelock import FileLock
+import parser
 
 
 __author__ = 'pahaz'
-import parser
 
 
 def _int_dump(val, len_):
