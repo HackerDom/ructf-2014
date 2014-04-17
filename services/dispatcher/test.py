@@ -1,7 +1,11 @@
+from multiprocessing import Process
 import os
 import random
 import re
 import threading
+import select
+from sklearn.externals.joblib.parallel import multiprocessing
+import subprocess
 
 __author__ = 'stribog'
 
@@ -146,4 +150,19 @@ if __name__ == "__main__":
             t.start()
             t.join()
 
-    print os.system('python dispatcher.checker.py put 127.0.0.1 id flag')
+    def multi_check():
+        processes = []
+
+        for cmd in range(200):
+            p = subprocess.Popen('python dispatcher.checker.py put 127.0.0.1 id FFFLLLAGGG', stdout=subprocess.PIPE)
+            p.wait()
+            processes.append(p)
+
+        # while len(processes):
+        #         for i, x in enumerate(processes):
+        #             if x.returncode is not None:
+        #                 print "Process {0} returned with code {1}".format(x.pid, x.returncode)
+        #                 del processes[i]
+        #
+
+    multi_check()
