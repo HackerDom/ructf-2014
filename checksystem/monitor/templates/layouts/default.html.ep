@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <title><%= title %></title>
+    <link href="/bootstrap.css" rel="stylesheet">
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/highcharts.js"></script>
+    <script type="text/javascript" src="/bootstrap.js"></script>
   </head>
 
   <body class="page">

@@ -2,10 +2,12 @@
 % title 'RuCTF > скорборд';
 
 <p id="round">Round <%= $self->app->round->{n} %> (started at <%= $self->app->round->{time} %>)</p>
-<table border="1">
+<div id="history"></div>
+<table class="table table-bordered">
   <tr>
     <td>#</td>
     <td>Логотип</td>
+    <td>Флаги</td>
     <td>Команда</td>
     <td>Score</td>
     % for my $service (values %{$self->app->services}) {
@@ -20,12 +22,16 @@
       % my $name = $score->{team}{name};
       <img src="" width="64" height="64">
     </td>
+    <td>
+      <div style="width: 150px; height: 150px;" id="team_<%= $score->{team}{id} %>"></div>
+    </td>
     <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $sid (keys %{$self->app->services}) {
-      % my $status = $self->app->status->{$self->app->services->{$sid}}{$score->{team}{tid}}{status};
-      <td>
+      % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
+      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'active', 110 => 'danger'};
+      <td class="<%= $s->{$status} %>">
         S: <%= $status %> <br/>
         SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
         FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
@@ -34,3 +40,64 @@
   </tr>
   % }
 </table>
+
+<script>
+$(document).ready(function() {
+  $.get("<%= url_for('flags') %>", function(flags) {
+    $.each(flags, function(team, data) {
+      c = '#team_' + team;
+      console.log(c);
+      console.log(data);
+      s = [];
+      $.each(data, function(service, count) {
+        s.push([service, parseInt(count)]);
+      });
+      $(c).highcharts({
+        chart: {},
+        title: { text: '' },
+        tooltip: {
+          enabled: false
+       },
+       plotOptions: {
+         pie: {
+           animation: false,
+           dataLabels: {
+             enabled: false
+           }
+         }
+       },
+       series: [{
+         type: 'pie',
+         name: team,
+         data: s
+       }]
+      });
+    });
+  });
+  $.get("<%= url_for('history') %>", function(history) {
+    console.log(history);
+    $('#history').highcharts({
+      title: { text: 'История очков' },
+      xAxis: {
+        title: { text: 'Раунды' }
+      },
+      yAxis: {
+        title: { text: 'Очки' }
+      },
+      tooltip: {},
+      plotOptions: {
+        series: {
+          turboThreshold: 5000
+        }
+      },
+      legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle',
+        borderWidth: 0
+      },
+      series: history
+    });
+  });
+});
+</script>

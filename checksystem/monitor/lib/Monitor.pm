@@ -6,6 +6,8 @@ has teams      => sub { {} };
 has scoreboard => sub { [] };
 has round      => sub { {} };
 has status     => sub { {} };
+has flags      => sub { {} };
+has history    => sub { [] };
 
 sub startup {
   my $self = shift;
@@ -20,8 +22,9 @@ sub startup {
       $self->config->{db}{pass}, {AutoCommit => 1, RaiseError => 1, pg_enable_utf8 => 1}]);
 
   my $r = $self->routes;
-  $r->get('/')->to('main#index');
-  $r->get('/flags')->to('main#flags');
+  $r->get('/')->to('main#index')->name('index');
+  $r->get('/flags')->to('main#flags')->name('flags');
+  $r->get('/history')->to('main#history')->name('history');
 
   $self->pg(
     'SELECT id, name FROM services;',
@@ -46,7 +49,7 @@ sub startup {
     });
 
   Mojo::IOLoop->recurring(
-    3 => sub {
+    5 => sub {
       $self->log->info('Update scoreboard');
       Mojo::IOLoop->delay(
         sub {
@@ -69,10 +72,21 @@ sub startup {
               => $delay->begin
           );
           $self->pg(
-            'SELECT team_id, service, status, fail_comment FROM service_status;' => $delay->begin);
+            'SELECT team_id, service_id, status FROM service_status;'
+              => $delay->begin
+          );
+          $self->pg(
+            'SELECT * FROM services_flags_stolen;'
+              => $delay->begin
+          );
+          $self->pg(
+            'SELECT * FROM points_history
+            ORDER BY team_id, round'
+              => $delay->begin
+          );
         },
         sub {
-          my ($delay, $fh, $sh, $rh, $ssh) = @_;
+          my ($delay, $fh, $sh, $rh, $ssh, $flh, $ph) = @_;
           my ($flag_points, $sla_points);
 
           while (my $row = $sh->sth->fetchrow_hashref()) {
@@ -106,14 +120,25 @@ sub startup {
           @data = sort { $b->{score} <=> $a->{score} } @data;
           $self->scoreboard(\@data);
 
-          # TODO: save @data to file
-
           my $row = $rh->sth->fetchrow_hashref;
           $self->round({n => $row->{n}, time => scalar localtime int $row->{time}});
 
           while (my $row = $ssh->sth->fetchrow_hashref()) {
-            $self->app->status->{$row->{service}}{$row->{team_id}} = $row;
+            $self->app->status->{$row->{service_id}}{$row->{team_id}} = $row;
           }
+
+          while (my $row = $flh->sth->fetchrow_hashref()) {
+            $self->app->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
+          }
+
+          my ($h, $nh);
+          while (my $row = $ph->sth->fetchrow_hashref()) {
+            push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
+          }
+          for (keys %$h) {
+            push @$nh, {name => $_, data => $h->{$_}};
+          }
+          $self->app->history($nh);
         });
     });
 }
