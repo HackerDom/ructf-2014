@@ -123,10 +123,10 @@ class Checker(object):
                 self.status_mumble('many cookies!')
 
             self.status_ok(flag_id)
-        except r.ConnectionError:
+        except r.RequestException:
             self.status_down()
-        except r.Timeout:
-            self.status_mumble('Timeout')
+        # except r.Timeout:
+        #     self.status_mumble('Timeout')
 
     def check(self, *args):
         '''
@@ -140,10 +140,10 @@ class Checker(object):
             self.do_before_post_flag(context)
 
             self.status_ok()
-        except r.ConnectionError:
+        except r.RequestException:
             self.status_down()
-        except r.Timeout:
-            self.status_mumble('Timeout')
+        # except r.Timeout:
+        #     self.status_mumble('Timeout')
 
     def get(self, id, flag, *args):
         '''
@@ -161,10 +161,10 @@ class Checker(object):
             self.do_after_post_flag(context)
 
             self.status_ok()
-        except r.ConnectionError:
+        except r.RequestException:
             self.status_down()
-        except r.Timeout:
-            self.status_mumble('Timeout')
+        # except r.Timeout:
+        #     self.status_mumble('Timeout')
 
     def url_for(self, name='index', arg=None):
         if name == 'is_free_frequency':
