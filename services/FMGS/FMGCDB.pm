@@ -26,7 +26,7 @@ sub db_read {
     my $value = {};
     while (<F>) {
         chomp;
-        my ($key, $val) = split /=/, $_, 2;
+        my ($key, $val) = split /#/, $_, 2;
         $val = [split /;/, $val] if $val =~ /;/;
         $value->{$key} = $val;
     }
@@ -46,7 +46,7 @@ sub db_write {
 
     for (keys %$value) {
         my $val = ref $value->{$_} ? join ';', @{$value->{$_}} : $value->{$_};
-        print F "$_=$val";
+        print F "$_#$val";
     }
 
     close F;

@@ -8,6 +8,7 @@ our @EXPORT_OK = qw/
     set_title
     set_status
     set_action
+    del_action
     do_action
     select_line
     read_line
@@ -18,7 +19,7 @@ our $VERSION = 1.0;
 
 use constant {
     RWS => 6,
-    SW => 24
+    SW => 34
 };
 
 my %cls = (
@@ -44,6 +45,10 @@ sub set_action {
     $act{$btn} = [$ref, \@params];
 }
 
+sub del_action {
+    delete $act{+ shift};
+}
+
 sub do_action {
     &{$act{$_[0]}->[0]}(@{$act{$_[0]}->[1]}) if exists $act{$_[0]}
 }
@@ -63,7 +68,7 @@ sub read_line {
         set_action('CLN', sub { $dsp{$sel}->[1] = ''; 1 });
         set_action('OK', sub {
             delete $act{$_} for (@btn, 'CLN', 'OK');
-            $f->($dsp{$sel}->[1]) if $f;
+            $f->((split /#/, $dsp{$sel}->[1], 2)[-1]) if $f;
             select_line($sel, 0); 1
         });
     }

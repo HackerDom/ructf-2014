@@ -20,7 +20,7 @@ Frequency = db.Store('freq.db', Frequency, 5)
 
 @app.route('/')
 def hello_world():
-    freq = Frequency.execute('select * from frequency limit 25 deck')
+    freq = Frequency.execute('select * from frequency limit 5 deck')
     return render_template('index.html', freq=freq)
 
 
@@ -93,12 +93,6 @@ def dialog(frequency):
 
 
 if __name__ == '__main__':
-    import os
-
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
-
     app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'  # change this
     app.debug = True  # o_O! TODO: fix this!
     app.run(threaded=True, host='0.0.0.0')

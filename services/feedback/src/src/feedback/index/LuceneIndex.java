@@ -7,7 +7,6 @@ import feedback.index.helpers.IndexFields;
 import feedback.index.helpers.Indexer;
 import feedback.index.helpers.SearchHighlighter;
 import feedback.index.lucutils.SimpleNumberAwareAnalyzer;
-import feedback.utils.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -67,11 +66,11 @@ public class LuceneIndex {
 		commitThread.start();
 
 		highlighter = new SearchHighlighter(analyzer);
+		sort = new Sort(new SortField(IndexFields.date, SortField.Type.LONG, true));
 	}
 
 	public SearchResults search(String text, int top, boolean all) throws ParseException, IOException, InvalidTokenOffsetsException {
-		if(StringUtils.isBlank(text))
-			return new SearchResults(0, null);
+		if(text == null) text = "";
 
 		QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_47, indexFields.fieldsArray, analyzer, indexFields.boosts);
 		parser.setDefaultOperator(QueryParser.Operator.AND);
@@ -83,7 +82,7 @@ public class LuceneIndex {
 			String filter = all ? "" : String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
 
 			Query query = parser.parse(filter + " " + text); //WARN! Filter concatenation and no special characters escaping!
-			TopDocs hits = searcher.search(query, top);
+			TopDocs hits = searcher.search(query, top, sort);
 
 			Vote[] results = new Vote[hits.scoreDocs.length];
 			for(int i = 0; i < hits.scoreDocs.length; i++)
@@ -117,4 +116,5 @@ public class LuceneIndex {
 	private final TrackingIndexWriter trackingWriter;
 	private final Analyzer analyzer;
 	private final SearchHighlighter highlighter;
+	private final Sort sort;
 }
