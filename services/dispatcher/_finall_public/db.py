@@ -1,10 +1,11 @@
 import numbers
+import os
 import re
 from filelock import FileLock
+import parser
 
 
 __author__ = 'pahaz'
-import parser
 
 
 def _int_dump(val, len_):
@@ -61,6 +62,7 @@ class Store(object):
         str
         """
         self._log_lvl = log_level
+        db_name = os.path.join('db', db_name)
 
         self.lock = FileLock(db_name)
 

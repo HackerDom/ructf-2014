@@ -4,6 +4,7 @@ import pickle
 import random
 import sys
 import re
+import base64
 
 __author__ = 'pahaz'
 
@@ -70,11 +71,13 @@ class Context(object):
 class Packer(object):
     @staticmethod
     def pack(context):
-        return repr(pickle.dumps(context))
+        return base64.b64encode(repr(pickle.dumps(context)))
 
     @staticmethod
     def unpack(string):
-        return pickle.loads(eval("'''{0}'''".format(string.strip())))
+        string = base64.b64decode(string.strip()).strip()
+        # print(base64.b64decode(string.strip()).strip())
+        return pickle.loads(eval("{0}".format(string)))
 
 
 class AbstractTransport(object):
