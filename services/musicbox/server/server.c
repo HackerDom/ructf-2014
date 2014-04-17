@@ -98,18 +98,15 @@ void mb_process_client(int sockfd, struct Store *store) {
 	}
 }
 
-void sigchld_handler(int sig) {
-	while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) ;
-}
-
 void mb_setup_sigchld() {
 	struct sigaction sa;
-	sa.sa_handler = &sigchld_handler;
+	sa.sa_handler = SIG_IGN;
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	sa.sa_flags = SA_NOCLDWAIT;
 	if (sigaction(SIGCHLD, &sa, 0) == -1)
 		error("Error on sigaction");
 }
+
 
 void mb_start_server(int port, struct Store *store) {
 	int listener, newsockfd;
