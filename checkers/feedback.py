@@ -52,19 +52,24 @@ class FeedbackChecker(HttpCheckerBase):
 		user = {'login':parts[0], 'password':parts[1]}
 		result = self.spost(s, addr, 'auth', user)
 		if not result or result.get('error'):
+			self.debug('login failed')
 			return False
 
 		self.debug(parts[2])
 		result = self.sget(s, addr, 'search?query=' + parts[2])
 		if not result or result.get('error'):
+			self.debug('search failed')
 			return False
 		if result.get('hits') < 1:
+			self.debug('to few "hits"')
 			return False
 		votes = result.get('votes')
 		if not votes or len(votes) == 0:
+			self.debug('votes is empty')
 			return False
 		title = votes[0].get('title')
 		if not title:
+			self.debug('no "title" field')
 			return False
 		return title.find(flag) >= 0
 
@@ -76,17 +81,21 @@ class FeedbackChecker(HttpCheckerBase):
 
 		result = self.spost(s, addr, 'register', user)
 		if not result or result.get('error'):
+			self.debug('registration failed')
 			return False
 
 		vote = {'title':flag_id + ' ' + flag, 'text':'text', 'type':'invisible'}
 		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
+			self.debug('put failed')
 			return False
 		data = result.get('data')
 		if not data:
+			self.debug('no "data" field')
 			return False
 		new_flag_id = data.strip()
 		if not new_flag_id:
+			self.debug('flag_id is empty')
 			return False
 		print('{}:{}:{}'.format(user['login'], user['password'], new_flag_id))
 		return True
