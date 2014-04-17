@@ -146,7 +146,7 @@ sub put {
     send_key('6R');
     send_key('6R');
 
-    my $result = &get_last;
+    my $result = &get_all;
     do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
 
     print $fl->[0];
@@ -161,20 +161,12 @@ sub get {
     send_key('2L');
     send_line($id);
     send_key('OK');
-
-    my $result = &get_last;
-    do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
-    for my $i (0..4) {
-        do_exit(CHECKER_NOFLAG, "no flag")
-            if index($result, substr($flag, 5*$i, 5)) == -1;
-    }
-
     send_key('PGDN');
 
-    $result = &get_last;
+    my $result = &get_all;
     do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
-    for my $i (5..6) {
-        do_exit(CHECKER_NOFLAG, 'no flag')
+    for my $i (0..6) {
+        do_exit(CHECKER_NOFLAG, "no flag")
             if index($result, substr($flag, 5*$i, 5)) == -1;
     }
 
@@ -193,10 +185,9 @@ sub send_line {
 
 sub get_all {
     my $x = '';
-    #return unless select '' . $v, undef, undef, TIMEOUT;
 
     for (1..100*TIMEOUT) {
-        next unless select '' . $v, undef, undef, TIMEOUT;
+        next unless select '' . $v, undef, undef, 0.01;
         while (select '' . $v, undef, undef, 0.01) {
             recv $S, ($_ = ''), 1024, 0;
             return $x unless length;
@@ -206,10 +197,5 @@ sub get_all {
     }
 
     return $x;
-}
-
-sub get_last {
-    my @lines = split /\n/, &get_all;
-    join "\n", @lines[(@lines-16)..(@lines)];
 }
 
