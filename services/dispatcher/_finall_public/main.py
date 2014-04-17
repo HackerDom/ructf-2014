@@ -31,8 +31,8 @@ def hello_world():
 
 @app.route('/ack/', methods=['POST', 'GET'])
 def ack():
-    last = Messages.execute(u"select * from messages")
-    return Response(repr(last[-1]))
+    last = Messages.execute(u"select * from messages limit 1 deck")
+    return Response(repr(last))
 
 
 @app.route('/is_free_frequency/<frequency>/', methods=['GET'])

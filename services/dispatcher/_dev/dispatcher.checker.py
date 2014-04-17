@@ -71,13 +71,12 @@ class Context(object):
 class Packer(object):
     @staticmethod
     def pack(context):
-        return base64.b64encode(repr(pickle.dumps(context)))
+        return base64.b64encode(pickle.dumps(context))
 
     @staticmethod
     def unpack(string):
-        string = base64.b64decode(string.strip()).strip()
-        # print(base64.b64decode(string.strip()).strip())
-        return pickle.loads(eval("{0}".format(string)))
+        string = base64.b64decode(string)
+        return pickle.loads(string)
 
 
 class AbstractTransport(object):
@@ -91,14 +90,14 @@ class AbstractTransport(object):
         self.host = host
 
 
+
 class Checker(object):
     port = 5000
     packer = Packer
 
     def __init__(self, host):
         self.host = host
-        self._s = Checker.make_session()
-
+        self.http_init()
 
     def put(self, id, flag, *args):
         '''
@@ -120,6 +119,8 @@ class Checker(object):
             self.save_state_in(context)
 
             flag_id = Checker.packer.pack(context)
+            if len(flag_id) > 1000:
+                self.status_mumble('many cookies!')
 
             self.status_ok(flag_id)
         except r.ConnectionError:
@@ -238,21 +239,22 @@ class Checker(object):
 
         return valid_frequency
 
-    @staticmethod
-    def make_session():
-        s = r.Session()
-        s.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64) ' \
-                                  'AppleWebKit/537.36 (KHTML, like Gecko) ' \
-                                  'Chrome/34.0.1847.116 Safari/537.36'
-        return s
+    def http_init(self):
+        self._cookies = {}
 
     def http_get(self, url):
-        s = self._s
-        return s.get(url, timeout=1)
+        cookies = self._cookies
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36'}
+        rez = r.get(url, timeout=1, cookies=cookies, headers=headers)
+        self._cookies = rez.cookies.get_dict()
+        return rez
 
     def http_post(self, url, data):
-        s = self._s
-        return s.post(url, data)
+        cookies = self._cookies
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36'}
+        rez = r.post(url, data, timeout=1, cookies=cookies, headers=headers)
+        self._cookies = rez.cookies.get_dict()
+        return rez
 
     def do_post_flag(self, context):
         context.message = self.generate_message_with_flag(context.flag)
@@ -286,11 +288,11 @@ class Checker(object):
         if str(context.frequency) not in rez.text:
             self.status_mumble('/ url - did not contain my post frequency')
 
-    def http_cookies_dict(self):
-        return self._s.cookies
+    def http_get_cookies(self):
+        return self._cookies
 
     def http_set_cookies(self, cookies):
-        self._s.cookies = cookies
+        self._cookies = cookies
 
     def do_after_post_flag(self, context):
         rez = self.http_get(self.url_for('dialog', context.frequency))
@@ -307,7 +309,7 @@ class Checker(object):
         self.log(error_msg, " ** [ERROR] IMPORTANT ** ")
 
     def save_state_in(self, context):
-        context._cookies = self.http_cookies_dict()
+        context._cookies = self.http_get_cookies()
 
     def load_state_from(self, context):
         self.http_set_cookies(context._cookies)
