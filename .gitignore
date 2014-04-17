@@ -15,6 +15,9 @@ services/dispatcher/build/
 services/dispatcher/eggs/
 services/dispatcher/parts/
 services/dispatcher/venv/
+services/dispatcher/db/messages.db
+services/dispatcher/db/freq.db
+services/dispatcher/db/test.db
 services/dispatcher/messages.db
 services/dispatcher/freq.db
 services/dispatcher/test.db
