@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # coding=utf-8
 import pickle
 import random
@@ -245,7 +246,7 @@ class Checker(object):
         s = self._s
         return s.post(url, data)
 
-    def  do_post_flag(self, context):
+    def do_post_flag(self, context):
         context.message = self.generate_message_with_flag(context.flag)
         context.callsign = self.generate_callsign()
         rez = self.http_post(self.url_for('post'), data={
