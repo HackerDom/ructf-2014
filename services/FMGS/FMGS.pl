@@ -22,12 +22,11 @@ bind $S, sockaddr_in PORT, INADDR_ANY or die "Can't bind: $!";
 listen $S, SOMAXCONN;
 
 while (accept $C, $S) {
-    my $thread = new threads(\&process, $C);
+    my $thread = new threads(sub { eval { &process } }, $C);
     $thread->detach();
 }
 
 close $S;
-
 
 sub process {
     my ($C, $c) = @_;
@@ -47,12 +46,9 @@ sub process {
 
     vec ($c = '', fileno ($C), 1) = 1;
 
-
     local $_ = '';
     send $C, &draw, 0;
-    while (defined ($_ = recv_str)) {
-        send $C, &draw, 0 if btn_press($_);
-    }
+    while (defined ($_ = recv_str)) { send $C, &draw, 0 if btn_press($_) }
 
     shutdown $C, 2;
 }
