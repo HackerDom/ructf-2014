@@ -1,6 +1,11 @@
 from flask import Flask, render_template, request, Response, session, abort
 
 import db
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 app = Flask(__name__)
 
@@ -93,12 +98,6 @@ def dialog(frequency):
 
 
 if __name__ == '__main__':
-    import os
-
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
-
     app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'  # change this
     app.debug = True  # o_O! TODO: fix this!
     app.run(threaded=True, host='0.0.0.0')
