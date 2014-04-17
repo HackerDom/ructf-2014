@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use constant {
-    DEBUG => 0,
+    DEBUG => 1,
     PORT => 44100,
     TIMEOUT => 1,
 
