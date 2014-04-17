@@ -51,6 +51,7 @@ public class SLAworker extends Thread{
 	public void run() {
 		try
 		{
+			Thread.currentThread().setName("SLA");
 			logger.info("Getting SLA state from db");
 			Hashtable<TeamService,SLA> stateFromDb = GetStateFromDb();
 			Timestamp lastKnownTime = GetLastKnownTime(stateFromDb);
