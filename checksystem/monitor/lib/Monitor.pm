@@ -124,21 +124,23 @@ sub startup {
           $self->round({n => $row->{n}, time => scalar localtime int $row->{time}});
 
           while (my $row = $ssh->sth->fetchrow_hashref()) {
-            $self->app->status->{$row->{service_id}}{$row->{team_id}} = $row;
+            $self->status->{$row->{service_id}}{$row->{team_id}} = $row;
           }
 
           while (my $row = $flh->sth->fetchrow_hashref()) {
-            $self->app->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
+            $self->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
           }
 
           my ($h, $nh);
           while (my $row = $ph->sth->fetchrow_hashref()) {
-            push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
+            if ($row->{round} % 15 == 0) {
+              push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
+            }
           }
           for (keys %$h) {
             push @$nh, {name => $_, data => $h->{$_}};
           }
-          $self->app->history($nh);
+          $self->history($nh);
         });
     });
 }

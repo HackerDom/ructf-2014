@@ -30,7 +30,7 @@
 
     % for my $sid (keys %{$self->app->services}) {
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
-      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'active', 110 => 'danger'};
+      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'danger', 110 => 'active'};
       <td class="<%= $s->{$status} %>">
         S: <%= $status %> <br/>
         SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
@@ -70,7 +70,10 @@ $(document).ready(function() {
          type: 'pie',
          name: team,
          data: s
-       }]
+       }],
+       credits: {
+        enabled: false
+      }
       });
     });
   });
@@ -79,13 +82,17 @@ $(document).ready(function() {
     $('#history').highcharts({
       title: { text: 'История очков' },
       xAxis: {
-        title: { text: 'Раунды' }
+        title: { text: 'Раунды' },
       },
       yAxis: {
-        title: { text: 'Очки' }
+        title: { text: 'Очки' },
+        min: 0
       },
       tooltip: {},
       plotOptions: {
+        line: {
+          animation: false
+        },
         series: {
           turboThreshold: 5000
         }
@@ -96,7 +103,10 @@ $(document).ready(function() {
         verticalAlign: 'middle',
         borderWidth: 0
       },
-      series: history
+      series: history,
+      credits: {
+        enabled: false
+      }
     });
   });
 });
