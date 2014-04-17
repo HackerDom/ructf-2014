@@ -402,7 +402,7 @@ CREATE VIEW xmlCachedScoreboard AS
 	
 CREATE VIEW services_flags_stolen AS
 	SELECT
-		t.name as team, s.name as service, count(s.name) as flags
+		t.id as team_id, t.name as team, s.id as service_id, s.name as service, count(s.name) as flags
 	FROM
 		stolen_flags as st
 	INNER JOIN
@@ -411,8 +411,8 @@ CREATE VIEW services_flags_stolen AS
 		teams t ON st.team_id = t.id
 	INNER JOIN
 		services as s ON s.id = fl.service_id
-	GROUP BY t.name, s.name
-	ORDER BY t.name, s.name;
+	GROUP BY t.id, s.id
+	ORDER BY t.id, s.id;
 	
 CREATE VIEW xmlFlags AS
 	SELECT xmlroot(
