@@ -4,6 +4,7 @@ import pickle
 import random
 import sys
 import re
+import base64
 
 __author__ = 'pahaz'
 
@@ -70,11 +71,13 @@ class Context(object):
 class Packer(object):
     @staticmethod
     def pack(context):
-        return repr(pickle.dumps(context))
+        return base64.b64encode(repr(pickle.dumps(context)))
 
     @staticmethod
     def unpack(string):
-        return pickle.loads(eval("'''{0}'''".format(string.strip())))
+        string = base64.b64decode(string.strip()).strip()
+        # print(base64.b64decode(string.strip()).strip())
+        return pickle.loads(eval("{0}".format(string)))
 
 
 class AbstractTransport(object):
@@ -119,9 +122,10 @@ class Checker(object):
             flag_id = Checker.packer.pack(context)
 
             self.status_ok(flag_id)
-        except r.exceptions.ConnectionError:
+        except r.ConnectionError:
             self.status_down()
-
+        except r.Timeout:
+            self.status_mumble('Timeout')
 
     def check(self, *args):
         '''
@@ -135,8 +139,10 @@ class Checker(object):
             self.do_before_post_flag(context)
 
             self.status_ok()
-        except r.exceptions.ConnectionError:
+        except r.ConnectionError:
             self.status_down()
+        except r.Timeout:
+            self.status_mumble('Timeout')
 
     def get(self, id, flag, *args):
         '''
@@ -154,8 +160,10 @@ class Checker(object):
             self.do_after_post_flag(context)
 
             self.status_ok()
-        except r.exceptions.ConnectionError:
+        except r.ConnectionError:
             self.status_down()
+        except r.Timeout:
+            self.status_mumble('Timeout')
 
     def url_for(self, name='index', arg=None):
         if name == 'is_free_frequency':
@@ -203,7 +211,7 @@ class Checker(object):
     def do_before_post_flag(self, context):
         rez = self.http_get(self.url_for('index'))
         if rez.status_code != 200:
-            self.status_down()
+            self.status_mumble("/ url - invalid status")
 
         frequency = self.do_getting_valid_frequency()
 
@@ -215,7 +223,7 @@ class Checker(object):
             frequency = self.generate_frequency()
             rez = self.http_get(self.url_for('is_free_frequency', frequency))
             if rez.status_code != 200:
-                self.status_down()
+                self.status_mumble("/is_free_frequency/ url - invalid status")
 
             if rez.text == 'True':
                 valid_frequency = frequency
@@ -240,7 +248,7 @@ class Checker(object):
 
     def http_get(self, url):
         s = self._s
-        return s.get(url)
+        return s.get(url, timeout=1)
 
     def http_post(self, url, data):
         s = self._s

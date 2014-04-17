@@ -25,8 +25,7 @@ int mb_set_ttl(uint8_t *data, int data_size, int ttl) {
 }
 
 void mb_process_put(int sockfd, struct Store *store) {
-	uint8_t buffer[MAX_FILE];
-	uint8_t *ptr = buffer;
+	uint8_t *ptr = file_buffer;
 	uint16_t ttl;
 	uuid_t id;
 
@@ -35,18 +34,18 @@ void mb_process_put(int sockfd, struct Store *store) {
 	if (recv(sockfd, &ttl, sizeof(ttl), 0) != sizeof(ttl))
 		error("Failed to receive TTL value");
 	do {
-		bytes_read = mb_receive_all_bytes(sockfd, ptr, buffer + sizeof(buffer) - ptr);
+		bytes_read = mb_receive_all_bytes(sockfd, ptr, file_buffer + sizeof(file_buffer) - ptr);
 		if (bytes_read < 0) {
 			mb_send_response(sockfd, MB_RESPONSE_ERROR);
 			return;
 		}
 		ptr += bytes_read;
 	} while (bytes_read != 0);
-	if (mb_set_ttl(buffer, ptr - buffer, ttl) < 0) {
+	if (mb_set_ttl(file_buffer, ptr - file_buffer, ttl) < 0) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
 		return;
 	}
-	if (mb_store_put(store, id, buffer, ptr - buffer) < 0) {
+	if (mb_store_put(store, id, file_buffer, ptr - file_buffer) < 0) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
 		return;
 	}
@@ -55,8 +54,7 @@ void mb_process_put(int sockfd, struct Store *store) {
 }
 
 void mb_process_get(int sockfd, struct Store *store) {
-	uint8_t buffer[MAX_FILE];
-	uint8_t *ptr = buffer;
+	uint8_t *ptr = file_buffer;
 	int data_length, bytes_sent;
 	uuid_t id;
 
@@ -64,7 +62,7 @@ void mb_process_get(int sockfd, struct Store *store) {
 	if (recv(sockfd, &id, sizeof(id), 0) != sizeof(id))
 		error("Failed to receive file ID");
 
-	data_length = mb_store_get(store, id, buffer, sizeof(buffer));
+	data_length = mb_store_get(store, id, file_buffer, sizeof(file_buffer));
 	debug("mb_process_get: data length = %d", data_length);
 	if (data_length < 0) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
@@ -72,8 +70,8 @@ void mb_process_get(int sockfd, struct Store *store) {
 	}
 	mb_send_response(sockfd, MB_RESPONSE_SUCCESS);
 	
-	while (buffer + data_length - ptr > 0) {
-		bytes_sent = mb_send_all_bytes(sockfd, ptr, buffer + data_length - ptr);
+	while (file_buffer + data_length - ptr > 0) {
+		bytes_sent = mb_send_all_bytes(sockfd, ptr, file_buffer + data_length - ptr);
 		ptr += bytes_sent;
 	}
 	mb_send_all_bytes(sockfd, NULL, 0);

@@ -5,6 +5,7 @@ import socket
 import re
 import os
 import string
+import shutil
 from checker import *
 from glob import glob
 from uuid import UUID
@@ -30,7 +31,7 @@ FLAG_TTL = 90 * 60
 
 MUSIC_DIRECTORY = 'music'
 
-TEMP_FILE = '.musicbox.temp'
+TMP_DIR = '/tmp/'
 
 class MusicboxChecker(CheckerBase):
 	def get_avaliable_songs(self):
@@ -131,25 +132,29 @@ class MusicboxChecker(CheckerBase):
 		if not song_data:
 			return False
 
+		temp_file = '%s%s' % (TMP_DIR, flag_id)
 		try:
-			with open(TEMP_FILE, 'wb') as f:
+			with open(temp_file, 'wb') as f:
 				f.write(song_data)
-			ogg_file = OggVorbis(TEMP_FILE)
+			ogg_file = OggVorbis(temp_file)
 			return flag in ogg_file[FLAG_TAG_NAME]
 		finally:
-			os.remove(TEMP_FILE)
+			os.remove(temp_file)
 
 	def put(self, addr, flag_id, flag):
 		sock = self.create_socket(addr, SERVICE_PORT)
 
 		song = self.pick_song()
+		
+		temp_file = '%s%s' % (TMP_DIR, flag_id)
+		shutil.copyfile(song, temp_file)
 
-		ogg_file = OggVorbis(song)
+		ogg_file = OggVorbis(temp_file)
 		ogg_file[FLAG_TAG_NAME] = flag
 		ogg_file.save()
 
 		try:
-			with open(song, 'rb') as f:
+			with open(temp_file, 'rb') as f:
 				song_data = f.read()
 			uuid = self.put_song(sock, song_data)
 			if not uuid:
@@ -157,7 +162,6 @@ class MusicboxChecker(CheckerBase):
 			print(uuid)
 			return str(uuid)
 		finally:
-			del ogg_file[FLAG_TAG_NAME]
-			ogg_file.save()
+			os.remove(temp_file)
 
 MusicboxChecker().run()

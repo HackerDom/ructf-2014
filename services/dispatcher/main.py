@@ -1,6 +1,11 @@
 from flask import Flask, render_template, request, Response, session, abort
 
 import db
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 app = Flask(__name__)
 
@@ -20,7 +25,7 @@ Frequency = db.Store('freq.db', Frequency, 5)
 
 @app.route('/')
 def hello_world():
-    freq = Frequency.execute('select * from frequency limit 5 deck')
+    freq = Frequency.execute('select * from frequency limit 25 deck')
     return render_template('index.html', freq=freq)
 
 

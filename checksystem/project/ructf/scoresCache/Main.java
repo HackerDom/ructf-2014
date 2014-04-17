@@ -16,6 +16,8 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import ructf.dbObjects.Service;
+import ructf.dbObjects.Team;
 import ructf.main.Constants;
 import ructf.main.DatabaseManager;
 
@@ -24,7 +26,7 @@ public class Main {
 	private static Logger logger = Logger.getLogger("ructf.scoresCache");
 	
 	private static String sqlGetRoundTimes = "SELECT time FROM rounds ORDER BY n";
-	private static String sqlGetLastScores = "SELECT score.team_id, score.service_id, score.score, score.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM score GROUP BY team_id, service_id) last_times INNER JOIN score ON last_times.time=score.time AND last_times.team_id=score.team_id AND last_times.service_id=score.service_id";
+	private static String sqlGetLastScores = "SELECT round, score.team_id, score.service_id, score.score, score.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM score GROUP BY team_id, service_id) last_times INNER JOIN score ON last_times.time=score.time AND last_times.team_id=score.team_id AND last_times.service_id=score.service_id";
 	private static String sqlCreateInitState = "INSERT INTO score (round, time, team_id, service_id, score) SELECT 0, '2009-01-01', teams.id, services.id, (select 100 * count(*) FROM teams) FROM teams CROSS JOIN services";
 	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.victim_service_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
 	private static String sqlInsertScore = "INSERT INTO score (round, time, team_id, service_id, score) VALUES (?,?,?,?,?)";
@@ -48,6 +50,8 @@ public class Main {
 			Connection conn = DatabaseManager.CreateConnection();
 			PrepareStatements(conn);
 			
+			Thread.currentThread().setName("SCORE");
+			
 			logger.info("Getting score state from db");
 			Hashtable<TeamService,TeamScore> stateFromDb = GetStateFromDb();
 			if (stateFromDb.isEmpty()) {
@@ -61,14 +65,15 @@ public class Main {
 				logger.error("Still empty state. Possible empty 'teams' or 'services' tables? Exiting");
 				return;
 			}
-							
+									
 			Timestamp lastKnownTime = GetLastKnownTime(stateFromDb);
-			logger.info(String.format("Score LastKnownTime: %s", lastKnownTime.toString()));
+			int lastRound = GetLastRound(stateFromDb);
+			logger.info(String.format("Score LastKnownTime: %s, lastKnownRound: %d", lastKnownTime.toString(), lastRound));
 			
 			SLAworker slaWorker = new SLAworker();
 			slaWorker.start();
 			
-			DoJobLoop(conn, stateFromDb, lastKnownTime);
+			DoJobLoop(conn, stateFromDb, lastKnownTime, lastRound);
 						
 		} catch (Exception e) {
 			logger.fatal("General error in main thread", e);
@@ -77,11 +82,11 @@ public class Main {
 		}
 	}
 	
-	private static List<RottenStolenFlag> GetRottenStolenFlags(Timestamp ts) throws SQLException {
+	private static List<RottenStolenFlag> GetRottenStolenFlags(Timestamp fromCreationTime) throws SQLException {
 		List<RottenStolenFlag> result = new LinkedList<RottenStolenFlag>();
 		
-		logger.info(String.format("Getting new score data from time %s with rottenTime %d", ts.toString(), Constants.flagExpireInterval));
-		stGetStealsOfRottenFlags.setTimestamp(1, ts);
+		logger.info(String.format("Getting new score data from time %s with rottenTime %d", fromCreationTime.toString(), Constants.flagExpireInterval));
+		stGetStealsOfRottenFlags.setTimestamp(1, fromCreationTime);
 		stGetStealsOfRottenFlags.setDouble(2, Constants.flagExpireInterval);
 		ResultSet res = stGetStealsOfRottenFlags.executeQuery();
 		
@@ -110,11 +115,10 @@ public class Main {
 		return result;		
 	}
 	
-	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime) throws SQLException, InterruptedException {
-		Timestamp lastCreationTime = TimestampUtils.AddMillis(lastKnownTime, - Constants.flagExpireInterval*1000);				
-		
-		int totalTeamsCount = DatabaseManager.getTeams().size();		 
-		
+	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime, int lastRound) throws SQLException, InterruptedException {
+		Timestamp lastCreationTime = TimestampUtils.AddMillis(lastKnownTime, - Constants.flagExpireInterval*1000);
+
+		int totalTeamsCount = DatabaseManager.getTeams().size();		
 		while (true) {
 			List<RottenStolenFlag> flags = GetRottenStolenFlags(lastCreationTime);
 			Timestamp[] roundTimes = GetRoundTimes();
@@ -136,6 +140,7 @@ public class Main {
 			});
 			flagTimes.addAll(flags);
 			
+
 			for (RottenStolenFlag flag : flagTimes) {
 				lastCreationTime = flag.time;
 				
@@ -152,19 +157,29 @@ public class Main {
 				Timestamp rottenTime = TimestampUtils.AddMillis(flag.time, Constants.flagExpireInterval*1000);
 				try {
 					conn.setAutoCommit(false);
+
+					int round = BinarySearch(roundTimes, rottenTime);
+					for(;lastRound < round; lastRound++){
+						logger.info(String.format("Populating score round: %d", lastRound));
+						for(TeamService ts : state.keySet()){
+							InsertScore(lastRound, TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1), ts.team, ts.service, state.get(ts).score);						
+						}					
+					}
+					
 					for (RottenStolenFlag attackerFlag : list) {
 						int attacker = attackerFlag.attacker;
 						
 						double attackerOldScore = state.get(new TeamService(attacker, service)).score;
-						double attackerNewScore = attackerOldScore + scoreToEachAttacker;
-						InsertScore(BinarySearch(roundTimes, rottenTime), rottenTime, attacker, service, attackerNewScore);
-						state.put(new TeamService(attacker, service), new TeamScore(attacker, attackerNewScore, rottenTime));
+						double attackerNewScore = attackerOldScore + scoreToEachAttacker;						
+						InsertScore(round, rottenTime, attacker, service, attackerNewScore);
+						state.put(new TeamService(attacker, service), new TeamScore(attackerNewScore, round, rottenTime));
 						logger.info(String.format("Flag %s: (attacker, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, attacker, service, attackerOldScore, attackerNewScore, scoreToEachAttacker));
 					}
 					
 					double ownerNewScore = ownerTotalScore - scoreFromOwner;
-					InsertScore(BinarySearch(roundTimes, rottenTime), rottenTime, owner, service, ownerNewScore);
-					state.put(new TeamService(owner, service), new TeamScore(owner, ownerNewScore, rottenTime));
+					
+					InsertScore(round, rottenTime, owner, service, ownerNewScore);
+					state.put(new TeamService(owner, service), new TeamScore(ownerNewScore, round, rottenTime));
 					logger.info(String.format("Flag %s: (owner, service) (%d, %d): score %f -> %f (delta = %f)", flag.flagData, owner, service, ownerTotalScore, ownerNewScore, -scoreFromOwner));
 					
 					conn.commit();
@@ -187,7 +202,9 @@ public class Main {
 						logger.error("Failed to set autoCommit in database to true", e);
 						throw e;
 					}
-				}
+				}				
+				
+								
 			}
 			
 			logger.info("Sleeping Score ... ");
@@ -221,6 +238,7 @@ public class Main {
 		stInsertScore.execute();
 	}
 
+
 	private static Timestamp GetLastKnownTime(Hashtable<TeamService, TeamScore> stateFromDb) {
 		Timestamp max = null;
 		for (TeamScore ts : stateFromDb.values()) {
@@ -229,6 +247,15 @@ public class Main {
 		}
 		return max;
 	}
+	
+	private static int GetLastRound(Hashtable<TeamService, TeamScore> stateFromDb) {
+		int max = 0;
+		for (TeamScore ts : stateFromDb.values()) {
+			if (max < ts.round)
+				max = ts.round;
+		}
+		return max;
+	}	
 
 	private static void CreateInitStateInDb() throws SQLException {
 		stCreateInitState.execute();
@@ -248,12 +275,13 @@ public class Main {
 		Hashtable<TeamService, TeamScore> result = new Hashtable<TeamService, TeamScore>(); 
 		
 		while(res.next()){
-			int team = res.getInt(1);
-			int service = res.getInt(2);
-			double score = res.getDouble(3);			
-			Timestamp time = res.getTimestamp(4);
+			int round = res.getInt(1);
+			int team = res.getInt(2);
+			int service = res.getInt(3);
+			double score = res.getDouble(4);			
+			Timestamp time = res.getTimestamp(5);
 			
-			result.put(new TeamService(team, service), new TeamScore(team, score, time));
+			result.put(new TeamService(team, service), new TeamScore(score, round, time));
 		}
 		return result;		
 	}
