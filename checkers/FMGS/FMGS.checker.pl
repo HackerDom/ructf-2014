@@ -3,7 +3,7 @@
 use constant {
     DEBUG => 0,
     PORT => 44100,
-    TIMEOUT => 0.1,
+    TIMEOUT => 1,
 
     CHECKER_OK => 101,
     CHECKER_NOFLAG => 102,
@@ -11,7 +11,7 @@ use constant {
     CHECKER_DOWN => 104,
     CHECKER_ERROR => 110,
 
-    VISUALIZER => 'checker.vis',
+    VISUALIZER => '/tmp/checker.vis',
 
     CONNECTION_ERROR => "Could not connect to service",
     FLAG_NOT_FOUND => "Flag not found"
@@ -31,8 +31,9 @@ socket $S, PF_INET, SOCK_STREAM, getprotobyname 'tcp';
 $cr = connect $S, sockaddr_in PORT, inet_aton $ip;
 do_exit(CHECKER_DOWN, CONNECTION_ERROR) unless $cr;
 
-vec ($v = '', fileno ($S), 1) = 1;
+#vec($v = '', fileno($S), 1) = 1;
 $| = 1;
+$keys = 1;
 
 $handlers{$mode}->($id, $flag, $ip);
 
@@ -57,9 +58,10 @@ sub check {
 
 sub next_flight {
     my $ip = shift;
+    my $fn = "$ip.fmgs-last";
 
     my $last = 0;
-    if (open F, '<', "$ip.last") {
+    if (open F, '<', $fn) {
         $last = <F>;
         close F;
     }
@@ -69,7 +71,7 @@ sub next_flight {
     do { $result = <F> } while ($last--);
     close F;
 
-    open F, '>', "$ip.last";
+    open F, '>', $fn;
     print F ($n + 1);
     close F;
 
@@ -147,6 +149,7 @@ sub put {
     send_key('6R');
 
     my $result = &get_all;
+    # print STDERR "GOT: '$result'\n";
     do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
 
     print $fl->[0];
@@ -164,6 +167,7 @@ sub get {
     send_key('PGDN');
 
     my $result = &get_all;
+    # print STDERR "GOT: '$result'\n";
     do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
     for my $i (0..6) {
         do_exit(CHECKER_NOFLAG, "no flag")
@@ -176,16 +180,24 @@ sub get {
 sub send_key {
     my $msg = shift;
     send $S, "$msg\n", 0;
+    ++ $k;
 }
 
 sub send_line {
-    my $msg = join "\n", split //, shift;
+    my $msg = join "\n", split //, $_[0];
     send $S, "$msg\n", 0;
+    $k += length($_[0])
 }
 
 sub get_all {
     my $x = '';
 
+    $x .= <$S> for 1..15*($k + 1);
+    $k = 0;
+
+    return $x;
+
+=pod
     for (1..100*TIMEOUT) {
         next unless select '' . $v, undef, undef, 0.01;
         while (select '' . $v, undef, undef, 0.01) {
@@ -197,5 +209,6 @@ sub get_all {
     }
 
     return $x;
+=cut
 }
 
