@@ -49,7 +49,7 @@ sub startup {
     });
 
   Mojo::IOLoop->recurring(
-    5 => sub {
+    20 => sub {
       $self->log->info('Update scoreboard');
       Mojo::IOLoop->delay(
         sub {
@@ -79,14 +79,9 @@ sub startup {
             'SELECT * FROM services_flags_stolen;'
               => $delay->begin
           );
-          $self->pg(
-            'SELECT * FROM points_history
-            ORDER BY team_id, round'
-              => $delay->begin
-          );
         },
         sub {
-          my ($delay, $fh, $sh, $rh, $ssh, $flh, $ph) = @_;
+          my ($delay, $fh, $sh, $rh, $ssh, $flh) = @_;
           my ($flag_points, $sla_points);
 
           while (my $row = $sh->sth->fetchrow_hashref()) {
@@ -130,18 +125,27 @@ sub startup {
           while (my $row = $flh->sth->fetchrow_hashref()) {
             $self->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
           }
-
-          my ($h, $nh);
-          while (my $row = $ph->sth->fetchrow_hashref()) {
-            if (($row->{round} > $self->round->{n} - 40) or ($row->{round} % 15 == 0)) {
-              push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
-            }
-          }
-          for (keys %$h) {
-            push @$nh, {name => $_, data => $h->{$_}};
-          }
-          $self->history($nh);
         });
+    });
+    Mojo::IOLoop->recurring(
+      120 => sub {
+        $self->log->info('Update history');
+        $self->pg(
+          'SELECT * FROM points_history
+          ORDER BY team_id, round' => sub {
+            my $ph = shift;
+            my ($h, $nh);
+            while (my $row = $ph->sth->fetchrow_hashref()) {
+              if (($row->{round} > $self->round->{n} - 40) or ($row->{round} % 15 == 0)) {
+                push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
+              }
+            }
+            for (keys %$h) {
+              push @$nh, {name => $_, data => $h->{$_}};
+            }
+            $self->history($nh);
+          }
+        );
     });
 }
 
