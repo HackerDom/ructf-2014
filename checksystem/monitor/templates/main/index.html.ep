@@ -9,7 +9,7 @@
     <td>Логотип</td>
     <td>Флаги</td>
     <td>Команда</td>
-    <td>Score</td>
+    <td>Очки</td>
     % for my $service (values %{$self->app->services}) {
     <td><%= $service %></td>
     % }
@@ -23,7 +23,7 @@
       <img src="" width="64" height="64">
     </td>
     <td>
-      <div style="width: 150px; height: 150px;" id="team_<%= $score->{team}{id} %>"></div>
+      <div style="width: 100px; height: 100px;" id="team_<%= $score->{team}{id} %>"></div>
     </td>
     <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
@@ -32,7 +32,6 @@
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
       % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'danger', 110 => 'active'};
       <td class="<%= $s->{$status} %>">
-        S: <%= $status %> <br/>
         SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
         FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
       </td>
@@ -46,14 +45,18 @@ $(document).ready(function() {
   $.get("<%= url_for('flags') %>", function(flags) {
     $.each(flags, function(team, data) {
       c = '#team_' + team;
-      console.log(c);
-      console.log(data);
       s = [];
       $.each(data, function(service, count) {
         s.push([service, parseInt(count)]);
       });
       $(c).highcharts({
-        chart: {},
+        chart: {
+          margin: [0, 0, 0, 0],
+          spacingTop: 0,
+          spacingBottom: 0,
+          spacingLeft: 0,
+          spacingRight: 0
+        },
         title: { text: '' },
         tooltip: {
           enabled: false
@@ -61,6 +64,7 @@ $(document).ready(function() {
        plotOptions: {
          pie: {
            animation: false,
+           size:'100%',
            dataLabels: {
              enabled: false
            }
@@ -80,7 +84,10 @@ $(document).ready(function() {
   $.get("<%= url_for('history') %>", function(history) {
     console.log(history);
     $('#history').highcharts({
-      title: { text: 'История очков' },
+      chart: {
+        zoomType: 'x'
+      },
+      title: { text: '' },
       xAxis: {
         title: { text: 'Раунды' },
       },
@@ -91,7 +98,10 @@ $(document).ready(function() {
       tooltip: {},
       plotOptions: {
         line: {
-          animation: false
+          animation: false,
+          marker: {
+            enabled: false
+          }
         },
         series: {
           turboThreshold: 5000

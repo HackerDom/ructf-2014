@@ -314,11 +314,15 @@ CREATE VIEW points_history AS
 		FROM
 			score_history
 		INNER JOIN
-			sla_history ON score_history.team_id = sla_history.team_id AND score_history.service_id = sla_history.service_id AND score_history.round = sla_history.round	
+			sla_history ON score_history.team_id = sla_history.team_id AND score_history.service_id = sla_history.service_id AND score_history.round = sla_history.round
+		WHERE
+			score_history.round < (SELECT max(n) from rounds)
 		GROUP BY
 			score_history.round, score_history.team_id) history
 	INNER JOIN
 		teams ON history.team_id = teams.id;
+		
+	
 		
 CREATE VIEW service_status AS
 	SELECT 

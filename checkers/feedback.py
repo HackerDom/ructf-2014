@@ -2,6 +2,8 @@
 
 import uuid
 import requests as r
+import os
+from subprocess import Popen, PIPE
 
 from httpchecker import *
 
@@ -21,14 +23,17 @@ class FeedbackChecker(HttpCheckerBase):
 		return 'http://{}:{}/{}'.format(addr, PORT, suffix)
 
 	def parseresponse(self, response):
-		if response.status_code != 200:
-			raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
 		try:
-			result = response.json()
-			#self.debug(result)
-			return result
-		except ValueError:
-			raise r.exceptions.HTTPError('failed to parse response')
+			if response.status_code != 200:
+				raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
+			try:
+				result = response.json()
+				#self.debug(result)
+				return result
+			except ValueError:
+				raise r.exceptions.HTTPError('failed to parse response')
+		finally:
+			response.close()
 
 	def spost(self, s, addr, suffix, data = None):
 		response = s.post(self.url(addr, suffix), json.dumps(data), timeout=5)
@@ -45,36 +50,42 @@ class FeedbackChecker(HttpCheckerBase):
 		return result and result.get('hits') >= 0
 
 	def get(self, addr, flag_id, flag):
-		s = self.session(addr)
+		process = Popen(['./f.pl', addr, flag_id, flag], stdout=PIPE)
+		(output, err) = process.communicate()
+		exit_code = process.wait()
+		self.debug('Perl out: ' + output)
+		self.debug('Perl err: ' + err)
+		exit(exit_code)
+		# s = self.session(addr)
 
-		parts = flag_id.split(':', 3)
+		# parts = flag_id.split(':', 3)
 
-		user = {'login':parts[0], 'password':parts[1]}
-		result = self.spost(s, addr, 'auth', user)
-		if not result or result.get('error'):
-			self.debug('login failed')
-			return False
+		# user = {'login':parts[0], 'password':parts[1]}
+		# result = self.spost(s, addr, 'auth', user)
+		# if not result or result.get('error'):
+		# 	self.debug('login failed')
+		# 	return False
 
-		self.debug(parts[2])
-		result = self.sget(s, addr, 'search?query=' + parts[2])
-		if not result or result.get('error'):
-			self.debug('search failed')
-			return False
-		if result.get('hits') < 1:
-			self.debug('to few "hits"')
-			return False
-		votes = result.get('votes')
-		if not votes or len(votes) == 0:
-			self.debug('votes is empty')
-			return False
-		title = votes[0].get('title')
-		if not title:
-			self.debug('no "title" field')
-			return False
-		if title.find(flag) < 0:
-			self.debug('flag not found in "title"')
-			return False
-		return True
+		# self.debug(parts[2])
+		# result = self.sget(s, addr, 'search?query=' + parts[2])
+		# if not result or result.get('error'):
+		# 	self.debug('search failed')
+		# 	return False
+		# if result.get('hits') < 1:
+		# 	self.debug('to few "hits"')
+		# 	return False
+		# votes = result.get('votes')
+		# if not votes or len(votes) == 0:
+		# 	self.debug('votes is empty')
+		# 	return False
+		# title = votes[0].get('title')
+		# if not title:
+		# 	self.debug('no "title" field')
+		# 	return False
+		# if title.find(flag) < 0:
+		# 	self.debug('flag not found in "title"')
+		# 	return False
+		# return True
 
 	def put(self, addr, flag_id, flag):
 		s = self.session(addr)
