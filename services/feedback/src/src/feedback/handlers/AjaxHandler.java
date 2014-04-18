@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public abstract class AjaxHandler<In> implements IHttpListenerHandler {
 	public AjaxHandler(Class clazz) {
@@ -45,7 +46,9 @@ public abstract class AjaxHandler<In> implements IHttpListenerHandler {
 		byte[] buffer = writer.writeValueAsBytes(data);
 		response.setContentLength(buffer.length);
 		response.setHeader("Content-Type", "application/json");
-		response.getOutputStream().write(buffer);
+		try(OutputStream stream = response.getOutputStream()) {
+			stream.write(buffer);
+		}
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
