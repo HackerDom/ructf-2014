@@ -1,5 +1,5 @@
-#FROM ructf2014:arch
-FROM localrepo:arch
+FROM ructf2014:arch
+#FROM localrepo:arch
 MAINTAINER bay@hackerdom.ru
 
 RUN pacman -Sy
