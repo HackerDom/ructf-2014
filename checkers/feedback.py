@@ -23,14 +23,17 @@ class FeedbackChecker(HttpCheckerBase):
 		return 'http://{}:{}/{}'.format(addr, PORT, suffix)
 
 	def parseresponse(self, response):
-		if response.status_code != 200:
-			raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
 		try:
-			result = response.json()
-			#self.debug(result)
-			return result
-		except ValueError:
-			raise r.exceptions.HTTPError('failed to parse response')
+			if response.status_code != 200:
+				raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
+			try:
+				result = response.json()
+				#self.debug(result)
+				return result
+			except ValueError:
+				raise r.exceptions.HTTPError('failed to parse response')
+		finally:
+			response.close()
 
 	def spost(self, s, addr, suffix, data = None):
 		response = s.post(self.url(addr, suffix), json.dumps(data), timeout=5)

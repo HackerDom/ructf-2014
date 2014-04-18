@@ -101,6 +101,13 @@ sub make_route {
     my ($flag, $pts) = @_;
     my @points = map { coords($_) } ($pts =~ /(\S+\s+\S+)/g);
 
+    my $max_len = 10;
+    if (@points > $max_len) {
+        my $d = @points / $max_len;
+        my @p = map { $points[$d*$_] } 1 .. $max_len;
+        @points = @p;
+    }
+
     $flag .= join '', map { chr(65 + int(rand(25))) }
         1..(5*@points - length($flag));
 
