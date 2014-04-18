@@ -1,8 +1,8 @@
 #pragma once
 #include "input.h"
-#include <vector>
 #include <algorithm>
-
+#include <cassert>
+#include <vector>
 
 template<typename Data>
 class BaseQueue {
@@ -16,10 +16,13 @@ public:
             return Data();
         } else {
             size_t size = data_.size();
-            size_t pos = pos_ < size ?
-                std::min<ssize_t>(n, pos_) :
-                (size + n < pos_ ? pos_ : pos_ + size);
-            return data_[pos - n - 1];
+            if (pos_ < size) {
+                assert(n < pos_);
+                return data_[pos_ - n - 1];
+            } else {
+                size_t pos = size + n < pos_ ? pos_ - size : pos_;
+                return data_[pos - n - 1];
+            }
         }
     }
 
@@ -30,7 +33,7 @@ protected:
         if (pos_ < size) {
             // partial fill
             data_[pos_++] = diff;
-        } else if (pos_ < 2*size) {
+        } else {
             // full fill, start to forget
             data_[pos_ - size] = diff;
             if (++pos_ == 2*size) {
@@ -118,7 +121,7 @@ class Queue<Data, Length, Tail...>
 public:
     void Update(const Data& data) {
         Pop();
-        Update(data);
+        BaseQueue<Data>::Update(data);
         Push();
     }
 

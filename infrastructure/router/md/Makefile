@@ -4,7 +4,7 @@ CXXFLAGS=-std=c++0x
 md: input.o main.o queue.o
 	$(CXX) -o md input.o main.o queue.o
 
-main.o: main.C input.h
+main.o: main.C input.h queue.h
 
 input.o: input.C input.h
 

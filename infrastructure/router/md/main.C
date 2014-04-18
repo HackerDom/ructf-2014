@@ -32,14 +32,27 @@ int main(void) {
         size_t size = snapshot.size();
         vector<pair<size_t, Pair>> counters;
         for (size_t i = 0; i != size; ++i) {
-            if (queues[i].first != snapshot[i].name) {
+            pair<string, MainQueue>& queue = queues[i];
+            if (queue.first != snapshot[i].name) {
                 cerr << "Wrong name: " << snapshot[i].name
-                     << ", was " << queues[i].first << endl;
+                     << ", was " << queue.first << endl;
                 return 1;
             }
-            queues[i].second.Update(snapshot[i].counts);
-            queues[i].second.GetDiffs(&counters);
-            // TODO: output
+            queue.second.Update(snapshot[i].counts);
+            queue.second.GetDiffs(&counters);
+
+            cout << queue.first << ':';
+            for (size_t j = 0; j != counters.size(); ++j) {
+                cout << counters[j].first << ':' << counters[j].second.packets;
+                if (j != counters.size() - 1) {
+                    cout << '|';
+                }
+            }
+            if (i != size - 1) {
+                cout << ',';
+            }
         }
+
+        cout << endl;
     }
 }

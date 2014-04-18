@@ -22,7 +22,8 @@ struct Pair {
     }
 
     bool operator<(const Pair& rhs) const {
-        return packets < rhs.packets || bytes < rhs.bytes;
+        return (packets < rhs.packets) ||
+               (bytes < rhs.bytes);
     }
 
     PacketCount packets;
