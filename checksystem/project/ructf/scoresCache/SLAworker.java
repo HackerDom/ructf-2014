@@ -92,6 +92,37 @@ public class SLAworker extends Thread{
 				int count = res.getInt(5);
 				Timestamp time = res.getTimestamp(6);
 				
+				
+				try {
+					for(SLA sla : state.values()){
+						for(int r = sla.round + 1; r < round; r++){
+							logger.info(String.format("Inserting gap SLA fo (team, service, round) = (%d, %d, %d)", sla.team, sla.service, sla.round));
+							
+							sla.round = r;						
+							stInsertSla.setInt(1, r);
+							stInsertSla.setInt(2, sla.team);
+							stInsertSla.setInt(3, sla.service);
+							stInsertSla.setInt(4, sla.succeeded);
+							stInsertSla.setInt(5, sla.failed);
+							stInsertSla.setTimestamp(6, sla.time);
+							stInsertSla.execute();
+							
+							conn.commit();
+						}						
+					}
+				}
+				catch (SQLException exception)
+				{
+					try {
+						conn.rollback();
+						throw exception;
+					} catch (SQLException rollbackException) {
+						logger.error("Failed to rollback sla transaction", rollbackException);
+					}
+					logger.error("Failed to insert gap SLA data in database", exception);
+				}
+				
+				
 				TeamService key = new TeamService(team, service);
 				if(!stateDelta.containsKey(key))
 					stateDelta.put(key, new SLA(round, team, service, 0, 0, time));
@@ -147,7 +178,7 @@ public class SLAworker extends Thread{
 				} catch (SQLException rollbackException) {
 					logger.error("Failed to rollback sla transaction", rollbackException);
 				}
-				logger.error("Failed to insert sla data in database", exception);
+				logger.error("Failed to insert SLA data in database", exception);
 			}					
 			
 			if(stateDelta.size() == 0){
