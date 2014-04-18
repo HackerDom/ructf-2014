@@ -45,7 +45,7 @@ function create_filter(request, response, post) {
       data.get_filters(function(filters) {
         response.write(ejs.render(fs.readFileSync('templates/create_filter.html', 'utf8'), 
           {'countries': countries,
-           'message': 'New filter added',
+           'message': 'New filter has been added',
            'filters': filters
           }));
         response.end();
