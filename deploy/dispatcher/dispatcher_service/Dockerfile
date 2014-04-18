@@ -1,5 +1,4 @@
 FROM ructf2014:arch
-#FROM localrepo:arch
 MAINTAINER bay@hackerdom.ru
 
 RUN pacman -Sy
@@ -13,6 +12,6 @@ ADD dispatcher /home/dispatcher
 RUN chown -R dispatcher:dispatcher /home/dispatcher
 USER dispatcher
 
-ENTRYPOINT python2 /home/dispatcher/main.py
+CMD python2 /home/dispatcher/main.py
 
 EXPOSE 5000
