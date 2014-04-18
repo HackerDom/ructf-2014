@@ -38,8 +38,8 @@ exports.get_by_hash = function(hash, callback) {
 exports.add_filter = function(city, theme, callback) {
   if (! connection)
     throw 'Can\'t add filter until connection established';
-  if (theme.indexOf('http') != -1)
-    throw 'Thene can\'t contains `http` as substring';
+  if (theme.indexOf('http') != -1 || theme.indexOf('//') != -1)
+    throw 'Theme can\'t contains `http` or `//` as substring';
   connection.query('INSERT INTO filters (city, theme) VALUES (?, ?)', [city, theme], function(err) {
     if (err) throw err;
     callback();

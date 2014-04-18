@@ -129,7 +129,6 @@ function static_files(request, response) {
       return;
     }
     console.log("Get static file: " + pathname);
-    // TODO: correct Content-Type
     response.writeHead(200, {"Content-Type": get_mime_type(pathname)});
     response.write(content);
     response.end();
