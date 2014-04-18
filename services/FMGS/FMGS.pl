@@ -48,7 +48,10 @@ sub process {
 
     local $_ = '';
     send $C, &draw, 0;
-    while (defined ($_ = recv_str)) { send $C, &draw, 0 if btn_press($_) }
+    while (defined ($_ = recv_str)) {
+        btn_press($_);
+        send $C, &draw, 0
+    }
 
     shutdown $C, 2;
 }

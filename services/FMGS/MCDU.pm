@@ -114,15 +114,16 @@ sub draw {
         for ([0, 'bright_yellow'], [1, 'bright_cyan']) {
             my @t = ($dsp{"${row}L"}->[$_->[0]], $dsp{"${row}R"}->[$_->[0]]);
 
-            my $l1 = _align($t[0], SW, 'l');
-            my $l2 = _align($t[1], SW - length($l1), 'R');
+            my $l1 = _align($t[0], SW, 'l') || '';
+            my $l2 = _align($t[1], SW - length($l1), 'R') || '';
             $scr .= colored($_->[0] ? '    ' : '[-] ', 'white') .
                 colored($l1, _color($t[0], $_->[1])) .
                 colored($l2, _color($t[1], $_->[1])) .
                 colored($_->[0] ? '    ' : ' [-]', 'white') . "\n";
         }
     }
-    $scr .= '    ' . colored(_align($dsp{'STATUS'}, SW, 'l'), 'yellow') . "\n";
+    $scr .= '    ' .
+        colored(_align($dsp{'STATUS'}, SW, 'l') || '', 'yellow') . "\n";
 
     return $scr;
 }
