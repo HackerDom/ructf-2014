@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class SearchHandler implements IHttpListenerHandler {
 	public SearchHandler(LuceneIndex index, TokenCrypt tokenCrypt) {
@@ -42,11 +43,13 @@ public class SearchHandler implements IHttpListenerHandler {
 		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
 
 		try {
-			SearchResults results = index.search(query, top, authToken != null && authToken.isAdmin());
+			SearchResults results = index.search(query, top, authToken == null ? null : authToken.getLogin(), authToken != null && authToken.isAdmin());
 			byte[] buffer = writer.writeValueAsBytes(results);
 			response.setContentLength(buffer.length);
 			response.setHeader("Content-Type", "application/json");
-			response.getOutputStream().write(buffer);
+			try(OutputStream stream = response.getOutputStream()) {
+				stream.write(buffer);
+			}
 		} catch(ParseException|InvalidTokenOffsetsException e) {
 			log.error(String.format("Query failed '%s'", query), e);
 		}

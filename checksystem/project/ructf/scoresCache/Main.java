@@ -115,6 +115,19 @@ public class Main {
 		return result;		
 	}
 	
+	private static int FindLastFinishedRound(Timestamp[] roundTimes){
+		if(roundTimes.length <= 1)
+			return 0;
+		
+		Timestamp lastRoundTime = roundTimes[roundTimes.length - 1];
+		int round = roundTimes.length - 2;
+		for(; round > 0; round--)
+			if(roundTimes[round].before(TimestampUtils.AddMillis(lastRoundTime, - Constants.flagExpireInterval*1000)))
+				return round - 1;
+		
+		return 0;
+	}
+	
 	private static void DoJobLoop(Connection conn, Hashtable<TeamService,TeamScore> state, Timestamp lastKnownTime, int lastRound) throws SQLException, InterruptedException {
 		Timestamp lastCreationTime = TimestampUtils.AddMillis(lastKnownTime, - Constants.flagExpireInterval*1000);
 
@@ -160,7 +173,7 @@ public class Main {
 
 					int round = BinarySearch(roundTimes, rottenTime);
 					for(;lastRound < round; lastRound++){
-						logger.info(String.format("Populating score round: %d", lastRound));
+						logger.info(String.format("Populating score INNER round: %d", lastRound));
 						for(TeamService ts : state.keySet()){
 							InsertScore(lastRound, TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1), ts.team, ts.service, state.get(ts).score);						
 						}					
@@ -203,9 +216,37 @@ public class Main {
 						throw e;
 					}
 				}				
-				
-								
 			}
+			
+			try {
+				conn.setAutoCommit(false);
+				
+				for(;lastRound < FindLastFinishedRound(roundTimes); lastRound++){
+					logger.info(String.format("Populating score OUTER round: %d", lastRound));
+					for(TeamService ts : state.keySet()){
+						InsertScore(lastRound, TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1), ts.team, ts.service, state.get(ts).score);						
+					}					
+				}
+			}
+			catch (SQLException exception)
+			{
+				try {
+					conn.rollback();
+					throw exception;
+				} catch (SQLException rollbackException) {
+					logger.error("Failed to rollback score OUTER transaction", rollbackException);
+				}
+				logger.error("Failed to insert score OUTER data in database", exception);
+			}
+			finally
+			{
+				try {
+					conn.setAutoCommit(true);
+				} catch (SQLException e) {
+					logger.error("Failed to set autoCommit OUTER in database to true", e);
+					throw e;
+				}
+			}		
 			
 			logger.info("Sleeping Score ... ");
 			Thread.sleep(10000);

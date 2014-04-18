@@ -1,70 +1,115 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import uuid
+import requests as r
+import os
+from subprocess import Popen, PIPE
 
 from httpchecker import *
 
 GET = 'GET'
 POST = 'POST'
+PORT = 7654
 
 class FeedbackChecker(HttpCheckerBase):
-	def req(self, method, addr, url, data = None):
-		conn = http.client.HTTPConnection(addr, 7654, 5)
-		#conn.set_debuglevel(1)
-		try:
-			conn.request(method, url, data)
-			response = conn.getresponse()
-			result = response.read().decode('utf-8')
-			self.debug('{} "{}" -> {} {}'.format(method, url, response.status, response.reason))
-			return result
-		finally:
-			conn.close()
+	def session(self, addr):
+		s = r.Session()
+		s.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0'
+		s.headers['Accept'] = '*/*'
+		s.headers['Accept-Language'] = 'en-US,en;q=0.5'
+		return s
 
-	def ajax(self, method, addr, url, data = None):
-		return json.loads(self.req(method, addr, url, json.dumps(data)))
+	def url(self, addr, suffix):
+		return 'http://{}:{}/{}'.format(addr, PORT, suffix)
+
+	def parseresponse(self, response):
+		try:
+			if response.status_code != 200:
+				raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
+			try:
+				result = response.json()
+				#self.debug(result)
+				return result
+			except ValueError:
+				raise r.exceptions.HTTPError('failed to parse response')
+		finally:
+			response.close()
+
+	def spost(self, s, addr, suffix, data = None):
+		response = s.post(self.url(addr, suffix), json.dumps(data), timeout=5)
+		return self.parseresponse(response)
+
+	def sget(self, s, addr, suffix):
+		response = s.get(self.url(addr, suffix), timeout=5)
+		return self.parseresponse(response)
 
 	def check(self, addr):
-		result = self.ajax(GET, addr, '/search?query=')
-		return result.get('hits') >= 0
+		s = self.session(addr)
+
+		result = self.sget(s, addr, 'search?query=')
+		return result and result.get('hits') >= 0
 
 	def get(self, addr, flag_id, flag):
-		parts = flag_id.split(':', 3)
+		process = Popen(['./f.pl', addr, flag_id, flag], stdout=PIPE)
+		(output, err) = process.communicate()
+		exit_code = process.wait()
+		self.debug('Perl out: ' + output)
+		self.debug('Perl err: ' + err)
+		exit(exit_code)
+		# s = self.session(addr)
 
-		user = {'login':parts[0], 'password':parts[1]}
-		result = self.ajax(POST, addr, '/auth', user)
-		if not result or result.get('error'):
-			return False
+		# parts = flag_id.split(':', 3)
 
-		result = self.ajax(GET, addr, '/search?query=' + parts[2])
-		if not result or result.get('error'):
-			return False
-		if result.get('hits') < 1:
-			return False
-		votes = result.get('votes')
-		if not votes or len(votes) == 0:
-			return False
-		title = votes[0].get('title')
-		if not title:
-			return False
-		return title.find(flag) >= 0
+		# user = {'login':parts[0], 'password':parts[1]}
+		# result = self.spost(s, addr, 'auth', user)
+		# if not result or result.get('error'):
+		# 	self.debug('login failed')
+		# 	return False
+
+		# self.debug(parts[2])
+		# result = self.sget(s, addr, 'search?query=' + parts[2])
+		# if not result or result.get('error'):
+		# 	self.debug('search failed')
+		# 	return False
+		# if result.get('hits') < 1:
+		# 	self.debug('to few "hits"')
+		# 	return False
+		# votes = result.get('votes')
+		# if not votes or len(votes) == 0:
+		# 	self.debug('votes is empty')
+		# 	return False
+		# title = votes[0].get('title')
+		# if not title:
+		# 	self.debug('no "title" field')
+		# 	return False
+		# if title.find(flag) < 0:
+		# 	self.debug('flag not found in "title"')
+		# 	return False
+		# return True
 
 	def put(self, addr, flag_id, flag):
+		s = self.session(addr)
+
 		user = {'login':uuid.uuid4().hex, 'password':uuid.uuid4().hex}
 		self.debug(user)
 
-		result = self.ajax(POST, addr, '/register', user)
+		result = self.spost(s, addr, 'register', user)
 		if not result or result.get('error'):
+			self.debug('registration failed')
 			return False
 
 		vote = {'title':flag_id + ' ' + flag, 'text':'text', 'type':'invisible'}
-		result = self.ajax(POST, addr, '/put', vote)
+		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
+			self.debug('put failed')
 			return False
 		data = result.get('data')
 		if not data:
+			self.debug('no "data" field')
 			return False
 		new_flag_id = data.strip()
 		if not new_flag_id:
+			self.debug('flag_id is empty')
 			return False
 		print('{}:{}:{}'.format(user['login'], user['password'], new_flag_id))
 		return True

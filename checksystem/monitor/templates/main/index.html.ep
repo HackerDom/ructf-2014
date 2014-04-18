@@ -2,12 +2,14 @@
 % title 'RuCTF > скорборд';
 
 <p id="round">Round <%= $self->app->round->{n} %> (started at <%= $self->app->round->{time} %>)</p>
-<table border="1">
+<div id="history"></div>
+<table class="table table-bordered">
   <tr>
     <td>#</td>
     <td>Логотип</td>
+    <td>Флаги</td>
     <td>Команда</td>
-    <td>Score</td>
+    <td>Очки</td>
     % for my $service (values %{$self->app->services}) {
     <td><%= $service %></td>
     % }
@@ -20,13 +22,16 @@
       % my $name = $score->{team}{name};
       <img src="" width="64" height="64">
     </td>
+    <td>
+      <div style="width: 100px; height: 100px;" id="team_<%= $score->{team}{id} %>"></div>
+    </td>
     <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $sid (keys %{$self->app->services}) {
-      % my $status = $self->app->status->{$self->app->services->{$sid}}{$score->{team}{tid}}{status};
-      <td>
-        S: <%= $status %> <br/>
+      % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
+      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'danger', 110 => 'active'};
+      <td class="<%= $s->{$status} %>">
         SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
         FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
       </td>
@@ -34,3 +39,85 @@
   </tr>
   % }
 </table>
+
+<script>
+$(document).ready(function() {
+  $.get("<%= url_for('flags') %>", function(flags) {
+    $.each(flags, function(team, data) {
+      c = '#team_' + team;
+      s = [];
+      $.each(data, function(service, count) {
+        s.push([service, parseInt(count)]);
+      });
+      $(c).highcharts({
+        chart: {
+          margin: [0, 0, 0, 0],
+          spacingTop: 0,
+          spacingBottom: 0,
+          spacingLeft: 0,
+          spacingRight: 0
+        },
+        title: { text: '' },
+        tooltip: {
+          enabled: false
+       },
+       plotOptions: {
+         pie: {
+           animation: false,
+           size:'100%',
+           dataLabels: {
+             enabled: false
+           }
+         }
+       },
+       series: [{
+         type: 'pie',
+         name: team,
+         data: s
+       }],
+       credits: {
+        enabled: false
+      }
+      });
+    });
+  });
+  $.get("<%= url_for('history') %>", function(history) {
+    console.log(history);
+    $('#history').highcharts({
+      chart: {
+        zoomType: 'x'
+      },
+      title: { text: '' },
+      xAxis: {
+        title: { text: 'Раунды' },
+      },
+      yAxis: {
+        title: { text: 'Очки' },
+        min: 0
+      },
+      tooltip: {},
+      plotOptions: {
+        line: {
+          animation: false,
+          marker: {
+            enabled: false
+          }
+        },
+        series: {
+          turboThreshold: 5000
+        }
+      },
+      legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle',
+        borderWidth: 0
+      },
+      series: history,
+      credits: {
+        enabled: false
+      }
+    });
+  });
+});
+</script>

@@ -1,11 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import socket
 import json
 import os.path
 import traceback
-import http.client
+
+import requests as r
 
 EXITCODE_OK            = 101
 EXITCODE_CORRUPT       = 102
@@ -61,9 +62,12 @@ class HttpCheckerBase(object):
 
 			self.debug('Invalid command')
 			exit(EXITCODE_CHECKER_ERROR)
-		except http.client.NotConnected as e:
+		except (r.exceptions.ConnectionError, r.exceptions.Timeout) as e:
 			self.debug(e)
 			exit(EXITCODE_DOWN)
+		except (r.exceptions.HTTPError, r.exceptions.TooManyRedirects) as e:
+			self.debug(e)
+			exit(EXITCODE_MUMBLE)
 		except socket.error as e:
 			self.debug(e)
 			if isinstance(e, socket.timeout) or 'errno' in dir(e) and e.errno == 111:
