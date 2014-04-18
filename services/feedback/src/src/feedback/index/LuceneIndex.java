@@ -7,6 +7,7 @@ import feedback.index.helpers.IndexFields;
 import feedback.index.helpers.Indexer;
 import feedback.index.helpers.SearchHighlighter;
 import feedback.index.lucutils.SimpleNumberAwareAnalyzer;
+import feedback.utils.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -42,7 +43,7 @@ public class LuceneIndex {
 		indexFields = new IndexFields();
 
 		searcherManager = new SearcherManager(writer, true, null);
-		ControlledRealTimeReopenThread<IndexSearcher> reopenThread = new ControlledRealTimeReopenThread<>(trackingWriter, searcherManager, 2.0, 0.2);
+		ControlledRealTimeReopenThread<IndexSearcher> reopenThread = new ControlledRealTimeReopenThread<>(trackingWriter, searcherManager, 5.0, 0.2);
 		reopenThread.setName("reopen-thread");
 		reopenThread.setPriority(Math.min(Thread.currentThread().getPriority() + 2, Thread.MAX_PRIORITY));
 		reopenThread.setDaemon(true);
@@ -69,7 +70,7 @@ public class LuceneIndex {
 		sort = new Sort(new SortField(IndexFields.date, SortField.Type.LONG, true));
 	}
 
-	public SearchResults search(String text, int top, boolean all) throws ParseException, IOException, InvalidTokenOffsetsException {
+	public SearchResults search(String text, int top, String login, boolean all) throws ParseException, IOException, InvalidTokenOffsetsException {
 		if(text == null) text = "";
 
 		QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_47, indexFields.fieldsArray, analyzer, indexFields.boosts);
@@ -80,8 +81,12 @@ public class LuceneIndex {
 
 		try {
 			String filter = all ? "" : String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
+			if(StringUtils.isNotBlank(login)) {
+				filter = String.format("(%s OR %s)", String.format("%s:%s", IndexFields.login, login), filter);
+			}
 
 			Query query = parser.parse(filter + " " + text); //WARN! Filter concatenation and no special characters escaping!
+
 			TopDocs hits = searcher.search(query, top, sort);
 
 			Vote[] results = new Vote[hits.scoreDocs.length];
@@ -100,6 +105,7 @@ public class LuceneIndex {
 
 	public void addOrUpdateSubject(Vote vote) throws IOException {
 		trackingWriter.updateDocument(new Term(IndexFields.id, vote.id), Indexer.toDoc(vote));
+		searcherManager.maybeRefreshBlocking();
 	}
 
 	public void commit() throws IOException {

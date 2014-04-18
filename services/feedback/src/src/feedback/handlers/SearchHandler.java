@@ -43,7 +43,9 @@ public class SearchHandler implements IHttpListenerHandler {
 		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
 
 		try {
-			SearchResults results = index.search(query, top, authToken == null ? null : authToken.getLogin(), authToken != null && authToken.isAdmin());
+			boolean isAdmin = authToken != null && authToken.isAdmin();
+			String login = authToken == null ? null : authToken.getLogin();
+			SearchResults results = index.search(query, top, login, isAdmin);
 			byte[] buffer = writer.writeValueAsBytes(results);
 			response.setContentLength(buffer.length);
 			response.setHeader("Content-Type", "application/json");

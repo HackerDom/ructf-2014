@@ -14,6 +14,6 @@ public class DateTimeDeserializer extends JsonDeserializer<DateTime> {
 	}
 
 	public DateTime deserialize(long value) {
-		return new DateTime(value);
+		return new DateTime(value * 1000);
 	}
 }
