@@ -6,8 +6,11 @@ OUTPATH=bin
 
 all: musicbox
 
-debug: CFLAGS+=-DDEBUG
+debug: CFLAGS += -DDEBUG
 debug: all
+
+static: LDFLAGS += -static
+static: all
 
 musicbox: $(OBJFILES)
 	$(CC) $(OBJFILES) $(LDFLAGS) -o $(OUTPATH)/musicbox

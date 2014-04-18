@@ -1,6 +1,7 @@
 package feedback.index.helpers;
 
 import feedback.index.data.Vote;
+import feedback.utils.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -64,7 +65,7 @@ public class SearchHighlighter {
 		try {
 			String[] texts = postingsHighlighter.highlight(IndexFields.text, query, searcher, topDocs, 2);
 			for(int i = 0; i < votes.length; i++) {
-				votes[i].text = texts[i];
+				votes[i].text = texts[i] != null ? texts[i] : StringUtils.shorten(votes[i].text, 64, 256);
 			}
 		} catch(Exception ignored) {}
 		for(Vote vote : votes) {

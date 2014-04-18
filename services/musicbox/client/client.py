@@ -1,97 +1,81 @@
 #!/usr/bin/python
 
-from socket import *
-import sys
-import struct
+import random
+import socket
+import re
+import os
+import string
+import shutil
+from glob import glob
 from uuid import UUID
-
-READING_CHUNK_SIZE = 32 * 1024 - 1
+from struct import pack, unpack
 
 CHUNK_SIZE = 32 * 1024 - 1
 
-PUT_TYPE = 0
-GET_TYPE = 1
+REQUEST_PUT = 0
+REQUEST_GET = 1
 
-def show_help():
-	print("%s <host> <port> put <filename>" % sys.argv[0])
-	print("%s <host> <port> get <uuid>"     % sys.argv[0])
+RESPONSE_OK    = 0
+RESPONSE_ERROR = 1
 
-def read_binary_file(filename):
-	result = b''
-	with open(filename, "rb") as f:
-		while True:
-			next_bytes = f.read(READING_CHUNK_SIZE)
-			if not next_bytes:
-				break
-			result += next_bytes
-	return result
+SERVICE_PORT = 4242
 
-def encode_chunk(data):
-	assert len(data) <= CHUNK_SIZE
-	return struct.pack("h", len(data)) + data
+SOCKET_TIMEOUT = 2
 
-def data_to_chunk_sequenece(data):
-	result = b''
-	for i in range((len(data) + CHUNK_SIZE - 1) // CHUNK_SIZE):
-		result += encode_chunk(data[ i * CHUNK_SIZE : i * CHUNK_SIZE + CHUNK_SIZE])
-	return result + encode_chunk(b'')
+FLAG_TTL = 90 * 60
 
-def data_from_chunk_sequence(chunks):
-	decoded_len = 0
-	result = b''
-	while decoded_len < len(chunks):
-		chunk_len = struct.unpack("h", chunks[decoded_len : decoded_len + 2])[0]
-		result += chunks[decoded_len + 2 : decoded_len + 2 + chunk_len]
-		decoded_len += 2 + chunk_len
-	return result
+def send_chunked_data(sock, data):
+	for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
+		chunk_offset = i * CHUNK_SIZE
+		chunk_length = min(CHUNK_SIZE, len(data) - chunk_offset)
+		sock.sendall(pack('h', chunk_length))
+		sock.sendall(data[chunk_offset: chunk_offset + chunk_length])
+	sock.sendall(pack('h', 0))
 
-def get_response_from_socket(sock):
+def recv_chunked_data(sock):
 	result = b''
 	while True:
-		next_bytes = sock.recv(READING_CHUNK_SIZE)
-		if not next_bytes:
+		chunk_length = unpack('h', sock.recv(2))[0]
+
+		if chunk_length == 0:
 			break
-		result += next_bytes
+		next_chunk = b''
+		while len(next_chunk) < chunk_length:
+			next_chunk += sock.recv(chunk_length - len(next_chunk))
+
+		result += next_chunk
 	return result
 
-if len(sys.argv) < 5:
-	show_help()
-	exit(1)
+def create_socket(addr, port):
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.settimeout(SOCKET_TIMEOUT)
+	sock.connect((addr, port))
+	return sock
 
-progname, host, port, action, arg = sys.argv
-port = int(port)
+def put_song(addr, port, data):
+	sock = create_socket(addr, port)
 
-print("Connecting to %s:%d" % (host, port))
+	sock.sendall(pack('B', REQUEST_PUT))
+	sock.sendall(pack('h', FLAG_TTL))
+	send_chunked_data(sock, data)
 
-s = socket(AF_INET, SOCK_STREAM)
-s.connect((host,port))
+	status = unpack('B', sock.recv(1))[0]
 
-if action == "get":
-	s.sendall(struct.pack('B', GET_TYPE))
-	uuid = UUID(arg)
-	s.sendall(uuid.bytes)
-	status = struct.unpack('B', s.recv(1))[0]
-	if status == 0:
-		chunks = get_response_from_socket(s)
-		data = data_from_chunk_sequence(chunks)
-		sys.stdout.buffer.write(data)
-	else:
-		print('Error =(')
-elif action == "put":
-	s.sendall(struct.pack('B', PUT_TYPE))
-	s.sendall(struct.pack('H', 60 * 10))
-	data = read_binary_file(arg)
-	chunks = data_to_chunk_sequenece(data)
-	s.sendall(chunks)
-	response = struct.unpack('B', s.recv(1))[0]
-	if response == 0:
-		print('Success!')
-		uuid = UUID(bytes=s.recv(16))
-		print('UUID: %s' % str(uuid))
-	else:
-		print('Error =(')
-else:
-	show_help()
-	exit(1)
+	if status == RESPONSE_ERROR:
+		return None
 
-s.close()
+	uuid = UUID(bytes=sock.recv(16))
+
+	return uuid
+
+def get_song(addr, port, uuid):
+	sock = create_socket(addr, port)
+
+	sock.sendall(pack('B', REQUEST_GET))
+	sock.sendall(uuid.bytes)
+
+	status = unpack('B', sock.recv(1))[0]
+
+	if status == RESPONSE_ERROR:
+		return None
+	return recv_chunked_data(sock)

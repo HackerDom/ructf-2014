@@ -12,6 +12,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,17 +24,17 @@ import java.util.concurrent.TimeUnit;
 public class Feedback {
 	public static void main(String[] args) {
 		try {
-			if(args.length != 1 || args[0].equals("-?") || args[0].equals("--help")) {
+			if(args.length == 1 && (args[0].equals("-?") || args[0].equals("--help"))) {
 				System.out.println("feedback.jar <port>");
 				return;
 			}
 
-			int port = Integer.parseInt(args[0]);
+			int port = args.length >= 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
 
-			UserIndex userIndex = new UserIndex("users");
-			TokenCrypt tokenCrypt = new TokenCrypt("key");
-
-			index = new LuceneIndex("index");
+			new File("data").mkdir();
+			UserIndex userIndex = new UserIndex("data/users");
+			TokenCrypt tokenCrypt = new TokenCrypt("data/key");
+			index = new LuceneIndex("data/index");
 
 			addHello();
 
@@ -87,6 +88,7 @@ public class Feedback {
 		index.commit();
 	}
 
+	private static final int DEFAULT_PORT = 7654;
 	private static final int LISTENER_THREADS_COUNT = 4;
 	private static final Logger log = LoggerFactory.getLogger(Feedback.class);
 	private static LuceneIndex index;

@@ -1,6 +1,6 @@
 var mysql = require('mysql');
 
-var DB_HOST = 'localhost',
+var DB_HOST = process.env.DB_PORT_3306_TCP_ADDR || 'localhost',
     DB_USER = 'meteo',
     DB_PASSWORD = 'DhBr1lONLzMetf7mhROc',
     DB_NAME = 'meteo';
@@ -38,8 +38,8 @@ exports.get_by_hash = function(hash, callback) {
 exports.add_filter = function(city, theme, callback) {
   if (! connection)
     throw 'Can\'t add filter until connection established';
-  if (theme.indexOf('http') != -1)
-    throw 'Thene can\'t contains `http` as substring';
+  if (theme.indexOf('http') != -1 || theme.indexOf('//') != -1)
+    throw 'Theme can\'t contains `http` or `//` as substring';
   connection.query('INSERT INTO filters (city, theme) VALUES (?, ?)', [city, theme], function(err) {
     if (err) throw err;
     callback();

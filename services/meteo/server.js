@@ -45,7 +45,7 @@ function create_filter(request, response, post) {
       data.get_filters(function(filters) {
         response.write(ejs.render(fs.readFileSync('templates/create_filter.html', 'utf8'), 
           {'countries': countries,
-           'message': 'New filter added',
+           'message': 'New filter has been added',
            'filters': filters
           }));
         response.end();
@@ -129,7 +129,6 @@ function static_files(request, response) {
       return;
     }
     console.log("Get static file: " + pathname);
-    // TODO: correct Content-Type
     response.writeHead(200, {"Content-Type": get_mime_type(pathname)});
     response.write(content);
     response.end();

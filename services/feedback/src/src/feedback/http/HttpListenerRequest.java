@@ -4,7 +4,9 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +55,11 @@ public class HttpListenerRequest {
 			return map;
 		for(String part : parts) {
 			String[] pair = part.split("=");
-			map.put(pair[0], pair.length > 1 ? pair[1] : null);
+			try {
+				map.put(pair[0], pair.length > 1 ? URLDecoder.decode(pair[1], "utf-8") : null);
+			} catch(UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
 		}
 		return map;
 	}

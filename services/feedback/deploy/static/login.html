@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>FlightFeedback</title>
+		<link type="text/css" rel="stylesheet" href="styles.css"/>
+	</head>
+	<body>
+		<div class="main">
+			<h1>HackFlight. Feedback</h1>
+			<h2>Login</h2>
+			<form id="form" class="form-main">
+				<input type="text" id="form-login" class="form-control" placeholder="Login"/>
+				<input type="password" id="form-pass" class="form-control" placeholder="Password"/>
+				<input type="submit" id="form-btn" class="form-control" value="Login"/>
+			</form>
+			<div id="result"></div>
+			<script type="text/javascript" src="scripts.js"></script>
+			<script type="text/javascript">
+				var $result = $("#result").first();
+				var $btn = $("#form-btn").first();
+
+				function callback(result) {
+					var ok = "OK";
+					var str = result ? (result.error || ok) : "Unknown error";
+					if(str == ok)
+						setTimeout(function() {window.location = "/"}, 2000);
+					else
+						$btn.disabled = false;
+					$result.innerHTML = str;
+				}
+
+				$("#form").first().onsubmit = function(e) {
+					e.preventDefault();
+					$btn.disabled = true;
+					$result.innerHTML = "";
+					var user = {login:$("#form-login").first().value, password:$("#form-pass").first().value};
+					$.post("/auth", user, callback, callback);
+				}
+			</script>
+		</div>
+	</body>
+</html>

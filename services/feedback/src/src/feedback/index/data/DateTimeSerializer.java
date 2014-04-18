@@ -14,6 +14,6 @@ public class DateTimeSerializer extends JsonSerializer<DateTime> {
 	}
 
 	public long serialize(DateTime dateTime) {
-		return dateTime.getMillis();
+		return dateTime.getMillis() / 1000;
 	}
 }
