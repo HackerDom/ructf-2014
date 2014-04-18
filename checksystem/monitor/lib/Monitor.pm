@@ -133,7 +133,7 @@ sub startup {
 
           my ($h, $nh);
           while (my $row = $ph->sth->fetchrow_hashref()) {
-            if ($row->{round} % 15 == 0) {
+            if (($row->{round} > $self->round->{n} - 40) or ($row->{round} % 15 == 0)) {
               push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
             }
           }
