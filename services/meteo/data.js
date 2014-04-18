@@ -1,6 +1,6 @@
 var mysql = require('mysql');
 
-var DB_HOST = 'localhost',
+var DB_HOST = process.env.DB_PORT_3306_TCP_ADDR || 'localhost',
     DB_USER = 'meteo',
     DB_PASSWORD = 'DhBr1lONLzMetf7mhROc',
     DB_NAME = 'meteo';

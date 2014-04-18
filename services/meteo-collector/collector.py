@@ -6,10 +6,11 @@ import socket
 import logging
 import select
 import random
+import os
 
 def init_db():
   global db
-  DB_HOST = 'localhost'
+  DB_HOST = os.getenv('DB_PORT_3306_TCP_ADDR', 'localhost')
   DB_USER = 'meteo'
   DB_PASS = 'DhBr1lONLzMetf7mhROc'
   DB_NAME = 'meteo'
