@@ -10,7 +10,7 @@ public:
         : last_(initial), data_(length), pos_() {
     }
 
-    Data GetLast(size_t n) const {
+    Data GetLast(ssize_t n) const {
         if (!pos_) {
             return Data();
         } else {
@@ -58,7 +58,7 @@ public:
     }
 
     void Pop(const Queue& queue) {
-        sum_ = sum_ - queue.GetLast(cur_);
+        sum_ = sum_ - queue.GetLast(cur_-1);
     }
 
     void Push(const Queue& queue) {
