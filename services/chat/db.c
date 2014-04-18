@@ -25,9 +25,9 @@ mongo conn;
 int db_connect()
 {   
     int status;
-    if(getenv(DB_PORT_27017_TCP_ADDR))
+    if(getenv("DB_PORT_27017_TCP_ADDR"))
     {
-        status = mongo_client( &conn, getenv(DB_PORT_27017_TCP_ADDR), MONGO_PORT );
+        status = mongo_client( &conn, getenv("DB_PORT_27017_TCP_ADDR"), MONGO_PORT );
     }
     else
     { 
