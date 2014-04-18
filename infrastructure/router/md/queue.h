@@ -67,7 +67,8 @@ public:
     }
 
     void Pop(const Queue& queue) {
-        sum_ = sum_ - queue.GetLast(cur_-1);
+        if (cur_ == GetLength(Length()))
+            sum_ = sum_ - queue.GetLast(cur_-1);
     }
 
     void Push(const Queue& queue) {
