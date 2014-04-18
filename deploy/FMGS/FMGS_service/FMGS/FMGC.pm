@@ -6,6 +6,8 @@ use FMGCDB qw/db_read db_write/;
 use MCDU qw/set_title set_status set_action del_action put_line
     do_action clean select_line read_line/;
 
+use re 'eval';
+
 our @ISA = qw/Exporter/;
 our @EXPORT_OK = qw/sys_init btn_press/;
 our $VERSION = 1.0;
@@ -80,7 +82,7 @@ sub sys_init {
                 read_line(
                     sub { $flight{'AIRCRAFT'} = shift },
                     ('A'..'Z', '0'..'9', '-')
-                ); 1
+                );
             });
 
             put_line(2, 'L', 'INFO#FLIGHT', $flight{'FLIGHT'});
@@ -89,7 +91,7 @@ sub sys_init {
                 read_line(
                     sub { $flight{'FLIGHT'} = shift },
                     ('A'..'Z', '0'..'9')
-                ); 1
+                );
             });
 
             put_line(1, 'R', 'INFO#FROM', $flight{'FROM'});
@@ -98,7 +100,7 @@ sub sys_init {
                 read_line(
                     sub { $flight{'FROM'} = shift },
                     ('A'..'Z', '0'..'9', ' ', '.')
-                ); 1
+                );
             });
 
             put_line(2, 'R', 'INFO#TO', $flight{'TO'});
@@ -107,12 +109,11 @@ sub sys_init {
                 read_line(
                     sub { $flight{'TO'} = shift },
                     ('A'..'Z', '0'..'9', ' ', '.')
-                ); 1
+                );
             });
 
             put_line(5, 'R', 'SELECTABLE#ROUTE');
             set_action('5R', $r_init = sub {
-                clean;
                 set_title('ROUTE INIT');
                 for my $i (0..4) {
                     my $idx = $r_first + $i;
@@ -123,13 +124,24 @@ sub sys_init {
                         select_line((1 + $i).'L', 1);
                         read_line(
                             sub {
-                                $route[$idx] = [split /\s+/, shift, 2];
+                                my $arg = shift;
+                                if ($arg =~ /^\//) {
+                                    my @args = split /\s+/, substr($arg, 1);
+                                    push @args, 0 while @args < 2;
+
+                                    $arg = join ' ', @{convert_point(
+                                        _pack_point(
+                                            @{(find_points(@args))->[0]}
+                                        )
+                                    )};
+                                }
+                                $route[$idx] = [split /\s+/, $arg, 2];
                                 &$r_init
                             },
-                            ('A'..'Z', '0'..'9', ' ', '.', '=')
-                        ); 1
+                            (map { chr } ord(' ')..ord('~'))
+                        );
                     });
-                    last unless $route[$idx];
+                    put_line(1 + $i, 'L') unless $route[$idx]
                 }
 
                 set_action('CLN', sub {
@@ -173,7 +185,7 @@ sub sys_init {
                     read_line(
                         sub { $comment = shift },
                         ('A'..'Z', '0'..'9', '-', ' ', '=')
-                    ); 1
+                    );
                 });
 
                 put_line(6, 'R', 'SELECTABLE#OK');
@@ -204,7 +216,7 @@ sub sys_init {
                     TO => (join ':', @{$ep{'TO'}}),
                     ROUTE => \@track);
 
-                set_status("ERROR ADD"); 1
+                set_status("ERROR ADD");
             });
         });
 
@@ -227,7 +239,6 @@ sub sys_init {
                         my $p = $flight->[4]->[$i + $idx];
                         put_line(1 + $i, 'R', $p ? @{convert_point($p)} : '');
                     }
-                    1
                 };
                 &$view_route;
 
@@ -246,7 +257,7 @@ sub sys_init {
             };
 
             select_line('2L', 1);
-            read_line($v_flight, ('A'..'Z', '0'..'9')); 1
+            read_line($v_flight, ('A'..'Z', '0'..'9'));
         });
     };
 
