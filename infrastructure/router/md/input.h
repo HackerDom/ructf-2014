@@ -21,6 +21,10 @@ struct Pair {
         return Pair(packets + rhs.packets, bytes + rhs.bytes);
     }
 
+    bool operator<(const Pair& rhs) const {
+        return packets < rhs.packets || bytes < rhs.bytes;
+    }
+
     PacketCount packets;
     ByteCount   bytes;
 };

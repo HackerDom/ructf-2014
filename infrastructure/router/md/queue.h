@@ -25,12 +25,13 @@ public:
 protected:
     void Update(const Data& data) {
         size_t size = data_.size();
+        Data diff = last_ < data ? data - last_ : Data();
         if (pos_ < size) {
             // partial fill
-            data_[pos_++] = data - last_;
+            data_[pos_++] = diff;
         } else if (pos_ < 2*size) {
             // full fill, start to forget
-            data_[pos_ - size] = data - last_;
+            data_[pos_ - size] = diff;
             if (++pos_ == 2*size) {
                 // start from the beginning
                 pos_ -= size;
@@ -54,7 +55,7 @@ template<typename Data, typename Length>
 class Counter {
     typedef BaseQueue<Data> Queue;
 public:
-    Counter() : n_(), cur_(), sum_() {
+    Counter() : cur_(), sum_() {
     }
 
     void Pop(const Queue& queue) {
@@ -63,15 +64,13 @@ public:
 
     void Push(const Queue& queue) {
         sum_ = sum_ + queue.GetLast(0);
-        if (cur_ < n_)
+        if (cur_ < Length::value)
             ++cur_;
     }
 
-    std::pair<size_t, Data> GetDifference() const {
+    std::pair<size_t, Data> GetDiff() const {
         return std::make_pair(cur_, sum_);
     }
-
-    const size_t n_;
 
     size_t cur_;
     Data sum_;
@@ -93,6 +92,10 @@ public:
 protected:
     void Push() { }
     void Pop() { }
+
+    void GetDiffs(std::vector<std::pair<size_t, Data>>& counters) {
+        counters.clear();
+    }
 };
 
 template<typename Data, typename Length, typename... Tail>
@@ -122,5 +125,10 @@ protected:
     void Pop() {
         Counter::Pop(*this);
         NextQueue::Pop();
+    }
+
+    void GetDiffs(std::vector<std::pair<size_t, Data>>& counters) {
+        NextQueue::GetDiffs(counters);
+        counters.push_back(Counter::GetDiff());
     }
 };
