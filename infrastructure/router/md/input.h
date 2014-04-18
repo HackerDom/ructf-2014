@@ -30,9 +30,7 @@ struct Pair {
 };
 
 struct NamedPair {
-    std::string from;
-    std::string to;
-
+    std::string name;
     Pair counts;
 };
 

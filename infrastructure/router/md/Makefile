@@ -2,7 +2,7 @@ CXX=clang++
 CXXFLAGS=-std=c++0x
 
 md: input.o main.o queue.o
-	clang++ -o md input.o main.o queue.o
+	$(CXX) -o md input.o main.o queue.o
 
 main.o: main.C input.h
 
