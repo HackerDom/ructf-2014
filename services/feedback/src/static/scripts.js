@@ -37,11 +37,19 @@ $.get = function(url, data, success, error) {
 		}
 	}
 	var queryString = query.length == 0 ? "" : "?" + query.join("&");
-	$.ajax('GET', url + queryString, null, function(result) {
-			if(success) {success(result ? JSON.parse(result) : null)}
-		}, error);
+	$.ajax('GET', url + queryString, null, function(result) { if(success) {success(result ? JSON.parse(result) : null)} }, error);
 };
 
 $.post = function(url, data, success, error) {
-	$.ajax('POST', url, JSON.stringify(data), success, error);
+	$.ajax('POST', url, JSON.stringify(data), function(result) { if(success) {success(result ? JSON.parse(result) : null)} }, error);
+}
+
+$.getCookie = function(name) {
+	var matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+	return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+$.timestampToString = function(value) {
+	var date = new Date(value * 1000);
+	return date.toLocaleString().replace(/\b(\d)\b/g, "0$1");
 }

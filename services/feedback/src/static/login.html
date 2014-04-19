@@ -3,22 +3,23 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>FlightFeedback</title>
-		<link type="text/css" rel="stylesheet" href="styles.css"/>
+		<link type="text/css" rel="stylesheet" href="styles.min.css"/>
 	</head>
 	<body>
-		<div class="container">
+		<div class="main">
 			<h1>HackFlight. Feedback</h1>
 			<h2>Login</h2>
-			<form id="form">
-				<input type="text" id="form-login" class="form-control" placeholder="Login"/>
-				<input type="password" id="form-pass" class="form-control" placeholder="Password"/>
+			<form id="form" class="form-login">
+				<input type="text" id="form-login" class="form-control" placeholder="Login" maxlength="64"/>
+				<input type="password" id="form-pass" class="form-control" placeholder="Password" maxlength="64"/>
 				<input type="submit" id="form-btn" class="form-control" value="Login"/>
 			</form>
 			<div id="result"></div>
-			<script type="text/javascript" src="scripts.js"></script>
+			<script type="text/javascript" src="scripts.min.js"></script>
 			<script type="text/javascript">
 				var $result = $("#result").first();
 				var $btn = $("#form-btn").first();
+
 				function callback(result) {
 					var ok = "OK";
 					var str = result ? (result.error || ok) : "Unknown error";
@@ -28,6 +29,7 @@
 						$btn.disabled = false;
 					$result.innerHTML = str;
 				}
+
 				$("#form").first().onsubmit = function(e) {
 					e.preventDefault();
 					$btn.disabled = true;
