@@ -14,6 +14,12 @@ EXITCODE_MUMBLE        = 103
 EXITCODE_DOWN          = 104
 EXITCODE_CHECKER_ERROR = 110
 
+class HttpWebException(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
 class HttpCheckerBase(object):
 	def check(self, addr):
 		pass
@@ -64,16 +70,23 @@ class HttpCheckerBase(object):
 
 			self.debug('Invalid command')
 			exit(EXITCODE_CHECKER_ERROR)
+		except HttpWebException as e:
+			print('http status code {}'.format(e.value))
+			exit(EXITCODE_MUMBLE)
 		except (r.exceptions.ConnectionError, r.exceptions.Timeout) as e:
 			self.debug(e)
+			print('connection problem')
 			exit(EXITCODE_DOWN)
 		except (r.exceptions.HTTPError, r.exceptions.TooManyRedirects) as e:
 			self.debug(e)
+			print('invalid http response')
 			exit(EXITCODE_MUMBLE)
 		except socket.error as e:
 			self.debug(e)
 			if isinstance(e, socket.timeout) or 'errno' in dir(e) and e.errno == 111:
+				print('connection problem')
 				exit(EXITCODE_DOWN)
+			print('socket error')
 			exit(EXITCODE_MUMBLE)
 		except Exception as e:
 			self.debug('Error during execution')

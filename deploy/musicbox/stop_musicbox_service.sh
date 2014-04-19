@@ -1,6 +1,6 @@
 #!/bin/bash
 
-service_name=meteo
+service_name=musicbox
 
 if [ ! -f  /var/run/${service_name}_service.cont_id ]; then
  echo "Service is not running"

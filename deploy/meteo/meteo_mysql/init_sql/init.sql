@@ -2,6 +2,8 @@ CREATE DATABASE IF NOT EXISTS `meteo`;
 GRANT USAGE ON *.* TO 'meteo'@'%' IDENTIFIED BY 'DhBr1lONLzMetf7mhROc';
 GRANT ALL PRIVILEGES ON `meteo`.* TO 'meteo'@'%';
 
+USE meteo;
+
 DROP TABLE IF EXISTS `data`;
 CREATE TABLE IF NOT EXISTS `data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
