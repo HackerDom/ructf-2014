@@ -1,9 +1,9 @@
 -- RuCTF 2014
 
-INSERT INTO services (id,name,checker) VALUES ( 1, 'FMGS'      , '' );
-INSERT INTO services (id,name,checker) VALUES ( 2, 'chat'      , '' );
-INSERT INTO services (id,name,checker) VALUES ( 3, 'dispatcher', '' );
-INSERT INTO services (id,name,checker) VALUES ( 4, 'musicbox'  , '' );
-INSERT INTO services (id,name,checker) VALUES ( 5, 'feedback'  , '' );
-INSERT INTO services (id,name,checker) VALUES ( 6, 'meteo'     , '' );
-INSERT INTO services (id,name,checker) VALUES ( 7, 'blackbox'  , '' );
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 1, 'FMGS'      , '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 2, 'chat'      , '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 3, 'dispatcher', '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 4, 'musicbox'  , '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 5, 'feedback'  , '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 6, 'meteo'     , '' , false);
+INSERT INTO services (id,name,checker,is_not_task) VALUES ( 7, 'blackbox'  , '' , true);
