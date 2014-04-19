@@ -16,7 +16,7 @@
   <span id="s110" style="background-color: rgb(128, 128, 128);">CHECKER ERROR</span>
   )
 </h2>
-<table class="table">
+<table class="table table-bordered">
   <tr>
     <td><b>#</b></td>
     <td><b>Логотип</b></td>
