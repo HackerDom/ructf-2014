@@ -24,6 +24,7 @@ use constant {
 };
 
 use Socket;
+use Fcntl qw/:flock/;
 use Term::ANSIColor qw/colorstrip/;
 
 my ($mode, $ip, $id, $flag) = @ARGV;
@@ -89,9 +90,11 @@ sub visualize {
     my ($ip, $flight) = @_;
 
     open F, '>>', VISUALIZER;
+    flock F, LOCK_EX;
     my $line = join ' ', @{$flight}[5, 7, 6];
     $line =~ s/\s+/, /g;
     print F "$ip:\t[$line]\n";
+    flock F, LOCK_UN;
     close F;
 }
 

@@ -15,26 +15,31 @@ MODULUS =  int('D12FBA8D63EA1F6ABFE3C989FEBD928361627ADE5AC6F878ED52613ED03076AF
 def OK(message=''):
   if message:
     logging.debug(message)
+    print(message)
   sys.exit(101)
 
 def CORRUPT(message=''):
   if message:
     logging.debug(message)
+    print(message)
   sys.exit(102)
 
 def MUMBLE(message=''):
   if message:
     logging.debug(message)
+    print(message)
   sys.exit(103)
 
 def DOWN(message=''):
   if message:
     logging.debug(message)
+    print(message)
   sys.exit(104)
 
 def ERR(message=''):
   if message:
     logging.error(message)
+    print(message)
   sys.exit(105)
 
 def get_or_die(url):
@@ -122,6 +127,7 @@ def check(hostname):
   menus = soup.find_all(class_='dropdown-menu')
   if len(menus) != 2:
     MUMBLE('Invalid markup on page: %s/create_filter' % root)
+
   last_href = menus[1].li.a['href']
 
   r = requests.get(root + last_href)
@@ -191,9 +197,21 @@ def put(hostname, flag_id, flag):
 def get(hostname, flag_id, flag):
   root = 'http://%s:%d' % (hostname, HTTP_PORT)
 
-  r = get_or_die(root + '/hash/%s' % flag_id)
+  flag_url = root + '/hash/%s' % flag_id
+  r = get_or_die(flag_url)
   if flag not in r.text:
     CORRUPT('Can\'t find my flag')
+
+  soup = BeautifulSoup(r.text)
+  menus = soup.find_all(class_='dropdown-menu')
+  if len(menus) != 2:
+    MUMBLE('Invalid markup on page: /hash/%s' % (root, '?' * len(flag_id)))
+
+  menu_elements = menus[1].find_all('li')
+  for menu_element in menu_elements[:-2][:5]:
+    filter_href = menu_element.find_all('a')[0]['href']
+    logging.debug('Get one filter page `%s%s`, set referer `%s`' % (root, filter_href, flag_url))
+    requests.get(root + filter_href, headers={'Referer': flag_url})  
 
 ########################### -MODES ###############################
 
