@@ -1,0 +1,52 @@
+#!/usr/bin/python2
+
+import json
+from io import BytesIO
+from subprocess import Popen, PIPE
+from bottle import get, post, request, run, static_file, response
+from mb_connector import *
+from uuid import UUID
+
+main_page = open('templates/index.html', 'rt').read()
+fail_page = open('templates/fail.html', 'rt').read()
+project_path = '.'
+
+musicbox_location = '127.0.0.1'
+musicbox_port = 4242
+
+@get('/static/<path:path>')
+def callback(path):
+	return static_file(path, root=project_path + '/static/')
+
+@get('/')
+def index():
+	return main_page
+
+@post('/get')
+def get_song_form_handler():
+	try:
+		uuid = UUID(request.forms.get('uuid').strip())
+		data = get_song(musicbox_location, musicbox_port, uuid)
+		if not data:
+			raise Exception('Musicbox error')
+		response.content_type = "audio/ogg"
+		response.add_header('Content-Disposition', 'attachment; filename=%s.ogg;' % str(uuid))
+		return data
+	except Exception as e:
+		print(e)
+		return fail_page
+
+@post('/put')
+def put_song_form_handler():
+	try:
+		song_data = request.files.get('input_file')
+		uuid = put_song(musicbox_location, musicbox_port, song_data.file.read())
+		if not uuid:
+			raise Exception('Musicbox error')
+		return json.dumps({ 'status' : 'success', 'uuid' : str(uuid) })
+	except Exception as e:
+		print(e)
+		return json.dumps({ 'status' : 'fail' })
+
+
+run(host='0.0.0.0', port=16780)
