@@ -114,8 +114,7 @@ void process_client()
         if (buf[0] != '\\')              // If not command, then client wants to say something
         {
             say(buf);
-            kill(-1,SIGUSR1);
-            //room_history();
+            kill(0, SIGUSR1);
         }
         else if (!strcmp(cmd, "\\quit"))
         {
@@ -208,6 +207,7 @@ int main(int argc, char **argv)
             shutdown(client, 2);
             exit(0);
         }
+        close(client);
     }
     close(server);
     return 0;
