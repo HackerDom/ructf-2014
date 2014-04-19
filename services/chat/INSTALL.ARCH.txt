@@ -1,0 +1,2 @@
+pacman -Sy && pacman --noconfirm -S mongodb && mkdir -p /data/db/ && mongod&
+
