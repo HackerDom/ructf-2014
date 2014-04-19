@@ -25,11 +25,11 @@ public class Feedback {
 	public static void main(String[] args) {
 		try {
 			if(args.length == 1 && (args[0].equals("-?") || args[0].equals("--help"))) {
-				System.out.println("feedback.jar <port>");
+				System.out.println("feedback.jar [port]");
 				return;
 			}
 
-			int port = args.length >= 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
+			int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
 
 			new File("data").mkdir();
 			UserIndex userIndex = new UserIndex("data/users");

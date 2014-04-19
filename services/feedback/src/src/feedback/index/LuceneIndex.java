@@ -53,7 +53,7 @@ public class LuceneIndex {
 			boolean stop = false;
 			while(!stop) {
 				try {
-					Thread.sleep(30000);
+					Thread.sleep(20000);
 					commit();
 				}
 				catch(Exception ignored) {
@@ -76,7 +76,7 @@ public class LuceneIndex {
 		QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_47, indexFields.fieldsArray, analyzer, indexFields.boosts);
 		parser.setDefaultOperator(QueryParser.Operator.AND);
 
-		long start = System.currentTimeMillis();
+		//long start = System.currentTimeMillis();
 		IndexSearcher searcher = searcherManager.acquire();
 
 		try {
@@ -95,7 +95,7 @@ public class LuceneIndex {
 
 			highlighter.highlight(results, query, searcher, hits);
 
-			log.info("Search: '{}', hits {}, elapsed {} ms", new Object[] {text, hits.totalHits, System.currentTimeMillis() - start});
+			//log.info("Search: '{}', hits {}, elapsed {} ms", new Object[] {text, hits.totalHits, System.currentTimeMillis() - start});
 
 			return new SearchResults(hits.totalHits, results);
 		} finally {
@@ -109,10 +109,10 @@ public class LuceneIndex {
 	}
 
 	public void commit() throws IOException {
-		long start = System.currentTimeMillis();
+		//long start = System.currentTimeMillis();
 		writer.commit();
 		searcherManager.maybeRefresh();
-		log.info("Commit, elapsed {} ms", System.currentTimeMillis() - start);
+		//log.info("Commit, elapsed {} ms", System.currentTimeMillis() - start);
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(LuceneIndex.class);
