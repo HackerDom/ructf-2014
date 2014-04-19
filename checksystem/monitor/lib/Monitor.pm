@@ -128,7 +128,7 @@ sub startup {
         });
     });
     Mojo::IOLoop->recurring(
-      120 => sub {
+      10 => sub {
         $self->log->info('Update history');
         $self->pg(
           'SELECT * FROM points_history

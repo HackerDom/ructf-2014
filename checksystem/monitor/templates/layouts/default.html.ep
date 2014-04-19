@@ -9,9 +9,27 @@
     <script type="text/javascript" src="/bootstrap.js"></script>
   </head>
 
-  <body class="page">
-    <div class="content">
-    <%= content %>
+  <body>
+    <div class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">RuCTF 2014</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="<%= url_for('index') %>">Скорборд</a></li>
+            <li><a href="#about">Полёты</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">
+              <%= content_for 'r' %></head>
+            </a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <%= content %>
     </div>
   </body>
 </html>

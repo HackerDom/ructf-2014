@@ -2,9 +2,11 @@
 % title 'RuCTF > скорборд';
 % use Mojo::Util 'url_escape';
 
-<p id="round">Round <%= $self->app->round->{n} %> (started at <%= $self->app->round->{time} %>)</p>
-<div id="history"></div>
-<table class="table table-bordered">
+% content_for r => begin
+  Раунд <%= $self->app->round->{n} %> (начался <%= $self->app->round->{time} %>)
+% end
+<div id="history" style="height: 350px;"></div>
+<table class="table">
   <tr>
     <td>#</td>
     <td>Логотип</td>
@@ -21,23 +23,21 @@
     <td><%= ++$pos %>.</td>
     <td>
       % my $name = url_escape url_escape $score->{team}{name};
-      % warn $name;
-      <img src="<%= url_for('/logo/' . $name) %>" width="64" height="64">
+      <img src="<%= url_for('/logo/' . $name) %>" width="64" height="64" class="img-rounded">
     </td>
-    <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
+    <td><span title="<%= $score->{team}{vuln_box} %>"><%= $score->{team}{name} %></span></td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $sid (keys %{$self->app->services}) {
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
-      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'danger', 110 => 'active'};
-      <td class="s<%= $status %>" data-team="<%= $score->{team}{id} %>" data-service="<%= $sid %>" data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>">
-        S: <%= $status %> <br/>
-        SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
-        FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
+      % my $s = {101 => 'OK', 102 => 'CORRUPT', 103 => 'MUMBLE', 104 => 'DOWN', 110 => 'CHECKER ERROR'};
+      <td title="<%= $s->{$status} %>" class="s<%= $status %>" data-team="<%= $score->{team}{id} %>" data-service="<%= $sid %>" data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>">
+        <p>SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %></p>
+        <p>FP: <%= sprintf '%.2f', $score->{fp}{$sid} %></p>
       </td>
     % }
     <td>
-      <div style="width: 100px; height: 100px;" id="team_<%= $score->{team}{id} %>"></div>
+      <div style="width: 94px; height: 94px;" id="team_<%= $score->{team}{id} %>"></div>
     </td>
   </tr>
   % }
