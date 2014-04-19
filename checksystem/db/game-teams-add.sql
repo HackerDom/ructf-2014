@@ -9,7 +9,7 @@ INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (6, 'ufologists', '1
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (7, 'SiBears', '10.23.7.0/24', '10.23.7.3', true);
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (8, 'BalalaikaCr3w', '10.23.8.0/24', '10.23.8.3', true);
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (9, 'SUSlo.dump', '10.23.9.0/24', '10.23.9.3', true);
-INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (10, 'ReallyNonamesFor', '10.23.10.0/24', '10.23.10.3', true);
+INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (10, 'Guests', '10.23.10.0/24', '10.23.10.3', true);
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (11, 'Мягкий отбой', '10.23.11.0/24', '10.23.11.3', true);
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (12, '[censored]', '10.23.12.0/24', '10.23.12.3', true);
 INSERT INTO teams (id,name,network,vuln_box,enabled) VALUES (13, 'Котаны', '10.23.13.0/24', '10.23.13.3', true);
