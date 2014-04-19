@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>RuCTF 2014 - Musicbox</title>
+    <link rel="stylesheet" href="static/css/common.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/jplayer.red.monday.css" type="text/css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <img src="static/images/logo.png" class="img-responsive container" id="mix-logo"/>
+
+      <div class="col-md-12">
+
+        <div id="jquery_jplayer_1" class="jp-jplayer"></div>
+
+        <div id="jp_container_1" class="jp-audio">
+          <div class="jp-type-single">
+            <div class="jp-gui jp-interface">
+              <ul class="jp-controls">
+                <li><a href="javascript:;" class="jp-play" tabindex="1">play</a></li>
+                <li><a href="javascript:;" class="jp-pause" tabindex="1">pause</a></li>
+                <li><a href="javascript:;" class="jp-stop" tabindex="1">stop</a></li>
+                <li><a href="javascript:;" class="jp-mute" tabindex="1" title="mute">mute</a></li>
+                <li><a href="javascript:;" class="jp-unmute" tabindex="1" title="unmute">unmute</a></li>
+                <li><a href="javascript:;" class="jp-volume-max" tabindex="1" title="max volume">max volume</a></li>
+              </ul>
+              <div class="jp-progress">
+                <div class="jp-seek-bar">
+                  <div class="jp-play-bar"></div>
+                </div>
+              </div>
+              <div class="jp-volume-bar">
+                <div class="jp-volume-bar-value"></div>
+              </div>
+              <div class="jp-time-holder">
+                <div class="jp-current-time"></div>
+                <div class="jp-duration"></div>
+              </div>
+            </div>
+            <div class="jp-details">
+              <ul>
+                <li><span class="jp-title"></span></li>
+              </ul>
+            </div>
+            <div class="jp-no-solution">
+              <span>Update Required</span>
+              To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>.
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
+      <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="uploadModalLabel">Upload status</h4>
+            </div>
+            <div class="modal-body" id="uploadModalbody">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-container text-center col-md-6">
+          <h1 class="header-pretty">Want to hear your own music?</h1>
+          <p class="header-pretty">You can do it right now</p>
+          <form id="putForm" role="form" class="form" action="/put" method="post">
+            <div class="form-group">
+              <input type="file" class="form-control" id="input_file" name="input_file" accept=".ogg">
+            </div>
+            <div class="form-group">
+              <button id="putFormSubmitButton" type="submit" class="btn btn-danger btn-lg">Upload</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="form-container text-center col-md-6">
+            <h1 class="header-pretty">Want your song back?</h1>
+            <p class="header-pretty">No problem, I'm not hiding anything</p>
+            <form id="getForm" role="form" class="form" action="/get" method="post">
+              <div class="form-group">
+                <input type="text" class="form-control" id="uuid" name="uuid" placeholder="Enter ID of the song you want back">
+              </div>
+              <div class="form-group">
+                <button type="submit" class="btn btn-danger btn-lg">Download</button>
+              </div>
+            </form>
+        </div>
+      </div>
+
+    </div>
+
+    <script type="text/javascript" src="static/js/jquery.js"></script>
+    <script type="text/javascript" src="static/js/bootstrap.js"></script>
+    <script type="text/javascript" src="static/js/jquery.form.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery.jplayer.min.js"></script>
+    <script type="text/javascript" src="static/js/index.js"></script>
+  </body>
+
+</html>

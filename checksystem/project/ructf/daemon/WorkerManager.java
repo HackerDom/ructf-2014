@@ -25,7 +25,7 @@ public class WorkerManager extends Thread{
 			logger.error(e);
 		}
 		finally{
-			freeThreads++;				
+			freeThreads++;		
 		}		
 	}
 	

@@ -3,6 +3,8 @@ package ructf.main;
 import java.sql.*;
 import java.util.*;
 
+import ructf.getflags.DuplicateTaskFlagForTeam;
+import ructf.getflags.NoSuchTaskFlagException;
 import ructf.getflags.StolenFlag;
 
 public class FlagManager
@@ -20,6 +22,7 @@ public class FlagManager
 	private PreparedStatement	stDeleteDelayedFlag;
 	private PreparedStatement	stInsertStolenFlag;
 	private PreparedStatement	stGetNotExpiredFlags;
+	private PreparedStatement	stInsertStolenTaskFlag;
 	private Random				random;
 	private StringBuilder		stringBuilder;
 	
@@ -30,6 +33,7 @@ public class FlagManager
 	private static String sqlInsertStolenFlag = "INSERT INTO stolen_flags (team_id, flag_data, victim_team_id, victim_service_id) VALUES (?,?,?,?)";
 	private static String sqlGetNotExpiredFlags = "SELECT flag_id, flag_data FROM flags WHERE " +
 		"team_id=? AND service_id=? AND EXTRACT(EPOCH FROM NOW()-time) < ?";
+	private static String sqlInsertStolenTaskFlag = "INSERT INTO stolen_task_flags (team_id, flag_data) VALUES (?,?)";
 	
 	public FlagManager(Connection dbConnection) throws SQLException
 	{
@@ -39,6 +43,7 @@ public class FlagManager
 		stDeleteDelayedFlag = dbConnection.prepareStatement(sqlDeleteDelayedFlag);
 		stGetDelayedFlag = dbConnection.prepareStatement(sqlGetDelayedFlag);
 		stGetNotExpiredFlags = dbConnection.prepareStatement(sqlGetNotExpiredFlags);
+		stInsertStolenTaskFlag = dbConnection.prepareStatement(sqlInsertStolenTaskFlag);
 		random = new Random();
 		stringBuilder = new StringBuilder();
 	}
@@ -124,6 +129,23 @@ public class FlagManager
 		catch (SQLException e) {
 			DatabaseManager.ShowDbException(stInsertStolenFlag, e);
 			return false;
+		}
+	}
+	
+	public void InsertTaskStolenFlag(int teamId, String flagData) throws DuplicateTaskFlagForTeam, NoSuchTaskFlagException, SQLException {
+		try {
+			stInsertStolenTaskFlag.setInt(1, teamId);
+			stInsertStolenTaskFlag.setString(2, flagData);			
+			stInsertStolenTaskFlag.executeUpdate();
+			return;
+		}
+		catch (SQLException e) {
+			if(e.getMessage().indexOf("duplicate key value violates unique constraint") >= 0)
+				throw new DuplicateTaskFlagForTeam(e);
+			else if(e.getMessage().indexOf("duplicate key value violates unique constraint") >= 0)
+				throw new NoSuchTaskFlagException(e);				
+			DatabaseManager.ShowDbException(stInsertStolenTaskFlag, e);
+			throw e;
 		}
 	}
 	

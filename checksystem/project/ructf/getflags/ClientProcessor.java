@@ -2,6 +2,7 @@ package ructf.getflags;
 
 import java.net.*;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 import org.apache.log4j.*;
@@ -105,6 +106,7 @@ public class ClientProcessor extends Thread
 				}
 				totalFlags++;
 			
+				
 				if (flagStr.length() != Constants.flagLength) {
 					out.println("Denied: bad flag length. Must be: " + Constants.flagLength);
 					// logger.debug("Denied: bad length");
@@ -112,10 +114,36 @@ public class ClientProcessor extends Thread
 				}
 				logger.debug(String.format("Got flag: %s (%d)", flagStr, totalFlags));
 				
+				
+				
+				try{
+					flagManager.InsertTaskStolenFlag(teamId.getId(), flagStr);
+					goodFlags++;
+					logger.debug(String.format("Accepted taskFlag %s", flagStr));
+					out.println("Accepted");
+					continue;
+				}
+				catch(NoSuchTaskFlagException ne){
+					logger.debug("Denied: no such task flag");
+					out.println("Denied: no such flag");
+					continue;
+				}
+				catch (DuplicateTaskFlagForTeam de) {
+					logger.debug("Denied: task flag resubmit");
+					out.println("Denied: you already submitted this flag");
+					continue;
+				}
+				catch (SQLException e) {
+					logger.error("InsertTaskStolenFlag failed", e);
+					out.println("Please try again later");
+				}
+				
+				
+				
 				StolenFlag stolenFlag = new StolenFlag(flagStr, dbConnection);
 				if (stolenFlag.noSuchFlag()) {
-					out.println("Denied: no such flag");
 					logger.debug("Denied: no such flag");
+					out.println("Denied: no such flag");					
 					continue;
 				}
 				
@@ -147,7 +175,7 @@ public class ClientProcessor extends Thread
 				}
 				
 				goodFlags++;
-				logger.debug("Accepted");
+				logger.debug(String.format("Accepted flag %s", flagStr));
 				if (flagManager.InsertStolenFlag(teamId.getId(), stolenFlag))
 					out.println("Accepted");
 				else {

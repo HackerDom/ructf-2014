@@ -1,21 +1,17 @@
 FROM ructf2014:arch
 MAINTAINER dqkrait@gmail.com
 
-RUN pacman -S --noconfirm libvorbis
+RUN pacman -S --noconfirm libvorbis python2-pip
+RUN pip2 install bottle
 
+RUN useradd musicbox
 ADD musicbox /home/musicbox/
 
-#RUN pacman -Sy
-#RUN pacman -S --noconfirm python2-pip
-#RUN pacman -S --noconfirm gcc
-#RUN pip2 install flask
 
-#RUN useradd dispatcher
+RUN chown -R musicbox:musicbox /home/musicbox
+USER musicbox
 
-#ADD dispatcher /home/dispatcher
-#RUN chown -R dispatcher:dispatcher /home/dispatcher
-#USER dispatcher
+EXPOSE 4242 16780
 
-#CMD python2 /home/dispatcher/main.py
-
-EXPOSE 5000
+WORKDIR /home/musicbox
+CMD /home/musicbox/start.sh
