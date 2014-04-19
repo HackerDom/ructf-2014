@@ -43,7 +43,7 @@ def ERR(message=''):
   if message:
     logging.error(message)
     print(message)
-  sys.exit(105)
+  sys.exit(110)
 
 def get_or_die(url):
   r = requests.get(url)

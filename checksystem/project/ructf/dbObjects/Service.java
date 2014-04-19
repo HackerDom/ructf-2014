@@ -9,6 +9,7 @@ public class Service
 	private String name;
 	private String checker;
 	private boolean delayFlagGet;
+	private boolean isNotTask;
 
 	public static Vector<Service> LoadServices(Statement st) throws Exception
 	{
@@ -19,22 +20,23 @@ public class Service
 		return services;
 	}
 
-	private Service(int id, String name, String checker, boolean delayFlagGet)
+	private Service(int id, String name, String checker, boolean delayFlagGet, boolean isNotTask)
 	{
 		this.id = id;
 		this.name = name;
 		this.checker = checker;
 		this.delayFlagGet = delayFlagGet;
+		this.isNotTask = isNotTask;
 	}
 
 	private Service(ResultSet rs) throws SQLException
 	{
-		this(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getBoolean(4));
+		this(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getBoolean(4), rs.getBoolean(5));
 	}
 
 	public String toString()
 	{
-		return String.format("Service(%d, '%s', '%s', delay='%b')", id, name, checker, delayFlagGet);
+		return String.format("Service(%d, '%s', '%s', delay='%b', isNotTask='%b')", id, name, checker, delayFlagGet, isNotTask);
 	}
 
 	public int getId()
@@ -56,6 +58,11 @@ public class Service
 	{
 		return delayFlagGet;
 	}
+	
+	public boolean getIsNotTask()
+	{
+		return isNotTask;
+	}
 
-	private static String loadQuery = "SELECT id, name, checker, delay_flag_get FROM services";
+	private static String loadQuery = "SELECT id, name, checker, delay_flag_get, is_not_task FROM services";
 }
