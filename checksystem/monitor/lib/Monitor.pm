@@ -49,7 +49,7 @@ sub startup {
     });
 
   Mojo::IOLoop->recurring(
-    20 => sub {
+    5 => sub {
       $self->log->info('Update scoreboard');
       Mojo::IOLoop->delay(
         sub {
@@ -123,7 +123,7 @@ sub startup {
           }
 
           while (my $row = $flh->sth->fetchrow_hashref()) {
-            $self->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
+            $self->flags->{$row->{team_id}}{$row->{service_id}} = $row->{flags};
           }
         });
     });

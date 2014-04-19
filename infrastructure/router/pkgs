@@ -1,2 +1,2 @@
 openvpn bridge-utils iptables iproute ifenslave-* tftpd-hpa isc-dhcp-server
-nagios3-core nagios3-cgi ulogd
+nagios3-core nagios3-cgi ulogd ulogd-pcap make clang

@@ -32,6 +32,8 @@ if (/\s*(\d+)\s+(\d+)\s+mon_to_(\w+)/ and $from) {
     $bytes{"$from-$to"} = $bytes;
 }
 
+print scalar keys %packets, $/;
+
 for $pair (sort keys %packets) {
     print "$pair $packets{$pair} $bytes{$pair}\n";
 }
