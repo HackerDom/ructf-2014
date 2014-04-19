@@ -27,6 +27,10 @@ define servicegroup {
 }
 
 define hostgroup {
+    hostgroup_name   Switches
+}
+
+define hostgroup {
     hostgroup_name   Essential hosts
 }
 
@@ -58,7 +62,7 @@ define host {
     use            generic-host
     host_name      Core switch
     address        10.24.0.1
-    hostgroups     Essential hosts
+    hostgroups     Essential hosts, Switches
     check_interval 2
 }
 
@@ -102,7 +106,7 @@ define host {
     host_name      Team {{i}} switch
     address        10.24.{{i}}.1
     check_interval 2
-    hostgroups     Essential hosts
+    hostgroups     Essential hosts, Switches
 }
 
 define service {
