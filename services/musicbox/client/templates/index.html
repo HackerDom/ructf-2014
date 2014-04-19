@@ -4,21 +4,55 @@
     <title>RuCTF 2014 - Musicbox</title>
     <link rel="stylesheet" href="static/css/common.css" type="text/css" />
     <link rel="stylesheet" href="static/css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/jplayer.red.monday.css" type="text/css" />
   </head>
 
   <body>
     <div class="container">
-
-    <div class="col-md-12">
-
-    </div>
-
       <img src="static/images/logo.png" class="img-responsive container" id="mix-logo"/>
 
-      <!-- Here goes the player
+      <div class="col-md-12">
+
+        <div id="jquery_jplayer_1" class="jp-jplayer"></div>
+
+        <div id="jp_container_1" class="jp-audio">
+          <div class="jp-type-single">
+            <div class="jp-gui jp-interface">
+              <ul class="jp-controls">
+                <li><a href="javascript:;" class="jp-play" tabindex="1">play</a></li>
+                <li><a href="javascript:;" class="jp-pause" tabindex="1">pause</a></li>
+                <li><a href="javascript:;" class="jp-stop" tabindex="1">stop</a></li>
+                <li><a href="javascript:;" class="jp-mute" tabindex="1" title="mute">mute</a></li>
+                <li><a href="javascript:;" class="jp-unmute" tabindex="1" title="unmute">unmute</a></li>
+                <li><a href="javascript:;" class="jp-volume-max" tabindex="1" title="max volume">max volume</a></li>
+              </ul>
+              <div class="jp-progress">
+                <div class="jp-seek-bar">
+                  <div class="jp-play-bar"></div>
+                </div>
+              </div>
+              <div class="jp-volume-bar">
+                <div class="jp-volume-bar-value"></div>
+              </div>
+              <div class="jp-time-holder">
+                <div class="jp-current-time"></div>
+                <div class="jp-duration"></div>
+              </div>
+            </div>
+            <div class="jp-details">
+              <ul>
+                <li><span class="jp-title"></span></li>
+              </ul>
+            </div>
+            <div class="jp-no-solution">
+              <span>Update Required</span>
+              To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>.
+            </div>
+          </div>
+        </div>
 
 
-      -->
+      </div>
 
       <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -45,7 +79,7 @@
               <input type="file" class="form-control" id="input_file" name="input_file">
             </div>
             <div class="form-group">
-              <button id="putFormSubmitButton" type="submit" class="btn btn-primary btn-lg">Upload</button>
+              <button id="putFormSubmitButton" type="submit" class="btn btn-danger btn-lg">Upload</button>
             </div>
           </form>
         </div>
@@ -58,7 +92,7 @@
                 <input type="text" class="form-control" id="uuid" name="uuid" placeholder="Enter ID of the song you want back">
               </div>
               <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-lg">Download</button>
+                <button type="submit" class="btn btn-danger btn-lg">Download</button>
               </div>
             </form>
         </div>
@@ -67,9 +101,10 @@
     </div>
 
     <script type="text/javascript" src="static/js/jquery.js"></script>
-    <script type="text/javascript" src="static/js/jquery.form.min.js"></script>
     <script type="text/javascript" src="static/js/bootstrap.js"></script>
-    <script type="text/javascript" src="static/js/common.js"></script>
+    <script type="text/javascript" src="static/js/jquery.form.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery.jplayer.min.js"></script>
+    <script type="text/javascript" src="static/js/index.js"></script>
   </body>
 
 </html>
