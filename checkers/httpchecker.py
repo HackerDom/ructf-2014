@@ -28,6 +28,8 @@ class HttpCheckerBase(object):
 		sys.stderr.write('%s\n' % msg)
 
 	def run(self):
+		self.debug(' '.join(sys.argv))
+
 		if len(sys.argv) < 3:
 			self.debug('Not enough arguments')
 			exit(EXITCODE_CHECKER_ERROR)

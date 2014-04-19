@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<head>
+<title>RuCTF 2014 flight map</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<link href="https://developers.google.com/maps/documentation/javascript/examples/default.css" rel="stylesheet">
+<style type="text/css">
+  html { height: 100% }
+  body { height: 100%; margin: 0; padding: 0 }
+  #map_canvas { height: 100% }
+</style>
+<script type="text/javascript"  src="http://maps.googleapis.com/maps/api/js?sensor=false">
+</script>
+
+<script type="text/javascript">
+  var map = null;
+  var mapOptions = null;
+
+  var marker = null; //should be array of planes
+  var flightPath = null; //should be array of plane paths
+
+  var planes = [
+    [0,0,10,10,20,10,40,50]
+  ];
+  var progress = 0.0;
+
+  function fetch_timeout()
+  {
+    xmlhttp=new XMLHttpRequest();
+    xmlhttp.open("GET","<%= url_for('fly_data') %>",false);
+    xmlhttp.send();
+    var data = JSON.parse(xmlhttp.responseText);
+    //TODO: split into planes and progress
+  }
+
+  function redraw_planes()
+  {
+    for (i=0;i<planes.length;i++)
+    {
+      draw_plane(planes[i], progress);
+    }
+    progress += 0.01;
+    if (progress > 1)
+    {
+      progress = 1.0;
+    }
+  }
+
+  function draw_plane(data, progress)
+  {
+    totalLen = 0.0;
+    for (i=2;i<data.length;i += 2)
+    {
+      totalLen += Math.sqrt((data[i] - data[i-2]) * (data[i] - data[i-2]) + (data[i+1] - data[i-1])*(data[i+1] - data[i-1]));
+    }
+    passed = totalLen * progress;
+    totalLen = 0.0;
+    temp_line = Array();
+    temp_line.push(new google.maps.LatLng(data[0], data[1]));
+    for (i=2;i<data.length;i += 2)
+    {
+      difference = Math.sqrt((data[i] - data[i-2]) * (data[i] - data[i-2]) + (data[i+1] - data[i-1])*(data[i+1] - data[i-1]));
+      if (totalLen + difference >= passed)
+      {
+        k = (passed - totalLen) / difference;
+        final_x = data[i-2] + (data[i] - data[i-2]) * k;
+        final_y = data[i-1] + (data[i+1] - data[i-1]) * k;
+        temp_line.push(new google.maps.LatLng(final_x, final_y));
+        break;
+      }
+      temp_line.push(new google.maps.LatLng(data[i], data[i+1]));
+      totalLen += difference;
+    }
+    path = flightPath.getPath();
+    while (path.length)
+    {
+      path.pop();
+    }
+    for (i = 0; i < temp_line.length; i++)
+    {
+      path.push(temp_line[i]);
+    }
+    marker.setPosition(new google.maps.LatLng(final_x,final_y)); //lat, lon
+  }
+
+  function initialize()
+  {
+    myLatlng = new google.maps.LatLng(0.0, 0.0);
+    mapOptions = {
+      center: myLatlng,
+      zoom: 2,
+      maxZoom: 10,
+      streetViewControl: false,
+      mapTypeId: google.maps.MapTypeId.SATELLITE
+    };
+    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+    marker = new google.maps.Marker({
+      position: myLatlng,
+      map: map,
+      icon: 'plane.png',
+      title:"Hello World!"
+    });
+    flightPath = new google.maps.Polyline({
+      path: [],
+      geodesic: true,
+      strokeColor: '#FF0000',
+      strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
+
+    flightPath.setMap(map);
+    window.setInterval("redraw_planes()",500);
+    //TODO: setInterval for planes fetching
+  }
+</script>
+</head>
+<body onload="initialize(); ">
+<div id="map_canvas"></div>
+</body>
+</html>

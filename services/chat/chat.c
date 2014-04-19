@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <signal.h>
 
 #include "db.h"
@@ -54,7 +53,7 @@ void print_greeting()
 {
     WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
     WriteLn("");
-    WriteLn("Commands: \\help, \\register, \\login, \\list, \\join <room>, \\leave, \\quit");
+    WriteLn("Commands: \\help, \\register, \\login, \\create, \\list, \\join, \\leave, \\quit");
     WriteLn("");
 }
 
@@ -82,28 +81,18 @@ void parse_argv(char buf[], char **argv, int *argc)
     }
 }
 
-void melting(int parameter) {
-    room_history();
-    Write(">");
-}
-
-void set_signal()
-{
-void (*originalInterruptSignal)(int); 
- originalInterruptSignal = signal(SIGUSR1, melting);
-}
-
 void process_client()
 {
     char *argv[MAX_ARGV];
     char buf[BUF_SIZE];
     int argc = 0;
+
     set_signal();
     print_greeting();
+    prompt();
 
     while (1)
     {
-        Write("> ");
         if (!fgets(buf, BUF_SIZE, stdin))
             break;
         strtok(buf, "\r\n");             // Skip everything after "\r" or "\n"
@@ -114,7 +103,6 @@ void process_client()
         if (buf[0] != '\\')              // If not command, then client wants to say something
         {
             say(buf);
-            kill(0, SIGUSR1);
         }
         else if (!strcmp(cmd, "\\quit"))
         {
@@ -153,6 +141,7 @@ void process_client()
             WriteLn("Unknown command or wrong number of arguments (type '\\help' for commands list)");
         }
         WriteLn("");
+        prompt();
     }
 }
 

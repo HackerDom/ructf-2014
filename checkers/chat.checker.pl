@@ -9,19 +9,19 @@ use IO::Select;
 my $TIMEOUT      = 5;
 my $DEBUG        = 1;
 my $PORT         = 5555;
-my $READ_TIMEOUT = 2;
+my $READ_TIMEOUT = 5;
 my $READ_BUF     = 65535;
-my $DUMP         = 0;
+my $DUMP         = 1;
 
 ########################
 
-sub MSG          { my $s = shift; $s =~ s/[\r\n]+/[\\n]/g; $s; }
+sub MSG          { my $s = pop; $s =~ s/[\r\n]+/[\\n]/g; $s; }
 
-sub EXIT_OK      { warn MSG(pop).$/; exit 101 }
-sub EXIT_CORRUPT { warn MSG(pop).$/; exit 102 }
-sub EXIT_MUMBLE  { warn MSG(pop).$/; exit 103 }
-sub EXIT_DOWN    { warn MSG(pop).$/; exit 104 }
-sub EXIT_ERR     { warn MSG(pop).$/; exit 105 }
+sub EXIT_OK      { my $s = pop; exit 101 }
+sub EXIT_CORRUPT { my $s = pop; warn MSG($s).$/; print $s.$/; exit 102 }
+sub EXIT_MUMBLE  { my $s = pop; warn MSG($s).$/; print $s.$/; exit 103 }
+sub EXIT_DOWN    { my $s = pop; warn MSG($s).$/; print $s.$/; exit 104 }
+sub EXIT_ERR     { my $s = pop; warn MSG($s).$/; exit 105 }
 
 my (@First, @Last);
 
@@ -76,20 +76,19 @@ sub readAll {
     my $result = '';
     while (1) {
         my @ready = $select->can_read($READ_TIMEOUT);
-        last unless @ready;
         $sock->recv(my $data, $READ_BUF);
         $result .= $data;
         last if $data =~ '>';
     }
     if ($DUMP) {
-        printf STDERR "[ <= ] %s\n", $_ for grep { /\S/ } split /[\r\n]/, $result;
+        printf STDERR "[ recv ] %s\n", $_ for grep { /\S/ } split /[\r\n]/, $result;
     }
     return $result;
 }
 
 sub sendData {
     my ($sock,$data) = @_;
-    printf STDERR "[ => ] %s\n", $data if $DUMP;
+    printf STDERR "[ send ] %s\n", $data if $DUMP;
     $sock->send("$data\r\n");
 }
 
@@ -99,8 +98,9 @@ sub assertBanner {
 
 sub check {
     my ($host) = @_;
-    my $s = connectTo($host) or EXIT_DOWN "Service is down: $@";
+    my $s = connectTo($host) or EXIT_DOWN $@;
     my $data = readAll($s);
+    sendData($s, "\\quit");
     $s->close();
     assertBanner($data) ? EXIT_OK : EXIT_MUMBLE "Welcome banner corrupted";
 }
@@ -118,20 +118,20 @@ sub put {
 
     debug "put: generated: $login, $room, $pass";
 
-    my $s = connectTo($host) or EXIT_DOWN "Service is down: $@";
+    my $s = connectTo($host) or EXIT_DOWN $@;
 
     my $data = readAll($s);
     assertBanner($data) or EXIT_MUMBLE "Welcome banner corrupted";
 
     sendData($s, "\\register $login $pass");
     $data = readAll($s);
-    $data =~ /Login OK/ or EXIT_MUMBLE "register failed: '$data'";
+    $data =~ /Login OK/ or EXIT_MUMBLE "register failed";
 
     debug "register OK";
 
     sendData($s, "\\create $room $pass");
     $data = readAll($s);
-    $data =~ /Welcome to private room '$room'/ or EXIT_MUMBLE "create room failed: '$data'";
+    $data =~ /Welcome to private room '$room'/ or EXIT_MUMBLE "create room failed";
 
     debug "create room OK";
 
@@ -142,13 +142,10 @@ sub put {
 
     sendData($s, "$flag");
     $data = readAll($s);
-    $data =~ /$flag/ or EXIT_MUMBLE "say flag failed";
-
-    debug "say flag OK";
 
     sendData($s, "\\quit");
 
-    print join "_", $login, $room, $pass;
+    print join "_", $login, $room, $pass;  # New Flag ID
     EXIT_OK;
 }
 
@@ -157,28 +154,28 @@ sub get {
 
     my ($login, $room, $pass) = split '_', $id;
 
-    my $s = connectTo($host) or EXIT_DOWN "Service is down: $@";
+    my $s = connectTo($host) or EXIT_DOWN $@;
 
     my $data = readAll($s);
     assertBanner($data) or EXIT_MUMBLE "Welcome banner corrupted";
 
     sendData($s, "\\login $login $pass");
     $data = readAll($s);
-    $data =~ /Login OK/ or EXIT_MUMBLE "login failed: '$data'";
+    $data =~ /Login OK/ or EXIT_MUMBLE "login failed";
 
     debug "login OK";
 
     sendData($s, "\\join $room $pass");
     $data = readAll($s);
-    $data =~ /Welcome to private room '$room'/ or EXIT_MUMBLE "join room failed: '$data'";
+    $data =~ /Welcome to private room '$room'/ or EXIT_MUMBLE "join room failed";
 
     debug "join room OK";
 
     sendData($s, "\\quit");
 
-    $data =~ /$flag/ or EXIT_MUMBLE "flag not found: '$data'";
+    $data =~ /$flag/ or EXIT_MUMBLE "flag not found";
 
-    EXIT_OK "flag check OK";
+    EXIT_OK;
 }
 
 __DATA__
