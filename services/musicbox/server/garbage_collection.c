@@ -67,6 +67,7 @@ void mb_collect_file(char *filename) {
 int mb_collect(char *dirname) {
 	struct dirent **files;
 	int files_count, i;
+	char filename[256];
 
 	if ((files_count = scandir(dirname, &files, NULL, alphasort)) < 0) {
 		warn("Failed to obtain listing of directory %s", dirname);
@@ -74,7 +75,8 @@ int mb_collect(char *dirname) {
 	}
 
 	for (i = 0; i < files_count; ++i) {
-		mb_collect_file(files[i]->d_name);
+		sprintf(filename, "%s/%s", dirname, files[i]->d_name);
+		mb_collect_file(filename);
 	}
 
 	free(files);
@@ -95,6 +97,7 @@ size_t mb_occupied_space(char * dirname) {
 	struct dirent **files;
 	int files_count, i;
 	size_t total_size;
+	char filename[256];
 
 	if ((files_count = scandir(dirname, &files, NULL, alphasort)) < 0) {
 		warn("Failed to obtain listing of directory %s", dirname);
@@ -103,7 +106,8 @@ size_t mb_occupied_space(char * dirname) {
 
 	total_size = 0;
 	for (i = 0; i < files_count; ++i) {
-		total_size += mb_get_file_size(files[i]->d_name);
+		sprintf(filename, "%s/%s", dirname, files[i]->d_name);
+		total_size += mb_get_file_size(filename);
 	}
 
 	free(files);
