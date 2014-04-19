@@ -138,7 +138,7 @@ def check(hostname):
   check_substring_or_die(r.text, 'New filter has been added')
 
   soup = BeautifulSoup(r.text)
-  menus = soup.find_all(class_='dropdown-menu')
+  menus = soup.find_all(attrs={'class': 'dropdown-menu'})
   if len(menus) != 2:
     MUMBLE('Invalid markup on page: %s/create_filter' % root)
 
@@ -217,7 +217,7 @@ def get(hostname, flag_id, flag):
     CORRUPT('Can\'t find my flag')
 
   soup = BeautifulSoup(r.text)
-  menus = soup.find_all(class_='dropdown-menu')
+  menus = soup.find_all(attrs={'class': 'dropdown-menu'})
   if len(menus) != 2:
     MUMBLE('Invalid markup on page: /hash/%s' % (root, '?' * len(flag_id)))
 
@@ -229,7 +229,7 @@ def get(hostname, flag_id, flag):
 
 ########################### -MODES ###############################
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)-8s:%(name)-12s %(message)s')
 logging.debug('Checker started with parameters: `%s`' % ' '.join(sys.argv))
 
 if len(sys.argv) < 2:
