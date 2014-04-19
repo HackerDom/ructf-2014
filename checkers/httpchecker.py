@@ -45,10 +45,7 @@ class HttpCheckerBase(object):
 
 		try:
 			if command == 'check':
-				if self.check(addr):
-					exit(EXITCODE_OK)
-				else:
-					exit(EXITCODE_MUMBLE)
+				exit(self.check(addr))
 
 			if len(sys.argv) < 5:
 				self.debug('Not enough arguments')
@@ -57,16 +54,10 @@ class HttpCheckerBase(object):
 			flag_id, flag = sys.argv[3:5]
 
 			if command == 'get':
-				if self.get(addr, flag_id, flag):
-					exit(EXITCODE_OK)
-				else:
-					exit(EXITCODE_CORRUPT)
+				exit(self.get(addr, flag_id, flag))
 
 			if command == 'put':
-				if self.put(addr, flag_id, flag):
-					exit(EXITCODE_OK)
-				else:
-					exit(EXITCODE_MUMBLE)
+				exit(self.put(addr, flag_id, flag))
 
 			self.debug('Invalid command')
 			exit(EXITCODE_CHECKER_ERROR)
