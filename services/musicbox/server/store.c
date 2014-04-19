@@ -11,6 +11,18 @@ void mb_store_clear(struct Store *store) {
 	free(store->dir);
 }
 
+void mb_replace(char *str, char replace_from, char replace_to) {
+	int i, length;
+
+	length = strlen(str);
+
+	for (i = 0; i < length; ++i) {
+		str[i] = str[i] == replace_from 
+			? replace_to 
+			: str[i];
+	}
+}
+
 int mb_store_put(struct Store *store, uuid_t id, uint8_t *buffer, int length) {
 	char id_text[37];
 	char path[256];
@@ -19,7 +31,8 @@ int mb_store_put(struct Store *store, uuid_t id, uint8_t *buffer, int length) {
 
 	uuid_generate_random(id);
 	uuid_unparse(id, id_text);
-	sprintf(path, "%s/%s", store->dir, id_text);
+	mb_replace(id_text, '-', '_');
+	sprintf(path, "%s/%s.ogg", store->dir, id_text);
 	file = fopen(path, "w");
 	if (file == NULL) {
 		warn("Failed to open location %s", path);
@@ -43,7 +56,8 @@ int mb_store_get(struct Store *store, uuid_t id, uint8_t *buffer, int capacity) 
 	int length;
 
 	uuid_unparse(id, id_text);
-	sprintf(path, "%s/%s", store->dir, id_text);
+	mb_replace(id_text, '-', '_');
+	sprintf(path, "%s/%s.ogg", store->dir, id_text);
 	debug("mb_store_get: %s", path);
 	file = fopen(path, "r");
 	if (file == NULL)

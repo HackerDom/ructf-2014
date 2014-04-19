@@ -1,6 +1,10 @@
 FROM ructf2014:arch
 MAINTAINER dqkrait@gmail.com
 
+RUN pacman -S --noconfirm libvorbis
+
+ADD musicbox /home/musicbox/
+
 #RUN pacman -Sy
 #RUN pacman -S --noconfirm python2-pip
 #RUN pacman -S --noconfirm gcc

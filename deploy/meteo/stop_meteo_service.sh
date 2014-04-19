@@ -7,8 +7,5 @@ if [ ! -f  /var/run/${service_name}_service.cont_id ]; then
  exit 1
 fi
 
-echo Stoppeing mysql
-docker stop ${service_name}_mysql
-
 id=$(cat /var/run/${service_name}_service.cont_id)
 docker stop "${id}" && rm /var/run/${service_name}_service.cont_id

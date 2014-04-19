@@ -19,7 +19,7 @@ function showResponse(responseText, statusText, xhr, $form)  {
 } 
 
 function getHostname() {
-	return window.location.host;
+	return window.location.hostname;
 }
 
 $(document).ready(function() {
@@ -27,9 +27,10 @@ $(document).ready(function() {
 		var curUrl = "http://" + getHostname() + ":17216/info.xsl";
 		$.ajax({
 			url : curUrl,
-			dataType : "json",
+			dataType : "jsonp",
+			jsonpCallback : "callback",
 			success : function(data) {
-				var title = data['title'];
+				var title = data['/stream.ogg']['title'];
 				$(".jp-title").text(title);
 			},
 			timeout : 1000
