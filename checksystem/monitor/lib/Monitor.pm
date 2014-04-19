@@ -1,6 +1,9 @@
 package Monitor;
 use Mojo::Base 'Mojolicious';
 
+use Mojo::Util 'slurp';
+use Time::Piece;
+
 has services   => sub { {} };
 has teams      => sub { {} };
 has scoreboard => sub { [] };
@@ -8,6 +11,9 @@ has round      => sub { {} };
 has status     => sub { {} };
 has flags      => sub { {} };
 has history    => sub { [] };
+
+has ip2team    => sub { {} };
+has fly        => sub { {} };
 
 sub startup {
   my $self = shift;
@@ -47,8 +53,34 @@ sub startup {
       $self->log->info('Fetch teams at startup');
       while (my $row = $db->sth->fetchrow_hashref()) {
         $self->teams->{$row->{id}} = $row;
+        $self->ip2team->{$row->{vuln_box}} = $row->{name};
       }
     });
+
+  Mojo::IOLoop->recurring(
+    5 => sub {
+      $self->log->info('Update fly data');
+      my $data = slurp '/tmp/checker.vis';
+      my ($f, $teams);
+
+      for my $line (split /\r?\n/, $data) {
+        chomp $line;
+        my ($ip, $c) = split /:\t/, $line;
+        $c = substr $c, 1, length($c) - 2;
+        my @c = split /,\s+/, $c;
+        $teams->{$ip} = \@c;
+      }
+
+      $f->{progress} = time() - localtime($self->round->{time})->epoch;
+      for (keys %$teams) {
+        push @{$f->{teams}}, {
+          name   => $self->ip2team->{$_},
+          type   => 0,
+          coords => $teams->{$_}
+        }
+      }
+      $self->fly($f);
+  });
 
   Mojo::IOLoop->recurring(
     5 => sub {
