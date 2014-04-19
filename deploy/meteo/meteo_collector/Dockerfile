@@ -6,7 +6,6 @@ EXPOSE 9000
 RUN pacman -S --noconfirm python3 python-pip
 RUN pip3 install pymysql
 
-ADD privkey.pem /home/collector/
 ADD collector.py /home/collector/
 
 RUN useradd collector
