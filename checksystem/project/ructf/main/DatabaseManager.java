@@ -95,7 +95,10 @@ public class DatabaseManager
 		Statement statement = internalDbConnection.createStatement();
 		services = Service.LoadServices(statement);
 		for (Service service : services)
+		{
 			serviceNamesHash.put(service.getId(), service.getName());
+			servicesHash.put(service.getId(), service);
+		}
 		teams = Team.LoadTeams(statement);
 		for (Team team : teams)
 			teamNamesHash.put(team.getId(), team.getName());
