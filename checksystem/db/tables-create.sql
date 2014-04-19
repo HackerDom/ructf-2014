@@ -24,7 +24,8 @@ CREATE TABLE services (
 	id		INTEGER			PRIMARY KEY,
 	name		VARCHAR(256),
 	checker		VARCHAR(256)		NOT NULL,
-	delay_flag_get	BOOLEAN			NOT NULL DEFAULT FALSE
+	delay_flag_get	BOOLEAN			NOT NULL DEFAULT FALSE,
+	is_not_task	BOOLEAN			NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE tasks (
@@ -70,6 +71,31 @@ CREATE TABLE stolen_flags (
 	victim_service_id	INTEGER,
 	score_attack	INTEGER		CHECK (score_attack BETWEEN 1 AND 2)
 );
+
+
+
+CREATE TABLE task_flags (
+	team_id		INTEGER,
+	flag_data	CHAR(32)		PRIMARY KEY
+);
+
+CREATE TABLE stolen_task_flags (
+	time		TIMESTAMP without time zone		NOT NULL,
+	team_id		INTEGER,
+	flag_data	CHAR(32) references task_flags(flag_data),
+	UNIQUE(team_id,flag_data)
+);
+
+SELECT
+	stolen_task_flags.team_id, sum(flag_price.price)
+FROM
+	stolen_task_flags
+INNER JOIN
+	(select flag_data, 1 / count(*) as price FROM stolen_task_flags WHERE time < ? GROUP BY flag_data) as flag_price
+ON
+	stolen_task_flags.flag_data = flag_price.flag_data
+GROUP BY
+	stolen_task_flags.team_id;
 
 CREATE TABLE score (
     round   	INTEGER NOT NULL,
@@ -247,6 +273,7 @@ CREATE TRIGGER set_time_flags		BEFORE INSERT ON flags		FOR EACH ROW EXECUTE PROC
 CREATE TRIGGER set_time_delayed_flags	BEFORE INSERT ON delayed_flags	FOR EACH ROW EXECUTE PROCEDURE set_time();
 CREATE TRIGGER set_time_secret_flags	BEFORE INSERT ON secret_flags	FOR EACH ROW EXECUTE PROCEDURE set_time();
 CREATE TRIGGER set_time_stolen_flags	BEFORE INSERT ON stolen_flags	FOR EACH ROW EXECUTE PROCEDURE set_time();
+CREATE TRIGGER set_time_task_stolen_flags	BEFORE INSERT ON stolen_task_flags	FOR EACH ROW EXECUTE PROCEDURE set_time();
 
 CREATE TRIGGER set_time_advisories	BEFORE INSERT ON advisories	FOR EACH ROW EXECUTE PROCEDURE set_time();
 CREATE TRIGGER set_time_access_checks	BEFORE INSERT ON access_checks	FOR EACH ROW EXECUTE PROCEDURE set_time();
@@ -263,6 +290,7 @@ CREATE TRIGGER solved_tasks_check_dups  BEFORE INSERT ON solved_tasks	 FOR EACH 
 
 -- Indexes
 
+CREATE UNIQUE INDEX idx_stolen_task_flags	ON stolen_task_flags(flag_data, team_id);
 CREATE UNIQUE INDEX idx_stolen_flags	ON stolen_flags(flag_data, team_id);
 CREATE INDEX idx_rounds_cache		ON rounds_cache(time);
 CREATE INDEX idx_rounds_cache_2		ON rounds_cache(team_id ASC, round ASC);
@@ -275,6 +303,7 @@ CREATE INDEX idx_access_checks_2	ON access_checks(round);
 CREATE INDEX idx_secret_flags	ON secret_flags(team_id, time);
 CREATE INDEX idx_access_checks_3	ON access_checks(team_id, time);
 CREATE INDEX idx_stolen_flags_2	ON stolen_flags(team_id, time);
+CREATE INDEX idx_stolen_Task_flags_2	ON stolen_task_flags(team_id, time);
 CREATE INDEX idx_advisories	ON advisories(team_id, check_time);
 CREATE INDEX idx_solved_tasks	ON solved_tasks(team_id, status, check_time);
 
