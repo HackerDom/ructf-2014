@@ -4,7 +4,7 @@ import json
 from io import BytesIO
 from subprocess import Popen, PIPE
 from bottle import get, post, request, run, static_file, response
-from client import *
+from mb_connector import *
 from uuid import UUID
 
 main_page = open('templates/index.html', 'rt').read()
@@ -27,6 +27,8 @@ def get_song_form_handler():
 	try:
 		uuid = UUID(request.forms.get('uuid').strip())
 		data = get_song(musicbox_location, musicbox_port, uuid)
+		if not data:
+			raise Exception('Musicbox error')
 		response.content_type = "audio/ogg"
 		response.add_header('Content-Disposition', 'attachment; filename=%s.ogg;' % str(uuid))
 		return data
@@ -39,10 +41,12 @@ def put_song_form_handler():
 	try:
 		song_data = request.files.get('input_file')
 		uuid = put_song(musicbox_location, musicbox_port, song_data.file.read())
+		if not uuid:
+			raise Exception('Musicbox error')
 		return json.dumps({ 'status' : 'success', 'uuid' : str(uuid) })
 	except Exception as e:
 		print(e)
 		return json.dumps({ 'status' : 'fail' })
 
 
-run(host='localhost', port=8080)
+run(host='0.0.0.0', port=16780)
