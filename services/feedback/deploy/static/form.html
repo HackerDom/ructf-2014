@@ -3,15 +3,21 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>FlightFeedback</title>
-		<link type="text/css" rel="stylesheet" href="styles.css"/>
+		<link type="text/css" rel="stylesheet" href="styles.min.css"/>
 	</head>
 	<body>
 		<div class="main">
 			<h1>HackFlight. Feedback</h1>
 			<h2>Submit a new feedback</h2>
+
+			<div id="login"></div>
+			<div id="auth" style="display:none">
+				<a href="/login.html">login</a>&emsp;or&emsp;<a href="/registration.html">register</a>
+			</div>
+
 			<form id="form" class="form-main">
-				<input type="text" id="form-title" class="form-control" placeholder="Title"/>
-				<textarea id="form-text" class="form-control" placeholder="Detailed description" rows="6"></textarea>
+				<input type="text" id="form-title" class="form-control" placeholder="Title" maxlength="128"/>
+				<textarea id="form-text" class="form-control" placeholder="Detailed description" rows="8" maxlength="512"></textarea>
 				<select id="form-privacy" class="form-control">
 					<option value="visible" selected>Public</option>
 					<option value="invisible">Private</option>
@@ -19,8 +25,14 @@
 				<input type="submit" id="form-btn" class="form-control" value="Post"/>
 			</form>
 			<div id="result"></div>
-			<script type="text/javascript" src="scripts.js"></script>
+			<script type="text/javascript" src="scripts.min.js"></script>
 			<script type="text/javascript">
+				var login = $.getCookie("login");
+				if(login)
+					$("#login").first().innerHTML = login;
+				else
+					$("#auth").first().style.display = "";
+
 				var $result = $("#result").first();
 				var $btn = $("#form-btn").first();
 

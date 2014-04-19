@@ -43,7 +43,7 @@ public class HttpListenerRequest {
 	}
 
 	private static Map<String, String> getQueryParams(URI uri) {
-		return parseQueryString(uri.getQuery());
+		return parseQueryString(uri.getRawQuery()); //.getQuery() has some problems with URL-decode
 	}
 
 	private static Map<String, String> parseQueryString(String query) {
@@ -56,13 +56,19 @@ public class HttpListenerRequest {
 		for(String part : parts) {
 			String[] pair = part.split("=");
 			try {
-				map.put(pair[0], pair.length > 1 ? URLDecoder.decode(pair[1], "utf-8") : null);
+				if(pair.length == 0)
+					continue;
+				String key = URLDecoder.decode(pair[0], UTF8);
+				String value = pair.length > 1 ? URLDecoder.decode(pair[1], UTF8) : null;
+				map.put(key, value);
 			} catch(UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
 		}
 		return map;
 	}
+
+	private static final String UTF8 = "utf-8";
 
 	private final String method;
 	private final URI uri;
