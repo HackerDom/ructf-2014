@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import sys
 import socket
 import requests
 import random
 import logging
 import select
+import time
 from bs4 import BeautifulSoup
 
 HTTP_PORT = 8888
@@ -95,10 +98,10 @@ def random_what():
   return random.choice(['city', 'airport'])
 
 def random_city():
-  return random.choice(['Yekaterinburg', 'Moscow', 'Samara', 'Saint-Petersburg'])
+  return random.choice(['Yekaterinburg', 'Moscow', 'Samara', 'Saint-Petersburg', 'Krasnodar', ])
 
 def random_airport():
-  return random.choice(['Koltsovo', 'Domodedovo'])
+  return random.choice(['Koltsovo', 'Domodedovo', 'Sheremetevo'])
 
 def random_place(what):
   if what == 'city':
@@ -107,7 +110,18 @@ def random_place(what):
     return random_airport()
 
 def random_metar():
-  return 'UUEE 161500Z 07008MPS 9999 DRSN SKC M17/M23 Q1028 NOSIG RMK 07420157 57420157'
+  city = random.choice(['UEAA','UEEE','UELL','UERP','UERR','UESK','UESO','UESS','UEST','UHBB','UHBI','UHHH','UHMA','UHMD','UHMM','UHMP','UHPP','UHSS','UHSH','UHWW','UIAA','UIAE','UIBB','UIBS','UIBV','UIII','UIKB','UIKE','UIKG','UIKK','UIKM','UINN','UITK','UITT','UIUB','UIUN','UIUU','ULAA','ULAM','ULDD','ULDR','ULKK','ULLI','ULLP','ULMM','ULOL','ULOO','ULPB','ULPM','ULSS','ULWC','ULWR','ULWW','ULAH','UMKK','UNAA','UNBB','UNBI','UNCC','UNEE','UNKL','UNKY','UNNT','UNOO','UNOS','UNTT','UNWW','UOHH','UOII','UODD','UOOD','UOOO','UOOW','UOTT','URFF','URKA','URKK','URKM','URKT','URKW','URMG','URML','URMM','URMN','URMO','URMS','URMT','URRR','URRT','URSS','URWA','URWI','URWW','USCC','USCM','USDD','USKK','USMM','USMU','USNN','USNR','USII','USPP','USRK','USRN','USRO','USRR','USSE','USSI','USSK','USSS','USTM','USTO','USTR','USTL','USUU','UUBA','UUBB','UUBP','UUBR','UUDD','UUDL','UUEE','UUEM','UUMO','UUOB','UUOK','UUOO','UUUS','UUWW','UUYH','UUYP','UUYW','UUYY','UWGG','UWKB','UWKD','UWKE','UWKO','UWKS','UWLL','UWLN','UWLS','UWLW','UWOO','UWOR','UWPP','UWPS','UWSS','UWSK','UWUB','UWUF','UWUK','UWUS','UWUU','UWWB','UWWZ','UWWS','UWWG','UWWW','UAAA','UAAH','UAAR','UACC','UACP','UADD','UAII','UAIT','UAKD','UAKK','UAOL','UAON','UAOO','UARR','UASB','UASK','UASP','UASS','UATA','UATE','UATG','UATT','UATR','UAUR','UAUU','UBBB','UBBG','UBBN','UBBY','UBBL'])
+  utc_time = time.strftime('%H%M00Z', time.gmtime())
+  wind = '%03d%02dMPS' % (random.randint(0, 359), random.randint(0, 99))
+  visibility = '%04d' % random.choice([50, 100, 1000, 9999])
+  weather = ' '.join(random.sample(['DZ','RA','SN','SG','PL','GS','RASN','SNRA','SHSN','SHRA','SHGR','FZRA','FZDZ','TSRA','TSGR','TSGS','TSSN','DS','SS'], random.randint(0, 4)))
+  q = 'Q%04d' % random.randint(800, 1200)
+  additional = random.choice(['NOSIG', 'BECMG', 'TEMPO'])
+
+  metar = ' '.join([city, utc_time, wind, visibility, weather, q, additional])
+  logging.debug('Generated metar: %s' % metar)
+
+  return metar
 
 ########################### MODES ###############################
 
