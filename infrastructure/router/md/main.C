@@ -10,7 +10,7 @@ typedef Length<10>    TenSeconds;
 typedef Length<60*5>  FiveMinutes;
 typedef Length<60*60> Hour;
 
-typedef Queue<Pair, Second, TenSeconds, FiveMinutes, Hour> MainQueue;
+typedef Queue<Pair, Hour, FiveMinutes, TenSeconds, Second> MainQueue;
 
 int main(void) {
     using std::vector; using std::string; using std::pair;
@@ -43,7 +43,7 @@ int main(void) {
 
             cout << queue.first << ':';
             for (size_t j = 0; j != counters.size(); ++j) {
-                cout << counters[j].first << ':' << counters[j].second.packets;
+                cout << counters[j].first << ':' << counters[j].second.bytes;
                 if (j != counters.size() - 1) {
                     cout << '|';
                 }
