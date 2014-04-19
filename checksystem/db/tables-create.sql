@@ -86,17 +86,6 @@ CREATE TABLE stolen_task_flags (
 	UNIQUE(team_id,flag_data)
 );
 
-SELECT
-	stolen_task_flags.team_id, sum(flag_price.price)
-FROM
-	stolen_task_flags
-INNER JOIN
-	(select flag_data, 1 / count(*) as price FROM stolen_task_flags WHERE time < ? GROUP BY flag_data) as flag_price
-ON
-	stolen_task_flags.flag_data = flag_price.flag_data
-GROUP BY
-	stolen_task_flags.team_id;
-
 CREATE TABLE score (
     round   	INTEGER NOT NULL,
     "time"		TIMESTAMP without time zone NOT NULL,
