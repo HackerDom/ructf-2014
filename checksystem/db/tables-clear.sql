@@ -16,7 +16,7 @@ DELETE FROM services;
 DELETE FROM teams;
 DELETE FROM score;
 DELETE FROM sla;
-DELETE FROM task_flags;
 DELETE FROM stolen_task_flags;
+DELETE FROM task_flags;
 
 INSERT INTO rounds(n) VALUES(0);
