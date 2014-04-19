@@ -22,7 +22,7 @@ SERVICE_PORT = 4242
 
 SOCKET_TIMEOUT = 2
 
-FLAG_TTL = 90 * 60
+FLAG_TTL = 3 * 60
 
 def send_chunked_data(sock, data):
 	for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
