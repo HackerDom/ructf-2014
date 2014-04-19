@@ -65,11 +65,19 @@ class FeedbackChecker(HttpCheckerBase):
 
 		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
-			self.debug('put failed')
+			print('put failed')
 			return False
 
 		result = self.sget(s, addr, 'search?query=' + vote.get('title') + ' ' + vote.get('text'))
-		return result and result.get('hits') > 0
+		if not result or result.get('error'):
+			print('search failed')
+			return False
+
+		if not (result.get('hits') > 0):
+			print('posted msg not found')
+			return False
+
+		return True
 
 	def randlogin(self):
 		return random.choice([
@@ -206,26 +214,27 @@ class FeedbackChecker(HttpCheckerBase):
 		user = {'login':parts[0], 'password':parts[1]}
 		result = self.spost(s, addr, 'auth', user)
 		if not result or result.get('error'):
-			self.debug('login failed')
+			print('login failed')
 			return False
 
 		self.debug(parts[2])
 		result = self.sget(s, addr, 'search?query=' + parts[2])
 		if not result or result.get('error'):
-			self.debug('search failed')
+			print('search failed')
 			return False
 		if result.get('hits') < 1:
-			self.debug('posted msg not found')
+			print('posted msg not found')
 			return False
 		votes = result.get('votes')
 		if not votes or len(votes) == 0:
-			self.debug('posted msg not found')
+			print('posted msg not found')
 			return False
 		title = votes[0].get('title')
 		text = votes[0].get('text')
 		if not ((title or title.find(flag) < 0) and (text or text.find(flag))):
-			self.debug('flag not found')
+			print('flag not found in msg')
 			return False
+
 		return True
 
 	def put(self, addr, flag_id, flag):
@@ -236,7 +245,7 @@ class FeedbackChecker(HttpCheckerBase):
 
 		result = self.spost(s, addr, 'register', user)
 		if not result or result.get('error'):
-			self.debug('registration failed')
+			print('registration failed')
 			return False
 
 		vote = self.randvote(flag_id, flag)
@@ -244,16 +253,17 @@ class FeedbackChecker(HttpCheckerBase):
 
 		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
-			self.debug('put failed')
+			print('put failed')
 			return False
 		data = result.get('data')
 		if not data:
-			self.debug('no "data" field')
+			print('no put result')
 			return False
 		new_flag_id = data.strip()
 		if not new_flag_id:
-			self.debug('flag_id is empty')
+			print('no put result')
 			return False
+
 		print('{}:{}:{}'.format(user['login'], user['password'], new_flag_id))
 		return True
 
