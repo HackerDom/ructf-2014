@@ -3,31 +3,35 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>FlightFeedback</title>
-		<link type="text/css" rel="stylesheet" href="styles.css"/>
+		<link type="text/css" rel="stylesheet" href="styles.min.css"/>
 	</head>
 	<body>
 		<div class="main">
 			<h1>HackFlight. Feedback</h1>
 			<h2>Search for existing topics</h2>
+
 			<div id="login"></div>
 			<div id="auth" style="display:none">
 				<a href="/login.html">login</a>&emsp;or&emsp;<a href="/registration.html">register</a>
 			</div>
+
 			<h2><a href="/form.html">post new feedback</a></h2>
-			<form id="search-form">
-				<input type="text" id="search-field" class="form-control" placeholder="Keywords"/>
-				<input type="submit" id="search-btn" class="form-control btn" value="Search"/>
+			<div class="clear"></div>
+			<form id="search-form" class="form-main">
+				<table class="search">
+					<colgroup>
+						<col class="search-input-col"/>
+						<col class="search-btn-col"/>
+					</colgroup>
+					<tr>
+						<td><input type="text" id="search-field" class="form-control" placeholder="Keywords" maxlength="128"/></td>
+						<td><input type="submit" id="search-btn" class="form-control search-btn" value="Search"/></td>
+					</tr>
+				</table>
 			</form>
-			<div id="hits"></div>
-			<table id="votes">
-				<colgroup>
-					<col class="votes-login"/>
-					<col class="votes-title"/>
-					<col class="votes-text"/>
-				</colgroup>
-				<tbody></tbody>
-			</table>
-			<script type="text/javascript" src="scripts.js"></script>
+			<div id="hits" class="search-hits"></div>
+			<table id="votes"><tbody></tbody></table>
+			<script type="text/javascript" src="scripts.min.js"></script>
 			<script>
 				var login = $.getCookie("login");
 				if(login)
@@ -42,14 +46,18 @@
 					$hits.innerHTML = "";
 					$votes.innerHTML = "";
 					$.get("/search", {query:query}, function(result) {
-						if(result && result.votes) {
+						if(result) {
 							$votes.innerHTML = "";
 							$hits.innerHTML = "Found " + result.hits + " result(s)";
-							for(var i = 0; i < result.votes.length; i++) {
-								var vote = result.votes[i];
-								$votes.innerHTML += "<tr><td>" + vote.login + "</td><td>" + vote.title + "</td><td>" + vote.text + "</td></tr>";
+							if(result.votes) {
+								for(var i = 0; i < result.votes.length; i++) {
+									var vote = result.votes[i];
+									$votes.innerHTML += "<tr><td><table class='search-result'><colgroup><col class='votes-col-title'/><col class='votes-col-date'/></colgroup><tr><td class='search-result-title'>" + vote.title + "</td><td class='search-result-date'>" + $.timestampToString(vote.date) + "<td></tr><tr><td class='search-result-login'>posted by&ensp;" + vote.login + "</td></tr></tr><td class='search-result-text'>" + vote.text + "</td></tr></table></td></tr>";
+								}
 							}
 						}
+					}, function() {
+						$hits.innerHTML = "Unknown error";
 					});
 				}
 
