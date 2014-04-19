@@ -25,7 +25,7 @@ class FeedbackChecker(HttpCheckerBase):
 	def parseresponse(self, response):
 		try:
 			if response.status_code != 200:
-				raise r.exceptions.HTTPError('status code {}'.format(response.status_code))
+				raise HttpWebException(response.status_code)
 			try:
 				result = response.json()
 				#self.debug(result)
@@ -55,7 +55,7 @@ class FeedbackChecker(HttpCheckerBase):
 		rnd = random.randrange(1,4)
 		for i in xrange(rnd):
 			phrase += ' ' + self.randword();
-		return phrase
+		return phrase.lstrip()
 
 	def check(self, addr):
 		s = self.session(addr)
@@ -160,39 +160,39 @@ class FeedbackChecker(HttpCheckerBase):
 
 	def randtitle(self):
 		return random.choice([
-			'interesting note',
+			'Interesting note',
 			'Good news!',
-			'what, what, what?!',
+			'What, what, what?!',
 			'Thanks',
 			'Good service',
-			'question',
-			'cooooooooool',
+			'Question...',
+			'Cooooooooool',
 			'I have a question',
 			'does it work?',
 			'What`s the longest you have gone without sleep?',
-			'how to get it?',
-			'check this',
-			'did you see it?!',
+			'How to get it?',
+			'Check this',
+			'Did you see it?!',
 			'WOW!',
 			'Amazing!!!11',
-			'coolest thing ever',
-			'some stuff',
+			'Coolest thing ever',
+			'Some stuff',
 			'Hmmm....',
-			'mAY be you can check it?',
+			'May be you can check it for us?',
 			'Can you answer my question?',
 			'Got it!',
 			'Booooooooom!!!',
-			'hahaha',
+			'Hahaha',
 			'test test test',
-			'pwned!',
-			'something interesting...',
+			'Pwned!',
+			'Something interesting...',
 			'To be or not to be?',
-			'not to be',
-			'qwerty',
+			'... not to be',
 			'You should look at this',
 			'Look at this',
-			'meow',
-			'Did you find any flag here?'
+			'Meeeeeoooooooow',
+			'Did you find any flag here?',
+			'Das ist gut'
 		])
 
 	def randuser(self):
@@ -222,13 +222,16 @@ class FeedbackChecker(HttpCheckerBase):
 		if not result or result.get('error'):
 			print('search failed')
 			return False
+
 		if result.get('hits') < 1:
 			print('posted msg not found')
 			return False
+
 		votes = result.get('votes')
 		if not votes or len(votes) == 0:
 			print('posted msg not found')
 			return False
+
 		title = votes[0].get('title')
 		text = votes[0].get('text')
 		if not ((title or title.find(flag) < 0) and (text or text.find(flag))):
@@ -255,13 +258,15 @@ class FeedbackChecker(HttpCheckerBase):
 		if not result or result.get('error'):
 			print('put failed')
 			return False
+
 		data = result.get('data')
 		if not data:
-			print('no put result')
+			print('no put result there')
 			return False
+
 		new_flag_id = data.strip()
 		if not new_flag_id:
-			print('no put result')
+			print('no put result there')
 			return False
 
 		print('{}:{}:{}'.format(user['login'], user['password'], new_flag_id))
