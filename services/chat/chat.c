@@ -53,7 +53,7 @@ void print_greeting()
 {
     WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
     WriteLn("");
-    WriteLn("Commands: \\help, \\register, \\login, \\list, \\join <room>, \\leave, \\quit");
+    WriteLn("Commands: \\help, \\register, \\login, \\create, \\list, \\join, \\leave, \\quit");
     WriteLn("");
 }
 
