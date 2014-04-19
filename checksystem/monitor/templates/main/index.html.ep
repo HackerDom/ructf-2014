@@ -125,7 +125,6 @@ $(document).ready(function() {
 
   for (s in [1,2,3,4,5,6,7]) {
     var ss = parseInt(s) + 1;
-    console.log(ss);
     var scores = [];
     $('td[data-service="' + ss + '"]').each(function (idx, el) {
       scores.push(parseFloat($(el).attr('data-score')));
@@ -187,7 +186,6 @@ $(document).ready(function() {
     });
   });
   $.get("<%= url_for('history') %>", function(history) {
-    console.log(history);
     $('#history').highcharts({
       chart: {
         zoomType: 'x'
