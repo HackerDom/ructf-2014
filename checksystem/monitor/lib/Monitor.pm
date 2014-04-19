@@ -72,7 +72,7 @@ sub startup {
               => $delay->begin
           );
           $self->pg(
-            'SELECT team_id, service_id, status FROM service_status;'
+            'SELECT team_id, service_id, status, fail_comment FROM service_status;'
               => $delay->begin
           );
           $self->pg(
@@ -123,7 +123,8 @@ sub startup {
           }
 
           while (my $row = $flh->sth->fetchrow_hashref()) {
-            $self->flags->{$row->{team_id}}{$row->{service_id}} = $row->{flags};
+            $self->flags->{$row->{team_id}}{$row->{service_id}} =
+              {count => $row->{flags}, name => $row->{service}};
           }
         });
     });

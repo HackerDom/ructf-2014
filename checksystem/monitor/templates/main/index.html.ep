@@ -1,9 +1,10 @@
 % layout 'default';
 % title 'RuCTF > скорборд';
+
 % use Mojo::Util 'url_escape';
 
 % content_for r => begin
-  Раунд <%= $self->app->round->{n} %> (начался <%= $self->app->round->{time} %>)
+  Раунд <%= $self->app->round->{n} %>
 % end
 <div id="history" style="height: 350px;"></div>
 <hr/>
@@ -46,8 +47,15 @@
 
     % for my $sid (keys %{$self->app->services}) {
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
+      % my $comment = $self->app->status->{$sid}{$score->{team}{id}}{fail_comment};
       % my $s = {101 => 'OK', 102 => 'CORRUPT', 103 => 'MUMBLE', 104 => 'DOWN', 110 => 'CHECKER ERROR'};
-      <td title="<%= $s->{$status} %>" class="s<%= $status %>" data-team="<%= $score->{team}{id} %>" data-service="<%= $sid %>" data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>">
+      <td
+        title="<%= $s->{$status} %>. <%= $comment %>"
+        class="s<%= $status %>"
+        data-team="<%= $score->{team}{id} %>"
+        data-service="<%= $sid %>"
+        data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>"
+      >
         <p>SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %></p>
         <p>FP: <%= sprintf '%.2f', $score->{fp}{$sid} %></p>
       </td>
@@ -138,10 +146,11 @@ $(document).ready(function() {
     $.each(flags, function(team, data) {
       c = '#team_' + team;
       s = [];
-      $.each(data, function(sid, count) {
+      $.each(data, function(sid, d) {
         s.push({
           x: sid,
-          y: parseInt(count),
+          y: parseInt(d.count),
+          name: d.name,
           color: $('td[data-sid="' + sid + '"]').css('background-color')
         });
       });
@@ -155,7 +164,7 @@ $(document).ready(function() {
         },
         title: { text: '' },
         tooltip: {
-          enabled: false
+          enabled: true
        },
        plotOptions: {
          pie: {
