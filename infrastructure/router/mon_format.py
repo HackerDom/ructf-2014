@@ -7,14 +7,14 @@ def format_counter(ratio):
     if ratio < 1000:
         return "  {:3.0f}".format(ratio)
     elif ratio < 1000*1000:
-        return " {:3.0f}K".format(ratio/1000)
+        return " {:3.0f}K".format(ratio/1024)
     else:
-        return " {:3.0f}M".format(ratio/1000/1000);
+        return " {:3.0f}M".format(ratio/1024/1024);
 
 def choose_color(ratio):
-    if ratio < 1000*1000:
+    if ratio < 1024*1024:
         return 'white'
-    elif ratio < 5*1000*1000:
+    elif ratio < 5*1024*1024:
         return 'yellow'
     else:
         return 'red'
