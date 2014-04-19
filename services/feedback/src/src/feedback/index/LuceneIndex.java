@@ -75,14 +75,16 @@ public class LuceneIndex {
 
 		QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_47, indexFields.fieldsArray, analyzer, indexFields.boosts);
 		parser.setDefaultOperator(QueryParser.Operator.AND);
+		parser.setAllowLeadingWildcard(true);
 
 		//long start = System.currentTimeMillis();
 		IndexSearcher searcher = searcherManager.acquire();
 
 		try {
-			String filter = all ? "" : String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
+			String filter = "";
+			filter = String.format("%s:%s", IndexFields.type, all ? "*" : VoteType.VISIBLE);
 			if(StringUtils.isNotBlank(login)) {
-				filter = String.format("(%s OR %s)", String.format("%s:%s", IndexFields.login, login), filter);
+				filter = String.format("(%s OR %s)", filter, String.format("%s:\"%s\"", IndexFields.login, login));
 			}
 
 			Query query = parser.parse(filter + " " + text); //WARN! Filter concatenation and no special characters escaping!

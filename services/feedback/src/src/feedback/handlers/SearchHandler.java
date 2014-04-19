@@ -13,8 +13,6 @@ import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,7 +62,7 @@ public class SearchHandler implements IHttpListenerHandler {
 	}
 
 	private static final int MAX_ITEMS = 100;
-	private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
+	//private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
 	private final ObjectWriter writer;
 	private final LuceneIndex index;
 	private TokenCrypt tokenCrypt;
