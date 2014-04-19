@@ -1,0 +1,8 @@
+body {
+  padding-top: 70px;
+}
+
+p.bg-success {
+  padding: 15px;
+  border-radius: 10px; 
+}
