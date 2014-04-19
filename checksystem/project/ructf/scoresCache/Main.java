@@ -326,7 +326,7 @@ public class Main {
 	
 	private static Hashtable<Integer,Double> GetTaskScores(Timestamp fromTimestamp) throws SQLException {
 		stSelectTaskScore.setTimestamp(1, fromTimestamp);
-		ResultSet res = stGetStealsOfRottenFlags.executeQuery();
+		ResultSet res = stSelectTaskScore.executeQuery();
 		
 		Hashtable<Integer,Double> result = new Hashtable<Integer,Double>(); 
 		
