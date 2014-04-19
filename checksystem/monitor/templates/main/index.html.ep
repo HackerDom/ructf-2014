@@ -61,7 +61,7 @@
       </td>
     % }
     <td>
-      <div style="width: 94px; height: 94px;" id="team_<%= $score->{team}{id} %>"></div>
+      <div style="width: 74px; height: 74px;" id="team_<%= $score->{team}{id} %>"></div>
     </td>
   </tr>
   % }
@@ -169,6 +169,7 @@ $(document).ready(function() {
          pie: {
            animation: false,
            size:'100%',
+           borderWidth: 0,
            dataLabels: {
              enabled: false
            }
@@ -207,7 +208,7 @@ $(document).ready(function() {
           }
         },
         series: {
-          turboThreshold: 5000
+          turboThreshold: 0
         }
       },
       legend: {
