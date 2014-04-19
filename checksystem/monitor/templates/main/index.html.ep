@@ -6,16 +6,32 @@
   Раунд <%= $self->app->round->{n} %> (начался <%= $self->app->round->{time} %>)
 % end
 <div id="history" style="height: 350px;"></div>
+<hr/>
+<h2>Скорборд (
+  <span id="s101" style="background-color: rgb(0, 220, 0);">UP</span>,
+  <span id="s102" style="background-color: rgb(255, 2255, 0);">CORRUPT</span>,
+  <span id="s103" style="background-color: rgb(255, 166, 0);">MUMBLE</span>,
+  <span id="s104" style="background-color: rgb(230, 0, 0);">DOWN</span>,
+  <span id="s110" style="background-color: rgb(128, 128, 128);">CHECKER ERROR</span>
+  )
+</h2>
 <table class="table">
   <tr>
-    <td>#</td>
-    <td>Логотип</td>
-    <td>Команда</td>
-    <td>Очки</td>
-    % for my $service (values %{$self->app->services}) {
-    <td><%= $service %></td>
+    <td><b>#</b></td>
+    <td><b>Логотип</b></td>
+    <td><b>Команда</b></td>
+    <td><b>Очки</b></td>
+    % my @scolors = ('rgb(139,0,139)', 'rgb(205,16,118)', 'rgb(139,139,0)', 'rgb(46,139,87)', 'rgb(0,238,238)', 'rgb(112,128,144)', 'rgb(139,60,139)');
+    % for my $sid (keys %{$self->app->services}) {
+      <td
+        class="service"
+        data-sid="<%= $sid %>"
+        style="background-color: <%= shift @scolors %>;"
+      >
+          <b><%= $self->app->services->{$sid} %></b>
+      </td>
     % }
-    <td>Флаги</td>
+    <td><b>Флаги</b></td>
   </tr>
   % my $pos = 0;
   % for my $score (@{$self->app->scoreboard}) {
@@ -107,13 +123,12 @@ $(document).ready(function() {
       scores.push(parseFloat($(el).attr('data-score')));
     });
     m = Math.max.apply(null, scores);
-    $('td[data-service=' + ss + ']').each(function (idx, el) {
+    $('td[data-service="' + ss + '"]').each(function (idx, el) {
       var score = parseFloat($(el).attr('data-score'));
       var x = m == 0 ? 1 : score / m;
       var color = colors[$(el).attr('class')];
       var hsv = rgbToHsv(color[0], color[1], color[2]);
-      var y = 0.3 + hsv[1] * x * 0.7;
-      var ncolor = hsvToRgb(hsv[0], y, hsv[2]);
+      var ncolor = hsvToRgb(hsv[0], 0.3 + hsv[1] * x * 0.7, hsv[2]);
       var z = 'rgb(' + parseInt(ncolor[0]) + ',' + parseInt(ncolor[1]) + ',' + parseInt(ncolor[2]) + ')';
       $(el).css('background-color', z);
     });
@@ -123,8 +138,12 @@ $(document).ready(function() {
     $.each(flags, function(team, data) {
       c = '#team_' + team;
       s = [];
-      $.each(data, function(service, count) {
-        s.push([service, parseInt(count)]);
+      $.each(data, function(sid, count) {
+        s.push({
+          x: sid,
+          y: parseInt(count),
+          color: $('td[data-sid="' + sid + '"]').css('background-color')
+        });
       });
       $(c).highcharts({
         chart: {
@@ -166,10 +185,10 @@ $(document).ready(function() {
       },
       title: { text: '' },
       xAxis: {
-        title: { text: 'Раунды' },
+        title: { text: '' },
       },
       yAxis: {
-        title: { text: 'Очки' },
+        title: { text: '' },
         min: 0
       },
       tooltip: {},
