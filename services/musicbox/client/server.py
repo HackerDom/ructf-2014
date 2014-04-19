@@ -25,9 +25,10 @@ def index():
 @post('/get')
 def get_song_form_handler():
 	try:
-		data = get_song(musicbox_location, musicbox_port, UUID(request.forms.get('uuid').strip()))
+		uuid = UUID(request.forms.get('uuid').strip())
+		data = get_song(musicbox_location, musicbox_port, uuid)
 		response.content_type = "audio/ogg"
-		response.add_header('Content-Disposition', 'attachment; filename=song.ogg;')
+		response.add_header('Content-Disposition', 'attachment; filename=%s.ogg;' % str(uuid))
 		return data
 	except Exception as e:
 		print(e)

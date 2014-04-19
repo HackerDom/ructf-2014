@@ -14,6 +14,12 @@ use constant {
     VISUALIZER => '/tmp/checker.vis',
 
     CONNECTION_ERROR => "Could not connect to service",
+    INVALID_HELLO => "Invalid `INIT' screen",
+    ADD_FLIGHT_ERROR => "Can't add flight ".
+        "(something has done wrong)",
+    READ_FLIGHT_ERROR => "Can't read flight ".
+        "(not exists or something has done wrong)",
+    DATABASE_END => "Can't generate flight",
     FLAG_NOT_FOUND => "Flag not found"
 };
 
@@ -31,9 +37,7 @@ socket $S, PF_INET, SOCK_STREAM, getprotobyname 'tcp';
 $cr = connect $S, sockaddr_in PORT, inet_aton $ip;
 do_exit(CHECKER_DOWN, CONNECTION_ERROR) unless $cr;
 
-#vec($v = '', fileno($S), 1) = 1;
-$| = 1;
-$keys = 1;
+($|, $keys) = (1, 1);
 
 $handlers{$mode}->($id, $flag, $ip);
 
@@ -52,7 +56,7 @@ sub check {
     send_key('RST');
 
     local $_ = &get_all;
-    do_exit(CHECKER_MUMBLE) unless /RuCTF2014 FMGS/;
+    do_exit(CHECKER_MUMBLE, INVALID_HELLO) unless /RuCTF2014 FMGS/;
     do_exit(CHECKER_OK);
 }
 
@@ -70,6 +74,8 @@ sub next_flight {
     my ($n, $result) = $last;
     do { $result = <F> } while ($last--);
     close F;
+
+    return undef unless $result;
 
     open F, '>', $fn;
     print F ($n + 1);
@@ -122,6 +128,8 @@ sub put {
     my ($id, $flag, $ip) = @_;
 
     my $fl = next_flight($ip);
+    do_exit(CHECKER_ERROR, DATABASE_END) unless defined $fl;
+
     send_key('RST');
     send_key('1L');
 
@@ -156,8 +164,7 @@ sub put {
     send_key('6R');
 
     my $result = &get_all;
-    # print STDERR "GOT: '$result'\n";
-    do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
+    do_exit(CHECKER_MUMBLE, ADD_FLIGHT_ERROR) if $result =~ /ERROR/;
 
     print $fl->[0];
     eval { visualize($ip, $fl) };
@@ -174,10 +181,9 @@ sub get {
     send_key('PGDN');
 
     my $result = &get_all;
-    # print STDERR "GOT: '$result'\n";
-    do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
+    do_exit(CHECKER_MUMBLE, READ_FLIGHT_ERROR) if $result =~ /ERROR/;
     for my $i (0..6) {
-        do_exit(CHECKER_NOFLAG, "no flag")
+        do_exit(CHECKER_NOFLAG, FLAG_NOT_FOUND)
             if index($result, substr($flag, 5*$i, 5)) == -1;
     }
 
@@ -203,19 +209,5 @@ sub get_all {
     $k = 0;
 
     return $x;
-
-=pod
-    for (1..100*TIMEOUT) {
-        next unless select '' . $v, undef, undef, 0.01;
-        while (select '' . $v, undef, undef, 0.01) {
-            recv $S, ($_ = ''), 1024, 0;
-            return $x unless length;
-
-            $x .= $_;
-        }
-    }
-
-    return $x;
-=cut
 }
 

@@ -17,8 +17,14 @@ function $(selector, ctx) {
 $.ajax = function(method, url, data, success, error) {
 	var xhr = new XMLHttpRequest();
 	xhr.open(method, url);
+
+	var done = false;
 	xhr.onreadystatechange = function() {
 		if(xhr.readyState == 4) {
+			if(done) return;
+
+			done = true;
+			clearTimeout(timeout);
 			if(xhr.status >= 200 && xhr.status < 300 || xhr.status == 304) {
 				if(success) { success(xhr.responseText); }
 			} else {
@@ -27,6 +33,13 @@ $.ajax = function(method, url, data, success, error) {
 		}
 	};
 	xhr.send(data);
+	var timeout = setTimeout( function() {
+		if(done) return;
+
+		done = true;
+		xhr.abort();
+		if(error) error()
+	}, 3000);
 };
 
 $.get = function(url, data, success, error) {
