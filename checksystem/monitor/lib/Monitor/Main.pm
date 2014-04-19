@@ -19,7 +19,7 @@ sub history {
 
 sub fly_data {
   my $self = shift;
-  $self->render(json => []);
+  $self->render(json => $self->app->fly);
 }
 
 1;

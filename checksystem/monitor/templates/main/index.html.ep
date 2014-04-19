@@ -6,8 +6,6 @@
 % content_for r => begin
   Раунд <%= $self->app->round->{n} %>
 % end
-<div id="history" style="height: 350px;"></div>
-<hr/>
 <h2>Скорборд (
   <span id="s101" style="background-color: rgb(0, 220, 0);">UP</span>,
   <span id="s102" style="background-color: rgb(255, 2255, 0);">CORRUPT</span>,
@@ -61,11 +59,14 @@
       </td>
     % }
     <td>
-      <div style="width: 74px; height: 74px;" id="team_<%= $score->{team}{id} %>"></div>
+      <div style="width: 70px; height: 70px;" id="team_<%= $score->{team}{id} %>"></div>
     </td>
   </tr>
   % }
 </table>
+
+<hr/>
+<div id="history" style="height: 280px;"></div>
 
 <script>
 function rgbToHsv(r, g, b) {
@@ -134,6 +135,9 @@ $(document).ready(function() {
       var score = parseFloat($(el).attr('data-score'));
       var x = m == 0 ? 1 : score / m;
       var color = colors[$(el).attr('class')];
+      if (!color) {
+        color = colors['s110'];
+      }
       var hsv = rgbToHsv(color[0], color[1], color[2]);
       var ncolor = hsvToRgb(hsv[0], 0.3 + hsv[1] * x * 0.7, hsv[2]);
       var z = 'rgb(' + parseInt(ncolor[0]) + ',' + parseInt(ncolor[1]) + ',' + parseInt(ncolor[2]) + ')';
