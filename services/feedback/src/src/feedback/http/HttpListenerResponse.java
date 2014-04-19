@@ -6,6 +6,7 @@ import org.apache.commons.io.output.ThresholdingOutputStream;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 public class HttpListenerResponse {
 	private HttpListenerResponse(HttpExchange exchange) {
@@ -47,6 +48,10 @@ public class HttpListenerResponse {
 
 	public void setHeader(String name, String value) {
 		this.exchange.getResponseHeaders().set(name, value);
+	}
+
+	public void putHeaders(String name, List<String> values) {
+		this.exchange.getResponseHeaders().put(name, values);
 	}
 
 	public long getBytesWritten() {

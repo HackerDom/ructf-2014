@@ -8,7 +8,7 @@ debug: all
 all: chat
 
 chat: $(SOURCES)
-	$(CC) $(SOURCES) --std=c99  $(CXXFLAGS) -I/usr/local/include -L/usr/local/lib -o chat -lmongoc
+	$(CC) $(SOURCES) --std=gnu99  $(CXXFLAGS) -I/usr/local/include -L/usr/local/lib -o chat -lmongoc
 
 clean:
 	rm -f chat

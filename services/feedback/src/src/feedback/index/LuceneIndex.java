@@ -43,38 +43,35 @@ public class LuceneIndex {
 		indexFields = new IndexFields();
 
 		searcherManager = new SearcherManager(writer, true, null);
-		ControlledRealTimeReopenThread<IndexSearcher> reopenThread = new ControlledRealTimeReopenThread<>(trackingWriter, searcherManager, 2.0, 0.2);
+		ControlledRealTimeReopenThread<IndexSearcher> reopenThread = new ControlledRealTimeReopenThread<>(trackingWriter, searcherManager, 5.0, 0.2);
 		reopenThread.setName("reopen-thread");
 		reopenThread.setPriority(Math.min(Thread.currentThread().getPriority() + 2, Thread.MAX_PRIORITY));
 		reopenThread.setDaemon(true);
 		reopenThread.start();
 
-		Thread commitThread = new Thread("commit-thread") {
-			@Override
-			public void run() {
-				boolean stop = false;
-				while(!stop) {
-					try {
-						Thread.sleep(30000);
-						commit();
-					}
-					catch(Exception ignored) {
-						if(ignored instanceof ThreadInterruptedException)
-							stop = true;
-					}
+		Thread commitThread = new Thread(() -> {
+			boolean stop = false;
+			while(!stop) {
+				try {
+					Thread.sleep(30000);
+					commit();
+				}
+				catch(Exception ignored) {
+					if(ignored instanceof ThreadInterruptedException)
+						stop = true;
 				}
 			}
-		};
+		}, "commit-thread");
 		commitThread.setPriority(Math.max(Thread.currentThread().getPriority() - 2, Thread.MIN_PRIORITY));
 		commitThread.setDaemon(true);
 		commitThread.start();
 
 		highlighter = new SearchHighlighter(analyzer);
+		sort = new Sort(new SortField(IndexFields.date, SortField.Type.LONG, true));
 	}
 
-	public SearchResults search(String text, int top) throws ParseException, IOException, InvalidTokenOffsetsException {
-		if(StringUtils.isBlank(text))
-			return new SearchResults(0, null);
+	public SearchResults search(String text, int top, String login, boolean all) throws ParseException, IOException, InvalidTokenOffsetsException {
+		if(text == null) text = "";
 
 		QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_47, indexFields.fieldsArray, analyzer, indexFields.boosts);
 		parser.setDefaultOperator(QueryParser.Operator.AND);
@@ -83,10 +80,14 @@ public class LuceneIndex {
 		IndexSearcher searcher = searcherManager.acquire();
 
 		try {
-			String filter = String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
+			String filter = all ? "" : String.format("%s:%s", IndexFields.type, VoteType.VISIBLE);
+			if(StringUtils.isNotBlank(login)) {
+				filter = String.format("(%s OR %s)", String.format("%s:%s", IndexFields.login, login), filter);
+			}
 
 			Query query = parser.parse(filter + " " + text); //WARN! Filter concatenation and no special characters escaping!
-			TopDocs hits = searcher.search(query, top);
+
+			TopDocs hits = searcher.search(query, top, sort);
 
 			Vote[] results = new Vote[hits.scoreDocs.length];
 			for(int i = 0; i < hits.scoreDocs.length; i++)
@@ -104,6 +105,7 @@ public class LuceneIndex {
 
 	public void addOrUpdateSubject(Vote vote) throws IOException {
 		trackingWriter.updateDocument(new Term(IndexFields.id, vote.id), Indexer.toDoc(vote));
+		searcherManager.maybeRefreshBlocking();
 	}
 
 	public void commit() throws IOException {
@@ -120,4 +122,5 @@ public class LuceneIndex {
 	private final TrackingIndexWriter trackingWriter;
 	private final Analyzer analyzer;
 	private final SearchHighlighter highlighter;
+	private final Sort sort;
 }

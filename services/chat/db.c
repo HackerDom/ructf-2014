@@ -23,8 +23,16 @@ char currentRoom[25];
 mongo conn;
 
 int db_connect()
-{
-    int status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+{   
+    int status;
+    if(getenv("DB_PORT_27017_TCP_ADDR"))
+    {
+        status = mongo_client( &conn, getenv("DB_PORT_27017_TCP_ADDR"), MONGO_PORT );
+    }
+    else
+    { 
+        status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+    }
     return status == MONGO_OK ? 0 : -1;
 }
 

@@ -6,6 +6,5 @@ lucene-highlighter-4.7.1-javadoc.zip
 lucene-memory-4.7.1-javadoc.zip
 lucene-queries-4.7.1-javadoc.zip
 lucene-queryparser-4.7.1-javadoc.zip
-readme.md
 slf4j-api-1.6.4-javadoc.jar
 slf4j-log4j12-1.6.4-javadoc.jar

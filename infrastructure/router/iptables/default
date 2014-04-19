@@ -1,0 +1,74 @@
+# /etc/init.d/iptables defaults file
+
+# INTRODUCTION: First thing first, I must warn you. The iptables
+# init.d setup and iptables tools themselves are VERY much capable
+# of locking you out of network services. This includes remote and
+# local network services, even localhost. You can even block local
+# console logins if authentication is network based. And please do
+# not be lulled into a false sense of security because you simply
+# installed the iptables package. It really does not provide a
+# firewall or any system security.
+#
+# Now for a short question and answer session:
+#
+# Q: You concocted this init.d setup, but you do not like it?
+# A: I was pretty much hounded into providing it. I do not like it.
+#    Don't use it. Use /etc/network/interfaces, use /etc/network/*.d/
+#    scripts use /etc/ppp/ip-*.d/ script. Create your own custom
+#    init.d script -- no need to even name it iptables.  Use ferm,
+#    ipmasq, ipmenu, guarddog, firestarter, or one of the many other
+#    firewall configuration tools available. Do not use the init.d
+#    script.
+#
+# Q: What is this iptables init.d setup all about?
+# A: The iptables init.d setup saves and restores whole iptables's
+#    table rulesets. That's basically it. It doesn't create any
+#    iptables rules nor provide for running any iptables rules.
+#    That also implies no support at all for dynamic rules.
+#
+# Q: How do I get started?
+# A: (Did I mention "do not use it" already? Oh well.)
+#    1. Setup your normal iptables rules -- firewalling, port forwarding
+#       NAT, etc. When everything is configured the way you like, run:
+#
+#           /etc/init.d/iptables save active
+#
+#    2. Setup your your inactive firewall rules -- this can be something
+#       like clear all rules and set all policy defaults to accept (which
+#       can be done with /etc/init.d/iptables clear). When that is ready,
+#       save the inactive ruleset:
+#
+#           /etc/init.d/iptables save inactive
+#
+#    3. Controlling the script itself is done through runlevels configured
+#       with debconf for package installation. Run "dpkg-reconfigure iptables"
+#       to enable or disable after installation.
+#
+# Q: Is that all?
+# A: Mostly. You can save additional rulesets and restore them by name. As
+#    an example:
+#
+#       /etc/init.d/iptables save midnight
+#       /etc/init.d/iptables load midnight
+#
+#
+#    Autosave only works with start followed by stop.
+#
+#    Also, take great care with the halt option. It's almost as good as
+#    pulling the network cable, except it disrupts localhost too.
+
+# deprecated default values:
+#    enable_iptables_initd - use the debconf setup
+#    preload_default - probably not necessary for iptables-restore
+#     and user modified init.d scripts cannot trusted anyway
+
+# set iptables_command to "iptables" (default) or "ip6tables"
+iptables_command=iptables
+
+# set enable_autosave to "true" to autosave the active ruleset
+# when going from start to stop
+enable_autosave=false
+
+# set enable_save_counters to "true" to save table counters with
+# rulesets
+enable_save_counters=true

@@ -1,7 +1,7 @@
 package feedback.index.helpers;
 
-import feedback.index.data.SortableDateTimeDeserializer;
-import feedback.index.data.SortableDateTimeSerializer;
+import feedback.index.data.DateTimeDeserializer;
+import feedback.index.data.DateTimeSerializer;
 import feedback.index.data.Vote;
 import feedback.utils.StringUtils;
 import org.apache.lucene.document.*;
@@ -33,7 +33,7 @@ public class Indexer {
 			doc.add(new Field(IndexFields.text, vote.text, type));
 		}
 
-		doc.add(new StringField(IndexFields.date, serializer.serialize(vote.date), Field.Store.YES));
+		doc.add(new StringField(IndexFields.date, String.valueOf(serializer.serialize(vote.date)), Field.Store.YES));
 
 		return doc;
 	}
@@ -41,14 +41,13 @@ public class Indexer {
 	public static Vote fromDoc(Document doc) {
 		Vote vote = new Vote();
 		vote.id = doc.get(IndexFields.id);
-		//vote.type = doc.get(IndexFields.type);
 		vote.login = doc.get(IndexFields.login);
 		vote.title = doc.get(IndexFields.title);
 		vote.text = doc.get(IndexFields.text);
-		vote.date = deserializer.deserialize(doc.get(IndexFields.date));
+		vote.date = deserializer.deserialize(Long.parseLong(doc.get(IndexFields.date)));
 		return vote;
 	}
 
-	private static SortableDateTimeSerializer serializer = new SortableDateTimeSerializer();
-	private static SortableDateTimeDeserializer deserializer = new SortableDateTimeDeserializer();
+	private static DateTimeSerializer serializer = new DateTimeSerializer();
+	private static DateTimeDeserializer deserializer = new DateTimeDeserializer();
 }

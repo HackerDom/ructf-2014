@@ -9,11 +9,16 @@
 		<div class="container">
 			<h1>HackFlight. Feedback</h1>
 			<h2>Search for existing topics</h2>
+			<div id="login"></div>
+			<div id="auth" style="display:none">
+				<a href="/login.html">login</a>&emsp;or&emsp;<a href="/registration.html">register</a>
+			</div>
+			<h2><a href="/form.html">post new feedback</a></h2>
 			<form id="search-form">
 				<input type="text" id="search-field" class="form-control" placeholder="Keywords"/>
 				<input type="submit" id="search-btn" class="form-control btn" value="Search"/>
 			</form>
-			<div>Total hits: <span id="hits"></span></div>
+			<div id="hits"></div>
 			<table id="votes">
 				<colgroup>
 					<col class="votes-login"/>
@@ -24,23 +29,32 @@
 			</table>
 			<script type="text/javascript" src="scripts.js"></script>
 			<script>
+				function getCookie(name) {
+					var matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+					return matches ? decodeURIComponent(matches[1]) : undefined;
+				}
+				var login = getCookie("login");
+				if(login)
+					$("#login").first().innerHTML = login;
+				else
+					$("#auth").first().style.display = "";
+
 				function dosearch() {
 					var query = $("#search-field").first().value;
 					var $votes = $("#votes tbody").first();
 					var $hits = $("#hits").first();
-					$votes.innerHTML = null;
-					if(query) {
-						$.get("/search", {query:query}, function(result) {
-							if(result && result.votes) {
-								$votes.innerHTML = null;
-								$hits.innerHTML = result.hits;
-								for(var i = 0; i < result.votes.length; i++) {
-									var vote = result.votes[i];
-									$votes.innerHTML += "<tr><td>" + vote.login + "</td><td>" + vote.title + "</td><td>" + vote.text + "</td></tr>";
-								}
+					$hits.innerHTML = "";
+					$votes.innerHTML = "";
+					$.get("/search", {query:query}, function(result) {
+						if(result && result.votes) {
+							$votes.innerHTML = "";
+							$hits.innerHTML = "Found " + result.hits + " result(s)";
+							for(var i = 0; i < result.votes.length; i++) {
+								var vote = result.votes[i];
+								$votes.innerHTML += "<tr><td>" + vote.login + "</td><td>" + vote.title + "</td><td>" + vote.text + "</td></tr>";
 							}
-						});
-					}
+						}
+					});
 				}
 				$("#search-form").first().onsubmit = function(e) {
 					e.preventDefault();

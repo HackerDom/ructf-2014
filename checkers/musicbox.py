@@ -5,6 +5,7 @@ import socket
 import re
 import os
 import string
+import shutil
 from checker import *
 from glob import glob
 from uuid import UUID
@@ -30,14 +31,9 @@ FLAG_TTL = 90 * 60
 
 MUSIC_DIRECTORY = 'music'
 
-TEMP_FILE = '.musicbox.temp'
+TMP_DIR = '/tmp/'
 
 class MusicboxChecker(CheckerBase):
-	def init_data(self):
-		self.data = dict()
-		self.data['played'] = []
-		self.data['planted'] = dict()
-
 	def get_avaliable_songs(self):
 		return glob('%s/*' % MUSIC_DIRECTORY)
 
@@ -48,16 +44,7 @@ class MusicboxChecker(CheckerBase):
 			self.debug('No songs to use')
 			exit(EXITCODE_CHECKER_ERROR)
 
-		not_played_songs = [ track for track in songs if not track in self.data['played'] ]
-
-		if len(not_played_songs) == 0:
-			self.data['played'] = []
-			not_played_songs = songs
-
-		chosen = random.choice(not_played_songs)
-		self.data['played'].append(chosen)
-
-		return chosen
+		return random.choice(songs)
 
 	def send_chunked_data(self, sock, data):
 		for i in range((len(data) + CHUNK_SIZE - 1) / CHUNK_SIZE):
@@ -120,62 +107,65 @@ class MusicboxChecker(CheckerBase):
 	def create_socket(self, addr, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.settimeout(SOCKET_TIMEOUT)
-		sock.connect((addr, port))
-		return sock
+		try:
+			sock.connect((addr, port))
+			return sock
+		except:
+			exit(EXITCODE_DOWN)
 
 	def check(self, addr):
 		flag = ''.join([ random.choice(string.ascii_uppercase + string.digits) for e in range(31) ]) + '='
+		flag_id = ''.join([ random.choice(string.ascii_uppercase + string.digits) for e in range(12) ])
 		global FLAG_TTL
 		old_ttl = FLAG_TTL
 		try:
 			FLAG_TTL = CHECK_TTL
-
-			if not self.put(addr, None, flag):
+			uuid = self.put(addr, flag_id, flag)
+			if not uuid:
 				return False
-			return self.get(addr, None, flag)
+			return self.get(addr, uuid, flag)
 		finally:
 			FLAG_TTL = old_ttl
 
 	def get(self, addr, flag_id, flag):
 		sock = self.create_socket(addr, SERVICE_PORT)
 
-		if not flag in self.data['planted']:
-			self.debug("Didn't planted this flag: %s" % flag)
-			exit(EXITCODE_CHECKER_ERROR)
-
-		uuid = UUID(self.data['planted'][flag])
+		uuid = UUID(flag_id)
 		song_data = self.get_song(sock, uuid)
 
 		if not song_data:
 			return False
 
+		temp_file = '%s%s' % (TMP_DIR, flag_id)
 		try:
-			with open(TEMP_FILE, 'wb') as f:
+			with open(temp_file, 'wb') as f:
 				f.write(song_data)
-			ogg_file = OggVorbis(TEMP_FILE)
+			ogg_file = OggVorbis(temp_file)
 			return flag in ogg_file[FLAG_TAG_NAME]
 		finally:
-			os.remove(TEMP_FILE)
+			os.remove(temp_file)
 
 	def put(self, addr, flag_id, flag):
 		sock = self.create_socket(addr, SERVICE_PORT)
 
 		song = self.pick_song()
+		
+		temp_file = '%s%s' % (TMP_DIR, flag_id)
+		shutil.copyfile(song, temp_file)
 
-		ogg_file = OggVorbis(song)
+		ogg_file = OggVorbis(temp_file)
 		ogg_file[FLAG_TAG_NAME] = flag
 		ogg_file.save()
 
 		try:
-			with open(song, 'rb') as f:
+			with open(temp_file, 'rb') as f:
 				song_data = f.read()
 			uuid = self.put_song(sock, song_data)
 			if not uuid:
 				return False
-			self.data['planted'][flag] = str(uuid)
-			return True
+			print(uuid)
+			return str(uuid)
 		finally:
-			del ogg_file[FLAG_TAG_NAME]
-			ogg_file.save()
+			os.remove(temp_file)
 
 MusicboxChecker().run()

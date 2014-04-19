@@ -16,4 +16,6 @@ test-db:
 	./change-owner.sh ructfetest testuser
 
 clean:
-	./run.sh tables-clear.sql
+	./run.sh ructf2014 ructf2014 tables-clear.sql
+	./run.sh ructf2014 ructf2014 ructf2014-services.sql
+	./run.sh ructf2014 ructf2014 game-teams-add.sql
