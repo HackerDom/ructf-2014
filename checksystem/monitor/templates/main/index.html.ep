@@ -6,8 +6,6 @@
 % content_for r => begin
   Раунд <%= $self->app->round->{n} %>
 % end
-<div id="history" style="height: 280px;"></div>
-<hr/>
 <h2>Скорборд (
   <span id="s101" style="background-color: rgb(0, 220, 0);">UP</span>,
   <span id="s102" style="background-color: rgb(255, 2255, 0);">CORRUPT</span>,
@@ -66,6 +64,9 @@
   </tr>
   % }
 </table>
+
+<hr/>
+<div id="history" style="height: 280px;"></div>
 
 <script>
 function rgbToHsv(r, g, b) {
