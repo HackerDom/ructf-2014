@@ -43,7 +43,7 @@ iptables -P INPUT DROP
 # Forwarding
 iptables -P FORWARD ACCEPT
 iptables -F FORWARD
-#iptables -A FORWARD -j ULOG
+iptables -A FORWARD -j ULOG
 
 init_chain() {
     local table=$1 chain=$2
@@ -112,6 +112,9 @@ $team2team && can_go teams teams
 
 can_go any checksystem_public
 
+
+# monitoring
+
 init_mon_network() {
     local name=${1%%:*} network=${1##*:}
     init_chain filter mon_from_$name
@@ -127,18 +130,30 @@ for i in $(seq 1 $((N-1))); do
     init_mon_network team$i:10.23.$i/24
 done
 
+init_chain filter mon_from_inet
+for iface in $inet_ifaces; do
+    $add_filter monitoring -i $iface -j mon_from_inet
+done
+
+init_chain filter mon_to_inet
+$add_filter mon_to_inet -j RETURN
+
 for net in vpn checksystem devs any; do
     init_mon_network $net:${!net}
 done
 
 for src in $(seq -f 'team%.0f' 1 $((N-1))) \
-           vpn checksystem devs any; do
+           vpn checksystem devs inet any; do
     for dst in $(seq 1 $((N-1))); do
         $add_filter mon_from_$src -d 10.23.$dst/24 -j mon_to_team$dst
     done
 
     for dst in vpn checksystem devs any; do
         $add_filter mon_from_$src -d ${!dst} -j mon_to_$dst
+    done
+
+    for iface in $inet_ifaces; do
+        $add_filter mon_from_$src -o $iface -j mon_to_inet
     done
 done
 
