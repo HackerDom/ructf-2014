@@ -21,7 +21,7 @@ sub EXIT_OK      { my $s = pop; exit 101 }
 sub EXIT_CORRUPT { my $s = pop; warn MSG($s).$/; print $s.$/; exit 102 }
 sub EXIT_MUMBLE  { my $s = pop; warn MSG($s).$/; print $s.$/; exit 103 }
 sub EXIT_DOWN    { my $s = pop; warn MSG($s).$/; print $s.$/; exit 104 }
-sub EXIT_ERR     { my $s = pop; warn MSG($s).$/; exit 105 }
+sub EXIT_ERR     { my $s = pop; warn MSG($s).$/; exit 110 }
 
 my (@First, @Last);
 
