@@ -123,7 +123,6 @@ function static_files(request, response) {
   fs.readFile(pathname, function(err, content){
     if (err) {
       console.log(err);
-      // TODO: call error404()
       response.writeHead(404, {"Content-Type": "text/html"});
       response.end();
       return;
