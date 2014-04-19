@@ -25,6 +25,8 @@ sub startup {
   $r->get('/')->to('main#index')->name('index');
   $r->get('/flags')->to('main#flags')->name('flags');
   $r->get('/history')->to('main#history')->name('history');
+  $r->get('/fly')->to('main#fly')->name('fly');
+  $r->get('/fly/data')->to('main#fly_data')->name('fly_data');
 
   $self->pg(
     'SELECT id, name FROM services;',
