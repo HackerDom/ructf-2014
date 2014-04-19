@@ -97,12 +97,14 @@ void room_leave()
 
 bool test_password(const char *expected, const char *actual)
 {
-    int len_actual = strlen(actual);
-    int len_expected = strlen(expected);
+    signed char len_actual = strlen(actual);
+    signed char len_expected = strlen(expected);
 
-    if (len_expected < 1)return false;
-    len_expected++;
-    for (int i = 0; i < len_expected; i++)    // vuln is here: strlen(actual)>127 => len_actual < 0 => no check [doesn't work]
+    if (len_actual < 1)
+        return false;
+
+    len_actual++;
+    for (int i = 0; i < len_actual; i++)    // vuln is here: strlen(actual)>127 => len_actual < 0 => no check [doesn't work]
     {
         if (expected[i] != actual[i])
             return false;
