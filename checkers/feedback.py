@@ -46,14 +46,14 @@ class FeedbackChecker(HttpCheckerBase):
 	def randword(self):
 		word = ''
 		rnd = random.randrange(2,10)
-		for i in xrange(rnd):
+		for i in range(rnd):
 			word += random.choice(string.ascii_lowercase)
 		return word
 
 	def randphrase(self):
 		phrase = ''
 		rnd = random.randrange(1,4)
-		for i in xrange(rnd):
+		for i in range(rnd):
 			phrase += ' ' + self.randword();
 		return phrase.lstrip()
 
