@@ -51,7 +51,18 @@ int create_server_socket (int port)
 
 void print_greeting()
 {
-    WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                _|_                                   ");
+    WriteLn("                               /___\\                                  ");
+    WriteLn("                              /_____\\                                 ");
+    WriteLn("                             /oo   oo\\                                ");
+    WriteLn(" \\___________________________\\       /___________________________/    ");
+    WriteLn("  `-----------|------|--------\\_____/--------|------|-----------'     ");
+    WriteLn("             ( )    ( )     O|OOo|oOO|O     ( )    ( )                ");
+    WriteLn("");
+    WriteLn("            ::: Welcome to RuCTF 2014 passenger chat :::");
     WriteLn("");
     WriteLn("Commands: \\help, \\register, \\login, \\create, \\list, \\join, \\leave, \\quit");
     WriteLn("");
