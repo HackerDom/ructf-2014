@@ -4,6 +4,7 @@
 #define MAX_FILE (1 * 1024 * 1024)
 #define MAX_CHUNK 0x7fff
 #define MAX_TTL 5400
+#define MAX_STORAGE_SPACE (1 * 1024 * 1024 * 1024)
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 
 #include <signal.h>

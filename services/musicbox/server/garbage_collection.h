@@ -5,8 +5,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-int collect(char *dirname);
+int mb_collect(char *dirname);
 
-size_t occupied_space(char * dirname);
+size_t mb_occupied_space(char *dirname);
 
 #endif

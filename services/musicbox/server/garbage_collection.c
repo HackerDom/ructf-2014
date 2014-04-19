@@ -1,6 +1,6 @@
 #include "garbage_collection.h"
 
-int has_to_be_removed(char *filename) {
+int mb_has_to_be_removed(char *filename) {
 	struct Tag *tags;
 	size_t tags_count, file_size, i;
 	int ttl, result;
@@ -55,8 +55,8 @@ int has_to_be_removed(char *filename) {
 	return result;
 }
 
-void collect_file(char *filename) {
-	if (has_to_be_removed(filename)) {
+void mb_collect_file(char *filename) {
+	if (mb_has_to_be_removed(filename)) {
 		info("Removing %s", filename);
 		if (remove(filename) < 0) {
 			warn("Failed to remove file %s", filename);
@@ -64,7 +64,7 @@ void collect_file(char *filename) {
 	}
 }
 
-int collect(char *dirname) {
+int mb_collect(char *dirname) {
 	struct dirent **files;
 	int files_count, i;
 
@@ -74,13 +74,13 @@ int collect(char *dirname) {
 	}
 
 	for (i = 0; i < files_count; ++i) {
-		collect_file(files[i]->d_name);
+		mb_collect_file(files[i]->d_name);
 	}
 
 	free(files);
 }
 
-size_t get_file_size(char *filename) {
+size_t mb_get_file_size(char *filename) {
 	struct stat file_stat;
 
 	if (stat(filename, &file_stat) < 0) {
@@ -91,7 +91,7 @@ size_t get_file_size(char *filename) {
 	return file_stat.st_size;
 }
 
-size_t occupied_space(char * dirname) {
+size_t mb_occupied_space(char * dirname) {
 	struct dirent **files;
 	int files_count, i;
 	size_t total_size;
@@ -103,7 +103,7 @@ size_t occupied_space(char * dirname) {
 
 	total_size = 0;
 	for (i = 0; i < files_count; ++i) {
-		total_size += get_file_size(files[i]->d_name);
+		total_size += mb_get_file_size(files[i]->d_name);
 	}
 
 	free(files);
