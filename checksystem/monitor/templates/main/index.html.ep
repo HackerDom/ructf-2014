@@ -1,53 +1,149 @@
 % layout 'default';
 % title 'RuCTF > скорборд';
+% use Mojo::Util 'url_escape';
 
-<p id="round">Round <%= $self->app->round->{n} %> (started at <%= $self->app->round->{time} %>)</p>
-<div id="history"></div>
-<table class="table table-bordered">
+% content_for r => begin
+  Раунд <%= $self->app->round->{n} %> (начался <%= $self->app->round->{time} %>)
+% end
+<div id="history" style="height: 350px;"></div>
+<hr/>
+<h2>Скорборд (
+  <span id="s101" style="background-color: rgb(0, 220, 0);">UP</span>,
+  <span id="s102" style="background-color: rgb(255, 2255, 0);">CORRUPT</span>,
+  <span id="s103" style="background-color: rgb(255, 166, 0);">MUMBLE</span>,
+  <span id="s104" style="background-color: rgb(230, 0, 0);">DOWN</span>,
+  <span id="s110" style="background-color: rgb(128, 128, 128);">CHECKER ERROR</span>
+  )
+</h2>
+<table class="table">
   <tr>
-    <td>#</td>
-    <td>Логотип</td>
-    <td>Флаги</td>
-    <td>Команда</td>
-    <td>Очки</td>
-    % for my $service (values %{$self->app->services}) {
-    <td><%= $service %></td>
+    <td><b>#</b></td>
+    <td><b>Логотип</b></td>
+    <td><b>Команда</b></td>
+    <td><b>Очки</b></td>
+    % my @scolors = ('rgb(139,0,139)', 'rgb(205,16,118)', 'rgb(139,139,0)', 'rgb(46,139,87)', 'rgb(0,238,238)', 'rgb(112,128,144)', 'rgb(139,60,139)');
+    % for my $sid (keys %{$self->app->services}) {
+      <td
+        class="service"
+        data-sid="<%= $sid %>"
+        style="background-color: <%= shift @scolors %>;"
+      >
+          <b><%= $self->app->services->{$sid} %></b>
+      </td>
     % }
+    <td><b>Флаги</b></td>
   </tr>
   % my $pos = 0;
   % for my $score (@{$self->app->scoreboard}) {
   <tr>
     <td><%= ++$pos %>.</td>
     <td>
-      % my $name = $score->{team}{name};
-      <img src="" width="64" height="64">
+      % my $name = url_escape url_escape $score->{team}{name};
+      <img src="<%= url_for('/logo/' . $name) %>" width="64" height="64" class="img-rounded">
     </td>
-    <td>
-      <div style="width: 100px; height: 100px;" id="team_<%= $score->{team}{id} %>"></div>
-    </td>
-    <td><%= $score->{team}{name} %> (<%= $score->{team}{vuln_box} %>)</td>
+    <td><span title="<%= $score->{team}{vuln_box} %>"><%= $score->{team}{name} %></span></td>
     <td><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $sid (keys %{$self->app->services}) {
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
-      % my $s = {101 => 'success', 102 => 'info', 103 => 'warning', 104 => 'danger', 110 => 'active'};
-      <td class="<%= $s->{$status} %>">
-        SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %> <br/>
-        FP: <%= sprintf '%.2f', $score->{fp}{$sid} %>
+      % my $s = {101 => 'OK', 102 => 'CORRUPT', 103 => 'MUMBLE', 104 => 'DOWN', 110 => 'CHECKER ERROR'};
+      <td title="<%= $s->{$status} %>" class="s<%= $status %>" data-team="<%= $score->{team}{id} %>" data-service="<%= $sid %>" data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>">
+        <p>SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %></p>
+        <p>FP: <%= sprintf '%.2f', $score->{fp}{$sid} %></p>
       </td>
     % }
+    <td>
+      <div style="width: 94px; height: 94px;" id="team_<%= $score->{team}{id} %>"></div>
+    </td>
   </tr>
   % }
 </table>
 
 <script>
+function rgbToHsv(r, g, b) {
+  r /= 255, g /= 255, b /= 255;
+
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, v = max;
+
+  var d = max - min;
+  s = max == 0 ? 0 : d / max;
+
+  if (max == min) {
+    h = 0; // achromatic
+  } else {
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return [ h, s, v ];
+}
+
+function hsvToRgb(h, s, v) {
+  var r, g, b;
+
+  var i = Math.floor(h * 6);
+  var f = h * 6 - i;
+  var p = v * (1 - s);
+  var q = v * (1 - f * s);
+  var t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v, g = t, b = p; break;
+    case 1: r = q, g = v, b = p; break;
+    case 2: r = p, g = v, b = t; break;
+    case 3: r = p, g = q, b = v; break;
+    case 4: r = t, g = p, b = v; break;
+    case 5: r = v, g = p, b = q; break;
+  }
+
+  return [ r * 255, g * 255, b * 255 ];
+}
+</script>
+
+<script>
 $(document).ready(function() {
+
+  var colors = {
+    s101: [0, 220, 0],
+    s102: [255, 255, 0],
+    s103: [255, 166, 0],
+    s104: [230, 0, 0],
+    s110: [128, 128, 128]
+  };
+
+  for (s in [1,2,3,4,5,6,7]) {
+    var ss = parseInt(s) + 1;
+    console.log(ss);
+    var scores = [];
+    $('td[data-service="' + ss + '"]').each(function (idx, el) {
+      scores.push(parseFloat($(el).attr('data-score')));
+    });
+    m = Math.max.apply(null, scores);
+    $('td[data-service="' + ss + '"]').each(function (idx, el) {
+      var score = parseFloat($(el).attr('data-score'));
+      var x = m == 0 ? 1 : score / m;
+      var color = colors[$(el).attr('class')];
+      var hsv = rgbToHsv(color[0], color[1], color[2]);
+      var ncolor = hsvToRgb(hsv[0], 0.3 + hsv[1] * x * 0.7, hsv[2]);
+      var z = 'rgb(' + parseInt(ncolor[0]) + ',' + parseInt(ncolor[1]) + ',' + parseInt(ncolor[2]) + ')';
+      $(el).css('background-color', z);
+    });
+  }
+
   $.get("<%= url_for('flags') %>", function(flags) {
     $.each(flags, function(team, data) {
       c = '#team_' + team;
       s = [];
-      $.each(data, function(service, count) {
-        s.push([service, parseInt(count)]);
+      $.each(data, function(sid, count) {
+        s.push({
+          x: sid,
+          y: parseInt(count),
+          color: $('td[data-sid="' + sid + '"]').css('background-color')
+        });
       });
       $(c).highcharts({
         chart: {
@@ -89,10 +185,10 @@ $(document).ready(function() {
       },
       title: { text: '' },
       xAxis: {
-        title: { text: 'Раунды' },
+        title: { text: '' },
       },
       yAxis: {
-        title: { text: 'Очки' },
+        title: { text: '' },
         min: 0
       },
       tooltip: {},

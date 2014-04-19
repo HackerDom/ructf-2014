@@ -42,16 +42,24 @@ public class SearchHandler implements IHttpListenerHandler {
 
 		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
 
+		boolean isAdmin = authToken != null && authToken.isAdmin();
+		String login = authToken == null ? null : authToken.getLogin();
+
+		SearchResults results = search(query, top, login, isAdmin);
+		byte[] buffer = writer.writeValueAsBytes(results);
+		response.setContentLength(buffer.length);
+		response.setHeader("Content-Type", "application/json");
+		try(OutputStream stream = response.getOutputStream()) {
+			stream.write(buffer);
+		}
+	}
+
+	private SearchResults search(String query, int top, String login, boolean isAdmin) throws IOException {
 		try {
-			SearchResults results = index.search(query, top, authToken == null ? null : authToken.getLogin(), authToken != null && authToken.isAdmin());
-			byte[] buffer = writer.writeValueAsBytes(results);
-			response.setContentLength(buffer.length);
-			response.setHeader("Content-Type", "application/json");
-			try(OutputStream stream = response.getOutputStream()) {
-				stream.write(buffer);
-			}
+			return index.search(query, top, login, isAdmin);
 		} catch(ParseException|InvalidTokenOffsetsException e) {
-			log.error(String.format("Query failed '%s'", query), e);
+			//log.error(String.format("Query failed '%s'", query), e);
+			return new SearchResults(0, null);
 		}
 	}
 

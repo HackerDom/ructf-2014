@@ -1,12 +1,12 @@
-#include "db.h"
-#include "mongo.h"
-#include "io.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
+#include "mongo.h"
 #include "debug.h"
+#include "db.h"
+#include "io.h"
 
 #define MONGO_HOST "127.0.0.1"
 #define MONGO_PORT 27017
@@ -23,8 +23,16 @@ char currentRoom[25];
 mongo conn;
 
 int db_connect()
-{
-    int status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+{   
+    int status;
+    if(getenv("DB_PORT_27017_TCP_ADDR"))
+    {
+        status = mongo_client( &conn, getenv("DB_PORT_27017_TCP_ADDR"), MONGO_PORT );
+    }
+    else
+    { 
+        status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+    }
     return status == MONGO_OK ? 0 : -1;
 }
 
@@ -66,16 +74,14 @@ void room_leave()
     }
 }
 
+/* test_password is vulnerable */
+
 bool test_password(const char *expected, const char *actual)
 {
-    char len_actual = strlen(actual);
-    char len_expected = strlen(expected);
+    signed char len_actual = strlen(actual);
+    signed char len_expected = strlen(expected);
 
-    D("len_actual: %d\n", len_actual)
-    D("len_expected: %d\n", len_expected)
-    D("expected:actual = %s:%s\n", expected, actual);
-
-    for (int i = 0; i < len_actual; i++)     // vuln is here: strlen(actual)>127 => len_actual < 0 => no check [doesn't work]
+    for (int i = 0; i < len_actual; i++)
     {
         if (i >= len_expected || expected[i] != actual[i])
             return false;

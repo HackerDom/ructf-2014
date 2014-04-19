@@ -46,7 +46,7 @@ sub db_write {
 
     for (keys %$value) {
         my $val = ref $value->{$_} ? join ';', @{$value->{$_}} : $value->{$_};
-        print F "$_#$val";
+        print F "$_#$val" if $val;
     }
 
     close F;

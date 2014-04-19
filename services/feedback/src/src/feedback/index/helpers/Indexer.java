@@ -33,7 +33,7 @@ public class Indexer {
 			doc.add(new Field(IndexFields.text, vote.text, type));
 		}
 
-		doc.add(new LongField(IndexFields.date, serializer.serialize(vote.date), Field.Store.YES));
+		doc.add(new StringField(IndexFields.date, String.valueOf(serializer.serialize(vote.date)), Field.Store.YES));
 
 		return doc;
 	}

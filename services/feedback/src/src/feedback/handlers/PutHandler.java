@@ -29,6 +29,9 @@ public class PutHandler extends AjaxHandler<Vote> {
 		if(StringUtils.isBlank(vote.title) || StringUtils.isBlank(vote.text))
 			return AjaxResult.createError("Not all required fields are set");
 
+		if(vote.title.length() > MAX_TITLE_LENGTH || vote.text.length() > MAX_TEXT_LENGTH)
+			return AjaxResult.createError("Title/text too long");
+
 		if(!(vote.type.equals(VoteType.VISIBLE) || vote.type.equals(VoteType.INVISIBLE)))
 			return AjaxResult.createError("Invalid type");
 
@@ -44,6 +47,9 @@ public class PutHandler extends AjaxHandler<Vote> {
 		vote.login = authToken != null ? authToken.getLogin() : "anonymous";
 		return vote;
 	}
+
+	private static final int MAX_TITLE_LENGTH = 128;
+	private static final int MAX_TEXT_LENGTH = 512;
 
 	private LuceneIndex index;
 	private TokenCrypt tokenCrypt;

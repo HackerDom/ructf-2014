@@ -40,6 +40,22 @@ define host {
 
 define host {
     use            generic-host
+    host_name      hewlett
+    address        10.23.0.3
+    hostgroups     Essential hosts
+    check_interval 2
+}
+
+define host {
+    use            generic-host
+    host_name      packard
+    address        10.23.0.4
+    hostgroups     Essential hosts
+    check_interval 2
+}
+
+define host {
+    use            generic-host
     host_name      Core switch
     address        10.24.0.1
     hostgroups     Essential hosts
@@ -60,7 +76,7 @@ define service {
     use                 generic-service
     host_name           Team {{i}} vuln image
     service_description SSH
-    check_command       check_ssh_port!36000
+    check_command       check_ssh
     check_interval 2
 }
 

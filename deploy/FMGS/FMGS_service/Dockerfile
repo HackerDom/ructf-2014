@@ -8,6 +8,6 @@ RUN chown -R fmgs:fmgs /home/FMGS
 USER fmgs
 
 WORKDIR /home/FMGS
-ENTRYPOINT /home/FMGS/FMGS.pl
+CMD /home/FMGS/FMGS.pl
 
 EXPOSE 44100

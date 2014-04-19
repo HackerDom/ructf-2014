@@ -33,6 +33,8 @@ for iface in $inet_ifaces; do
     $add_filter INPUT -i $iface -m state --state NEW -p tcp --dport 22 -j ACCEPT
 done
 
+# allow DHCP and TFTP requests to router
+$add_filter INPUT -p udp --dport 67 -m state --state NEW -j ACCEPT
 $add_filter INPUT -i $switch_iface -p udp --dport 69 -m state --state NEW -j ACCEPT
 
 iptables -P INPUT DROP
@@ -41,7 +43,7 @@ iptables -P INPUT DROP
 # Forwarding
 iptables -P FORWARD ACCEPT
 iptables -F FORWARD
-#iptables -A FORWARD -j ULOG
+iptables -A FORWARD -j ULOG
 
 init_chain() {
     local table=$1 chain=$2
@@ -80,9 +82,9 @@ for net in vpn core_switch devs checksystem teams team_switches any; do
 done
 
 init_chain filter to_checksystem_public
-for port in 80 31337; do
-$add_filter to_checksystem_public \
-    -d 10.23.0.2 -p tcp --dport $port -m state --state NEW -j ACCEPT
+for cs_host in 10.23.0.{2..4}; do
+    $add_filter to_checksystem_public -d $cs_host -p tcp -m multiport \
+        --dports 80,31337 -m state --state NEW -j ACCEPT
 done
 
 # and we fix networks here additionally in to_* chains
@@ -110,6 +112,9 @@ $team2team && can_go teams teams
 
 can_go any checksystem_public
 
+
+# monitoring
+
 init_mon_network() {
     local name=${1%%:*} network=${1##*:}
     init_chain filter mon_from_$name
@@ -125,18 +130,30 @@ for i in $(seq 1 $((N-1))); do
     init_mon_network team$i:10.23.$i/24
 done
 
+init_chain filter mon_from_inet
+for iface in $inet_ifaces; do
+    $add_filter monitoring -i $iface -j mon_from_inet
+done
+
+init_chain filter mon_to_inet
+$add_filter mon_to_inet -j RETURN
+
 for net in vpn checksystem devs any; do
     init_mon_network $net:${!net}
 done
 
 for src in $(seq -f 'team%.0f' 1 $((N-1))) \
-           vpn checksystem devs any; do
+           vpn checksystem devs inet any; do
     for dst in $(seq 1 $((N-1))); do
         $add_filter mon_from_$src -d 10.23.$dst/24 -j mon_to_team$dst
     done
 
     for dst in vpn checksystem devs any; do
         $add_filter mon_from_$src -d ${!dst} -j mon_to_$dst
+    done
+
+    for iface in $inet_ifaces; do
+        $add_filter mon_from_$src -o $iface -j mon_to_inet
     done
 done
 
