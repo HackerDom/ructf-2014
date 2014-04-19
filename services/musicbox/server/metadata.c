@@ -1,24 +1,8 @@
 #include "metadata.h"
 
-int mb_tag_init(char *key, char *value, struct Tag *tag) {
-	char *new_key, *new_value;
-
-	if ((new_key = (char *) malloc(strlen(key) + 1)) == NULL) {
-		warn("Failed to allocate memory\n");
-		return -1;
-	}
-
-	if ((new_value = (char *) malloc(strlen(value) + 1)) == NULL) {
-		warn("Failed to allocate memory\n");
-		free(new_key);
-		return -1;
-	}
-
-	strcpy(new_key, key);
-	strcpy(new_value, value);
-
-	tag->key = new_key;
-	tag->value = new_value;
+int mb_tag_init(const char *key, const char *value, struct Tag *tag) {
+	tag->key = strdup(key);
+	tag->value = strdup(value);
 
 	return 0;
 }
