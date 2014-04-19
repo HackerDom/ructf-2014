@@ -9,7 +9,7 @@ use IO::Select;
 my $TIMEOUT      = 5;
 my $DEBUG        = 1;
 my $PORT         = 5555;
-my $READ_TIMEOUT = 2;
+my $READ_TIMEOUT = 5;
 my $READ_BUF     = 65535;
 my $DUMP         = 1;
 
@@ -17,7 +17,7 @@ my $DUMP         = 1;
 
 sub MSG          { my $s = pop; $s =~ s/[\r\n]+/[\\n]/g; $s; }
 
-sub EXIT_OK      { my $s = pop; warn MSG($s).$/; print $s.$/; exit 101 }
+sub EXIT_OK      { my $s = pop; exit 101 }
 sub EXIT_CORRUPT { my $s = pop; warn MSG($s).$/; print $s.$/; exit 102 }
 sub EXIT_MUMBLE  { my $s = pop; warn MSG($s).$/; print $s.$/; exit 103 }
 sub EXIT_DOWN    { my $s = pop; warn MSG($s).$/; print $s.$/; exit 104 }
@@ -76,20 +76,19 @@ sub readAll {
     my $result = '';
     while (1) {
         my @ready = $select->can_read($READ_TIMEOUT);
-        last unless @ready;
         $sock->recv(my $data, $READ_BUF);
         $result .= $data;
         last if $data =~ '>';
     }
     if ($DUMP) {
-        printf STDERR "[ <= ] %s\n", $_ for grep { /\S/ } split /[\r\n]/, $result;
+        printf STDERR "[ recv ] %s\n", $_ for grep { /\S/ } split /[\r\n]/, $result;
     }
     return $result;
 }
 
 sub sendData {
     my ($sock,$data) = @_;
-    printf STDERR "[ => ] %s\n", $data if $DUMP;
+    printf STDERR "[ send ] %s\n", $data if $DUMP;
     $sock->send("$data\r\n");
 }
 
@@ -101,6 +100,7 @@ sub check {
     my ($host) = @_;
     my $s = connectTo($host) or EXIT_DOWN $@;
     my $data = readAll($s);
+    sendData($s, "\\quit");
     $s->close();
     assertBanner($data) ? EXIT_OK : EXIT_MUMBLE "Welcome banner corrupted";
 }
@@ -142,9 +142,6 @@ sub put {
 
     sendData($s, "$flag");
     $data = readAll($s);
-    $data =~ /$flag/ or EXIT_MUMBLE "put flag failed";
-
-    debug "say flag OK";
 
     sendData($s, "\\quit");
 
