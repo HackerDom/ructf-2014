@@ -1,5 +1,6 @@
 #include "store.h"
 #include "logging.h"
+#include "garbage_collection.h"
 #include "common.h"
 
 void mb_store_init(struct Store *store, const char *dir) {
@@ -28,6 +29,10 @@ int mb_store_put(struct Store *store, uuid_t id, uint8_t *buffer, int length) {
 	if (bytes_written != length)
 		return -1;
 	fclose(file);
+
+	if (mb_occupied_space(store->dir) > MAX_STORAGE_SPACE)
+		mb_collect(store->dir);
+
 	return bytes_written;
 }
 
