@@ -24,6 +24,7 @@ class CheckerBase(object):
 
 	def debug(self, msg):
 		sys.stderr.write('%s\n' % msg)
+		sys.stderr.flush()
 
 	def run(self):
 		if len(sys.argv) < 3:
