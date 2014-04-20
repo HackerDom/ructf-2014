@@ -75,7 +75,7 @@ sub startup {
       for (keys %$teams) {
         push @{$f->{teams}}, {
           name   => $self->ip2team->{$_},
-          type   => 0,
+          type   => 3,
           coords => $teams->{$_}
         }
       }
