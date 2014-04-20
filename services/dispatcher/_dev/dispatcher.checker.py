@@ -46,6 +46,19 @@ MESSAGE_FORMATS = [
     'Interesting, {0}',
 ]
 
+USER_AGENTS = [
+    'Mozilla/5.0 (Linux; U; Android 1.6; en-us; eeepc Build/Donut) AppleWebKit/528.5+ (KHTML, like Gecko) Version/3.1.2 Mobile Safari/525.20.1',
+    'Mozilla/5.0 (Linux; U; Android 2.1-update1; ru-ru; GT-I9000 Build/ECLAIR) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17',
+    'Mozilla/5.0 (Linux; U; Android 2.2; ru-ru; GT-I9000 Build/FROYO) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1',
+    'Mozilla/5.0 (Linux; U; Android 3.1; en-us; GT-P7510 Build/HMJ37) AppleWebKit/534.13 (KHTML, like Gecko) Version/4.0 Safari/534.13',
+    'Mozilla/5.0 (Linux; U; Android 2.1-update1 (7hero-astar9.3); ru-ru; HTC Legend Build/ERE27) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17',
+    'Mozilla/4.0 (compatible; MSIE 6.0; America Online Browser 1.1; rev1.5; Windows NT 5.1;)',
+    'BlackBerry9000/5.0.0.93 Profile/MIDP-2.0 Configuration/CLDC-1.1 VendorID/179',
+    'Mozilla/5.0 (PlayBook; U; RIM Tablet OS 1.0.0; en-US) AppleWebKit/534.8+ (KHTML, like Gecko) Version/0.0.1 Safari/534.8+',
+    'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.205 Safari/534.16',
+    'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; ru-ru) AppleWebKit/533.21.1 (KHTML, like Gecko) iCab/4.8 Safari/533.16',
+]
+
 '''
 check - проверка общей функциональности
 put - установка флага в сервис
@@ -243,16 +256,38 @@ class Checker(object):
         self._cookies = {}
 
     def http_get(self, url):
+        user_agent = self.generate_useragent()
+
+        self.log('- request GET: {0} -'.format(url))
+        self.log('COOKIES: {0}'.format(repr(self._cookies)))
+        self.log('USER_AGENT: {0}'.format(user_agent))
+
         cookies = self._cookies
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36'}
+        headers = {'User-Agent': user_agent}
         rez = r.get(url, timeout=1, cookies=cookies, headers=headers)
+
+        self.log('STATUS: {0}'.format(rez.status_code))
+        self.log('BODY: {0}'.format(repr(rez.text)))
+        self.log('- ! -\n')
+
         self._cookies = rez.cookies.get_dict()
         return rez
 
     def http_post(self, url, data):
+        user_agent = self.generate_useragent()
+
+        self.log('- request POST: {0} -'.format(url))
+        self.log('COOKIES: {0}'.format(repr(self._cookies)))
+        self.log('USER_AGENT: {0}'.format(user_agent))
+
         cookies = self._cookies
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36'}
+        headers = {'User-Agent': user_agent}
         rez = r.post(url, data, timeout=1, cookies=cookies, headers=headers)
+
+        self.log('STATUS: {0}'.format(rez.status_code))
+        self.log('BODY: {0}'.format(repr(rez.text)))
+        self.log('- ! - \n')
+
         self._cookies = rez.cookies.get_dict()
         return rez
 
@@ -275,6 +310,7 @@ class Checker(object):
 
         # ack !
         rez = self.http_get(self.url_for('ack'))
+
         if rez.status_code != 200:
             self.status_mumble('/ack/ url - invalid status')
 
@@ -324,6 +360,9 @@ class Checker(object):
         format_str = random.choice(MESSAGE_FORMATS)
         return format_str.format(flag)
 
+    def generate_useragent(self):
+        # 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36' #
+        return random.choice(USER_AGENTS)  # USER_AGENTS[hash % len(USER_AGENTS)]
 
 if __name__ == '__main__':
     command = sys.argv[1].lower()

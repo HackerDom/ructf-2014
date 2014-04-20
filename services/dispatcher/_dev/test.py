@@ -165,5 +165,6 @@ if __name__ == "__main__":
         #                 del processes[i]
         #
 
-    print os.system('python dispatcher.checker.py put 127.0.0.1 --- cmVnCl9yZWNvbnN0cnVjdG9yCnAwCihjX19tYWl')
+    print os.system('python C:/Users/stribog/PycharmProjects/GitHub/ructf-2014/services/dispatcher/_dev/dispatcher.checker.py check 10.23.14.3')
+    print os.system('python C:/Users/stribog/PycharmProjects/GitHub/ructf-2014/services/dispatcher/_dev/dispatcher.checker.py put 10.23.14.3 awfawfawf VS0XV4F55ZDJC1OE8LUSX5ZII82RJDD=')
     # print os.system('python dispatcher.checker.py get 127.0.0.1 Y2NvcHlfcmVnCl9yZWNvbnN0cnVjdG9yCnAwCihjX19tYWluX18KQ29udGV4dApwMQpjX19idWlsdGluX18Kb2JqZWN0CnAyCk50cDMKUnA0CihkcDUKUydfY29va2llcycKcDYKKGRwNwpTJ3Nlc3Npb24nCnA4ClMnZXlKbWNtVnhkV1Z1WTNraU9uc2lJR0lpT2lKT2VsazBUbnBqTWsxcVZUQk9SRTA5SW4xOS5CakhvOXcuQlItOVBsck9RYkd2SmhIWjlsTlVtdzRQWjBnJwpwOQpzc1MnZmxhZycKcDEwClMnY21WbkNsOXlaV052Ym5OMGNuVmpkRzl5Q25Bd0NpaGpYMTl0WVdsJwpwMTEKc1MnZnJlcXVlbmN5JwpwMTIKUyc3Njg3NzYyNTQ0MycKcDEzCnNTJ2NhbGxzaWduJwpwMTQKUycgU2h0YWZpcmthICcKcDE1CnNTJ21lc3NhZ2UnCnAxNgpTJ1dlIG5vdyB0aGF0IGNtVm5DbDl5WldOdmJuTjBjblZqZEc5eUNuQXdDaWhqWDE5dFlXbCcKcDE3CnNiLg== flag')
