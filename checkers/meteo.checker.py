@@ -244,6 +244,6 @@ if mode not in MODES.keys():
 try:
   MODES[mode](*(sys.argv[2:]))
 except Exception as e:
-  ERR('Invalid arguments: %s' % e)
+  DOWN(e)
 
 OK()
