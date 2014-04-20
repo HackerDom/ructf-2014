@@ -2,9 +2,11 @@
 # coding=utf-8
 import pickle
 import random
+import socket
 import sys
 import re
 import base64
+import traceback
 
 __author__ = 'pahaz'
 
@@ -136,7 +138,7 @@ class Checker(object):
                 self.status_mumble('many cookies!')
 
             self.status_ok(flag_id)
-        except r.RequestException:
+        except (r.RequestException, socket.error):
             self.status_down()
         # except r.Timeout:
         #     self.status_mumble('Timeout')
@@ -153,7 +155,7 @@ class Checker(object):
             self.do_before_post_flag(context)
 
             self.status_ok()
-        except r.RequestException:
+        except (r.RequestException, socket.error):
             self.status_down()
         # except r.Timeout:
         #     self.status_mumble('Timeout')
@@ -174,7 +176,7 @@ class Checker(object):
             self.do_after_post_flag(context)
 
             self.status_ok()
-        except r.RequestException:
+        except (r.RequestException, socket.error):
             self.status_down()
         # except r.Timeout:
         #     self.status_mumble('Timeout')
@@ -264,7 +266,7 @@ class Checker(object):
 
         cookies = self._cookies
         headers = {'User-Agent': user_agent}
-        rez = r.get(url, timeout=1, cookies=cookies, headers=headers)
+        rez = r.get(url, timeout=5, cookies=cookies, headers=headers)
 
         self.log('STATUS: {0}'.format(rez.status_code))
         self.log('BODY: {0}'.format(repr(rez.text)))
@@ -282,7 +284,7 @@ class Checker(object):
 
         cookies = self._cookies
         headers = {'User-Agent': user_agent}
-        rez = r.post(url, data, timeout=1, cookies=cookies, headers=headers)
+        rez = r.post(url, data, timeout=5, cookies=cookies, headers=headers)
 
         self.log('STATUS: {0}'.format(rez.status_code))
         self.log('BODY: {0}'.format(repr(rez.text)))
@@ -374,7 +376,12 @@ if __name__ == '__main__':
 
     c = Checker(host)
     command = getattr(c, command)
-    command(*args)
+    try:
+        command(*args)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+        sys.exit(110)
 
     # c = Checker('127.0.0.1')
     # # c.check()
