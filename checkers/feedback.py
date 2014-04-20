@@ -65,19 +65,19 @@ class FeedbackChecker(HttpCheckerBase):
 
 		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
-			print('put failed')
-			return False
+			print('put msg failed')
+			return EXITCODE_MUMBLE
 
 		result = self.sget(s, addr, 'search?query=' + vote.get('title') + ' ' + vote.get('text'))
 		if not result or result.get('error'):
 			print('search failed')
-			return False
+			return EXITCODE_MUMBLE
 
 		if not (result.get('hits') > 0):
 			print('posted msg not found')
-			return False
+			return EXITCODE_MUMBLE
 
-		return True
+		return EXITCODE_OK
 
 	def randlogin(self):
 		return random.choice([
@@ -160,30 +160,28 @@ class FeedbackChecker(HttpCheckerBase):
 
 	def randtitle(self):
 		return random.choice([
-			'Interesting note',
+			'Interesting note for you',
 			'Good news!',
 			'What, what, what?!',
 			'Thanks',
 			'Good service',
 			'Question...',
 			'Cooooooooool',
-			'I have a question',
-			'does it work?',
+			'We have a question',
+			'Does it really work?',
 			'What`s the longest you have gone without sleep?',
 			'How to get it?',
-			'Check this',
+			'Check this, please',
 			'Did you see it?!',
 			'WOW!',
 			'Amazing!!!11',
 			'Coolest thing ever',
-			'Some stuff',
+			'Some stuff here',
 			'Hmmm....',
 			'May be you can check it for us?',
-			'Can you answer my question?',
+			'Can you answer our question?',
 			'Got it!',
 			'Booooooooom!!!',
-			'Hahaha',
-			'test test test',
 			'Pwned!',
 			'Something interesting...',
 			'To be or not to be?',
@@ -192,7 +190,8 @@ class FeedbackChecker(HttpCheckerBase):
 			'Look at this',
 			'Meeeeeoooooooow',
 			'Did you find any flag here?',
-			'Das ist gut'
+			'Das ist gut',
+			'Hello and Welcome aboard'
 		])
 
 	def randuser(self):
@@ -215,30 +214,30 @@ class FeedbackChecker(HttpCheckerBase):
 		result = self.spost(s, addr, 'auth', user)
 		if not result or result.get('error'):
 			print('login failed')
-			return False
+			return EXITCODE_MUMBLE
 
 		self.debug(parts[2])
 		result = self.sget(s, addr, 'search?query=' + parts[2])
 		if not result or result.get('error'):
 			print('search failed')
-			return False
+			return EXITCODE_MUMBLE
 
 		if result.get('hits') < 1:
 			print('posted msg not found')
-			return False
+			return EXITCODE_CORRUPT
 
 		votes = result.get('votes')
 		if not votes or len(votes) == 0:
 			print('posted msg not found')
-			return False
+			return EXITCODE_CORRUPT
 
 		title = votes[0].get('title')
 		text = votes[0].get('text')
-		if not ((title or title.find(flag) < 0) and (text or text.find(flag))):
+		if not ((title and title.find(flag) >= 0) or (text and text.find(flag) >= 0)):
 			print('flag not found in msg')
-			return False
+			return EXITCODE_CORRUPT
 
-		return True
+		return EXITCODE_OK
 
 	def put(self, addr, flag_id, flag):
 		s = self.session(addr)
@@ -249,27 +248,27 @@ class FeedbackChecker(HttpCheckerBase):
 		result = self.spost(s, addr, 'register', user)
 		if not result or result.get('error'):
 			print('registration failed')
-			return False
+			return EXITCODE_MUMBLE
 
 		vote = self.randvote(flag_id, flag)
 		self.debug(vote)
 
 		result = self.spost(s, addr, 'put', vote)
 		if not result or result.get('error'):
-			print('put failed')
-			return False
+			print('put msg failed')
+			return EXITCODE_MUMBLE
 
 		data = result.get('data')
 		if not data:
 			print('no put result there')
-			return False
+			return EXITCODE_MUMBLE
 
 		new_flag_id = data.strip()
 		if not new_flag_id:
 			print('no put result there')
-			return False
+			return EXITCODE_MUMBLE
 
 		print('{}:{}:{}'.format(user['login'], user['password'], new_flag_id))
-		return True
+		return EXITCODE_OK
 
 FeedbackChecker().run()
