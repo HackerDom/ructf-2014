@@ -19,7 +19,7 @@
 	var markers = null; //should be array of planes
 	var flightPaths = null; //should be array of plane paths
 
-	var teams = [
+	var teams = []; /* [
 		{
 			name: "Leet More",
 			coords: [87, 5, 12, -35, -71, -52, -61, 75, -19, -31, -27, 20, -55, -89, -68, 8, -56, -21, 64, -81, -81, -30, -90, 81, -47, -16, 71, -40, 41, -82, 74, -36, -62, -73, -39, 74, -6, 24, -50, -68, 70, -65, -36, 46, 74, -46, 77, 56, 38, -70],
@@ -30,10 +30,10 @@
 			coords: [-75, -29, 42, 57, -69, -69, 9, -44, -46, -11, 74, 5, 54, -27, 65, 6, -80, -28, 52, 15, -69, -62, 17, -29, -35, -75, 76, -13, -26, -5, 60, 33, -88, 77, 34, -69, 63, -46, 14, -34, -63, 17, -82, 2, 6, -65, 58, -76, -76, -52],
 			type: 1
 		}
-	]
+	]*/
 
 	var progress = 0.0;
-	var teams_count = teams.length;
+//	var teams_count = teams.length;
 
 	function fetch_timeout()
 	{
@@ -42,6 +42,13 @@
 		xmlhttp.send();
 		var data = JSON.parse(xmlhttp.responseText);
 		teams = data.teams;
+		for (ii=0;ii<teams.length;ii++)
+		{
+			for(jj=0;jj<teams[ii].coords.length;jj++)
+			{
+				teams[ii].coords[jj] = parseFloat(teams[ii].coords[jj]);
+			}
+		}
 		progress = data.progress;
 		console.log(data);
 	}
@@ -82,6 +89,7 @@
 
 	function draw_plane(n, progress)
 	{
+		//console.log(teams);
 		totalLen = 0.0;
 		for (i=2;i<teams[n].coords.length;i += 2)
 		{
@@ -102,9 +110,13 @@
 				temp_line.push(new google.maps.LatLng(final_x, final_y));
 				break;
 			}
-			temp_line.push(new google.maps.LatLng(teams[n].coords[i], teams[n].coords[i+1]));
+			final_x = teams[n].coords[i];
+			final_y = teams[n].coords[i+1];
+			temp_line.push(new google.maps.LatLng(final_x, final_y));
 			totalLen += difference;
 		}
+	//	console.log('Hi', n);
+		//console.log(n, flightPaths);
 		path = flightPaths[n].getPath();
 		while (path.length)
 		{
@@ -117,12 +129,14 @@
 		bearing = calculateBearing(temp_line[temp_line.length - 2], temp_line[temp_line.length - 1]);
 		markers[n].setPosition(new google.maps.LatLng(final_x,final_y)); //lat, lon
 		name = ["A320.png", "B752.png", "A333.png", "B748.png"][teams[n].type];
-		icon = new google.maps.MarkerImage(name, new google.maps.Size(50, 50, "px", "px"), new google.maps.Point(bearing * 50, 0), new google.maps.Point(25, 25), null);
+		icon = new google.maps.MarkerImage("/" + name, new google.maps.Size(50, 50, "px", "px"), new google.maps.Point(bearing * 50, 0), new google.maps.Point(25, 25), null);
 		markers[n].setIcon(icon);
+	//	markers[n].setLabelContent(teams[n].name);
 	}
 
 	function initialize()
 	{
+		fetch_timeout();
 		myLatlng = new google.maps.LatLng(0.0, 0.0);
 		mapOptions = {
 			center: myLatlng,
@@ -134,12 +148,12 @@
 		map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 		markers = Array();
 		flightPaths = Array();
-		for (i=0;i<teams_count;i++)
+		for (i=0;i<teams.length;i++)
 		{
 			markers.push(new MarkerWithLabel({
 				position: myLatlng,
 				map: map,
-				icon: 'plane.png',
+				icon: '/plane.png',
 				labelContent: teams[i].name,
 				labelAnchor: new google.maps.Point(-30, 60),
 				labelStyle: { color: 'white', 'font-size': '20pt'}
@@ -153,7 +167,6 @@
 	  		}));
 	  		flightPaths[i].setMap(map);
 		}
-		fetch_timeout();
 		window.setInterval("redraw_planes()",500);
 		//TODO: setInterval for planes fetching
 	}
