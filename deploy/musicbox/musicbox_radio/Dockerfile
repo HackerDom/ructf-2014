@@ -1,17 +1,16 @@
 FROM ructf2014:arch
 MAINTAINER dqkrait@gmail.com
 
-RUN pacman -S --noconfirm icecast 
-RUN pip2 install bottle
+RUN pacman -Sy
+RUN pacman -S --noconfirm icecast mpd mpc
 
-RUN useradd musicbox
-ADD musicbox /home/musicbox/
+ADD mpd.conf /etc/mpd.conf
+ADD icecast.xml /etc/icecast.xml
+ADD info.xsl /usr/share/icecast/web/info.xsl
+ADD start.sh /start.sh
 
+RUN chown mpd:mpd /var/lib/mpd
 
-RUN chown -R musicbox:musicbox /home/musicbox
-USER musicbox
+EXPOSE 17216
 
-EXPOSE 4242 16780
-
-WORKDIR /home/musicbox
-CMD /home/musicbox/start.sh
+CMD /start.sh

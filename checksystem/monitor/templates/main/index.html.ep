@@ -6,23 +6,26 @@
 % content_for r => begin
   Раунд <%= $self->app->round->{n} %>
 % end
-<div id="history" style="height: 350px;"></div>
-<hr/>
-<h2>Скорборд (
-  <span id="s101" style="background-color: rgb(0, 220, 0);">UP</span>,
-  <span id="s102" style="background-color: rgb(255, 2255, 0);">CORRUPT</span>,
-  <span id="s103" style="background-color: rgb(255, 166, 0);">MUMBLE</span>,
-  <span id="s104" style="background-color: rgb(230, 0, 0);">DOWN</span>,
-  <span id="s110" style="background-color: rgb(128, 128, 128);">CHECKER ERROR</span>
-  )
-</h2>
+<!-- <h2>RuCTF 2014</h2> -->
+
+<div class="legend-item"><span  id="s101" style="background-color: rgb(0, 220, 0);" class="color-box">&nbsp;</span><span>&nbsp;UP</span></div>
+
+<div class="legend-item"><span id="s102" style="background-color: rgb(255, 255, 0);" class="color-box">&nbsp;</span><span>&nbsp;CORRUPT</span></div>
+
+<div class="legend-item"><span id="s103" style="background-color: rgb(255, 166, 0);" class="color-box">&nbsp;</span><span>&nbsp;MUMBLE</span></div>
+
+<div class="legend-item"><span id="s104" style="background-color: rgb(230, 0, 0);" class="color-box">&nbsp;</span><span>&nbsp;DOWN</span></div>
+
+<div class="legend-item"><span id="s105" style="background-color: rgb(69, 35, 0);" class="color-box">&nbsp;</span><span>&nbsp;CHECKER ERROR</span></div>
+
+
 <table class="table table-bordered">
   <tr>
-    <td><b>#</b></td>
+    <td><b>Место</b></td>
     <td><b>Логотип</b></td>
     <td><b>Команда</b></td>
     <td><b>Очки</b></td>
-    % my @scolors = ('rgb(139,0,139)', 'rgb(205,16,118)', 'rgb(139,139,0)', 'rgb(46,139,87)', 'rgb(0,238,238)', 'rgb(112,128,144)', 'rgb(139,60,139)');
+    % my @scolors = ('rgb(179,0,179)', 'rgb(205,16,118)', 'rgb(179,179,0)', 'rgb(46,179,87)', 'rgb(0,238,238)', 'rgb(112,128,144)', 'rgb(0,0,240)');
     % for my $sid (keys %{$self->app->services}) {
       <td
         class="service"
@@ -37,13 +40,13 @@
   % my $pos = 0;
   % for my $score (@{$self->app->scoreboard}) {
   <tr>
-    <td><%= ++$pos %>.</td>
+    <td class="team-pos"><%= ++$pos %></td>
     <td>
       % my $name = url_escape url_escape $score->{team}{name};
       <img src="<%= url_for('/logo/' . $name) %>" width="64" height="64" class="img-rounded">
     </td>
-    <td><span title="<%= $score->{team}{vuln_box} %>"><%= $score->{team}{name} %></span></td>
-    <td><%= sprintf '%.2f', $score->{score} %></td>
+    <td class="team-name"><span title="<%= $score->{team}{vuln_box} %>"><%= $score->{team}{name} %></span></td>
+    <td class="team-score"><%= sprintf '%.2f', $score->{score} %></td>
 
     % for my $sid (keys %{$self->app->services}) {
       % my $status = $self->app->status->{$sid}{$score->{team}{id}}{status};
@@ -51,21 +54,25 @@
       % my $s = {101 => 'OK', 102 => 'CORRUPT', 103 => 'MUMBLE', 104 => 'DOWN', 110 => 'CHECKER ERROR'};
       <td
         title="<%= $s->{$status} %>. <%= $comment %>"
-        class="s<%= $status %>"
+        class="s<%= $status %> service-status"
+        data-status="s<%= $status %>"
         data-team="<%= $score->{team}{id} %>"
         data-service="<%= $sid %>"
         data-score="<%= $score->{sla}{$sid} * $score->{fp}{$sid} %>"
       >
-        <p>SLA: <%= sprintf '%.2f', $score->{sla}{$sid} %></p>
-        <p>FP: <%= sprintf '%.2f', $score->{fp}{$sid} %></p>
+        <div>SLA: <%= sprintf '%d', 100 * $score->{sla}{$sid} %>%</div>
+        <div>FP: <%= sprintf '%.2f', $score->{fp}{$sid} %></div>
       </td>
     % }
     <td>
-      <div style="width: 74px; height: 74px;" id="team_<%= $score->{team}{id} %>"></div>
+      <div style="width: 70px; height: 70px;" id="team_<%= $score->{team}{id} %>"></div>
     </td>
   </tr>
   % }
 </table>
+
+<hr/>
+<div id="history" style="height: 280px;"></div>
 
 <script>
 function rgbToHsv(r, g, b) {
@@ -120,7 +127,7 @@ $(document).ready(function() {
     s102: [255, 255, 0],
     s103: [255, 166, 0],
     s104: [230, 0, 0],
-    s110: [128, 128, 128]
+    s110: [69, 35, 0]
   };
 
   for (s in [1,2,3,4,5,6,7]) {
@@ -133,9 +140,12 @@ $(document).ready(function() {
     $('td[data-service="' + ss + '"]').each(function (idx, el) {
       var score = parseFloat($(el).attr('data-score'));
       var x = m == 0 ? 1 : score / m;
-      var color = colors[$(el).attr('class')];
+      var color = colors[$(el).attr('data-status')];
+      if (!color) {
+        color = colors['s110'];
+      }
       var hsv = rgbToHsv(color[0], color[1], color[2]);
-      var ncolor = hsvToRgb(hsv[0], 0.3 + hsv[1] * x * 0.7, hsv[2]);
+      var ncolor = hsvToRgb(hsv[0], 0.5 + hsv[1] * x * 0.5, hsv[2]);
       var z = 'rgb(' + parseInt(ncolor[0]) + ',' + parseInt(ncolor[1]) + ',' + parseInt(ncolor[2]) + ')';
       $(el).css('background-color', z);
     });

@@ -25,7 +25,7 @@ CREATE TABLE services (
 	name		VARCHAR(256),
 	checker		VARCHAR(256)		NOT NULL,
 	delay_flag_get	BOOLEAN			NOT NULL DEFAULT FALSE,
-	is_not_task	BOOLEAN			NOT NULL DEFAULT FALSE
+	is_not_task	BOOLEAN			NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE tasks (
@@ -76,6 +76,7 @@ CREATE TABLE stolen_flags (
 
 CREATE TABLE task_flags (
 	team_id		INTEGER,
+	service_id	INTEGER,
 	flag_data	CHAR(32)		PRIMARY KEY
 );
 
@@ -420,7 +421,7 @@ CREATE VIEW xmlCachedScoreboard AS
 	) as scoreboard;
 	
 CREATE VIEW services_flags_stolen AS
-	SELECT
+	(SELECT
 		t.id as team_id, t.name as team, s.id as service_id, s.name as service, count(s.name) as flags
 	FROM
 		stolen_flags as st
@@ -431,7 +432,24 @@ CREATE VIEW services_flags_stolen AS
 	INNER JOIN
 		services as s ON s.id = fl.service_id
 	GROUP BY t.id, s.id
-	ORDER BY t.id, s.id;
+	ORDER BY t.id, s.id)
+	
+	UNION
+	
+	(SELECT
+		t.id as team_id, t.name as team, s.id as service_id, s.name as service, count(s.name) as flags
+	FROM
+		stolen_task_flags as st
+	INNER JOIN
+		task_flags as fl ON st.flag_data = fl.flag_data
+	INNER JOIN
+		teams t ON st.team_id = t.id
+	INNER JOIN
+		services as s ON s.id = fl.service_id
+	GROUP BY t.id, s.id
+	ORDER BY t.id, s.id);
+		
+		
 	
 CREATE VIEW xmlFlags AS
 	SELECT xmlroot(
