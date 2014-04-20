@@ -58,8 +58,8 @@ sub startup {
     });
 
   Mojo::IOLoop->recurring(
-    5 => sub {
-      $self->log->info('Update fly data');
+    30 => sub {
+      $self->log->info('[start] Update fly data');
       my $data = slurp '/tmp/checker.vis';
       my ($f, $teams);
 
@@ -80,10 +80,11 @@ sub startup {
         }
       }
       $self->fly($f);
+      $self->log->info('[end] Update fly data');
   });
 
   Mojo::IOLoop->recurring(
-    5 => sub {
+    30 => sub {
       $self->log->info('Update scoreboard');
       Mojo::IOLoop->delay(
         sub {
@@ -163,7 +164,7 @@ sub startup {
         });
     });
     Mojo::IOLoop->recurring(
-      10 => sub {
+      120 => sub {
         $self->log->info('Update history');
         $self->pg(
           'SELECT * FROM points_history
