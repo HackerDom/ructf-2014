@@ -32,7 +32,7 @@ public class Main {
 	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.victim_service_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
 	private static String sqlInsertScore = "INSERT INTO score (round, time, team_id, service_id, score) VALUES (?,?,?,?,?)";
 	
-	private static String sqlSelectTaskScore = "SELECT stolen_task_flags.team_id, sum(flag_price.price) FROM stolen_task_flags INNER JOIN (select flag_data, 1 / count(*) as price FROM stolen_task_flags WHERE time < ? GROUP BY flag_data) as flag_price ON stolen_task_flags.flag_data = flag_price.flag_data GROUP BY stolen_task_flags.team_id";
+	private static String sqlSelectTaskScore = "SELECT stolen_task_flags.team_id, sum(flag_price.price) FROM stolen_task_flags INNER JOIN (select flag_data, 1.00000001 / count(*) as price FROM stolen_task_flags WHERE time < ? GROUP BY flag_data) as flag_price ON stolen_task_flags.flag_data = flag_price.flag_data GROUP BY stolen_task_flags.team_id";
 		
 	private static PreparedStatement stGetRoundTimes;
 	private static PreparedStatement stGetLastScores;	
