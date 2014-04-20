@@ -17,8 +17,14 @@ function $(selector, ctx) {
 $.ajax = function(method, url, data, success, error) {
 	var xhr = new XMLHttpRequest();
 	xhr.open(method, url);
+
+	var done = false;
 	xhr.onreadystatechange = function() {
 		if(xhr.readyState == 4) {
+			if(done) return;
+
+			done = true;
+			clearTimeout(timeout);
 			if(xhr.status >= 200 && xhr.status < 300 || xhr.status == 304) {
 				if(success) { success(xhr.responseText); }
 			} else {
@@ -27,6 +33,13 @@ $.ajax = function(method, url, data, success, error) {
 		}
 	};
 	xhr.send(data);
+	var timeout = setTimeout( function() {
+		if(done) return;
+
+		done = true;
+		xhr.abort();
+		if(error) error()
+	}, 3000);
 };
 
 $.get = function(url, data, success, error) {
@@ -37,11 +50,19 @@ $.get = function(url, data, success, error) {
 		}
 	}
 	var queryString = query.length == 0 ? "" : "?" + query.join("&");
-	$.ajax('GET', url + queryString, null, function(result) {
-			if(success) {success(result ? JSON.parse(result) : null)}
-		}, error);
+	$.ajax('GET', url + queryString, null, function(result) { if(success) {success(result ? JSON.parse(result) : null)} }, error);
 };
 
 $.post = function(url, data, success, error) {
-	$.ajax('POST', url, JSON.stringify(data), success, error);
+	$.ajax('POST', url, JSON.stringify(data), function(result) { if(success) {success(result ? JSON.parse(result) : null)} }, error);
+}
+
+$.getCookie = function(name) {
+	var matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+	return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+$.timestampToString = function(value) {
+	var date = new Date(value * 1000);
+	return date.toLocaleString().replace(/\b(\d)\b/g, "0$1");
 }

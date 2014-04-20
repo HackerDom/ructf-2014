@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
+#include <signal.h>
 #include "debug.h"
 
 #define MONGO_HOST "127.0.0.1"
@@ -19,18 +20,44 @@ bool userSet = false;
 bool roomSet = false;
 char currentUser[25];
 char currentRoom[25];
+time_t last_time_msg;
+bool ignoreSignal = false;
 
 mongo conn;
 
 int db_connect()
 {
-    int status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+    int status;
+    if (getenv("DB_PORT_27017_TCP_ADDR"))
+    {
+        status = mongo_client( &conn, getenv("DB_PORT_27017_TCP_ADDR"), MONGO_PORT );
+    }
+    else
+    {
+        status = mongo_client( &conn, MONGO_HOST, MONGO_PORT );
+    }
     return status == MONGO_OK ? 0 : -1;
 }
 
 void db_disconnect()
 {
     mongo_destroy(&conn);
+}
+
+void prompt()
+{
+    if (userSet)
+        Write("%s", user_name(currentUser));
+    else
+        Write("nobody");
+    if (roomSet)
+        Write(" @ %s", room_name(currentRoom));
+    Write(" > ");
+}
+
+void set_signal()
+{
+    signal(SIGUSR1, signal_handler);
 }
 
 bool exists(char *collection, char *name, char *value)
@@ -66,18 +93,20 @@ void room_leave()
     }
 }
 
+/* test_password is vulnerable */
+
 bool test_password(const char *expected, const char *actual)
 {
-    char len_actual = strlen(actual);
-    char len_expected = strlen(expected);
+    signed char len_actual = strlen(actual);
+    signed char len_expected = strlen(expected);
 
-    D("len_actual: %d\n", len_actual)
-    D("len_expected: %d\n", len_expected)
-    D("expected:actual = %s:%s\n", expected, actual);
+    if (len_actual < 1)
+        return false;
 
-    for (int i = 0; i < len_actual; i++)     // vuln is here: strlen(actual)>127 => len_actual < 0 => no check [doesn't work]
+    len_actual++;
+    for (int i = 0; i < len_actual; i++)    // vuln is here: strlen(actual)>127 => len_actual < 0 => no check [doesn't work]
     {
-        if (i >= len_expected || expected[i] != actual[i])
+        if (expected[i] != actual[i])
             return false;
     }
     return true;
@@ -156,7 +185,7 @@ void say( char *message)
     if (!roomSet)
     {
         D("say: not in room\n");
-        WriteLn("Please, log in first");
+        WriteLn("Please, join room first");
         return;
     }
 
@@ -178,6 +207,11 @@ void say( char *message)
     }
 
     bson_destroy( &b );
+
+    ignoreSignal = true;
+    kill(0, SIGUSR1);
+    room_one_msg();
+    ignoreSignal = false;
 }
 
 void room_create(char *name, char *pass)
@@ -317,7 +351,15 @@ void room_history()
     bson query[1];
     mongo_cursor cursor[1];
     bson_init( query );
+
+    bson_append_start_object( query, "$query" );
     bson_append_string( query, "roomId", currentRoom );
+    bson_append_finish_object( query );
+
+    bson_append_start_object( query, "$orderby" );
+    bson_append_int( query, "time", 1);
+    bson_append_finish_object( query );
+
     bson_finish( query );
 
     mongo_cursor_init( cursor, &conn, COLLECTION_MESSAGES );
@@ -328,8 +370,8 @@ void room_history()
         bson_iterator iterator[1];
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
         {
-            time_t t = bson_iterator_int(iterator);
-            strftime(stime, 32, "%F %H:%M:%S", localtime(&t));
+            last_time_msg = bson_iterator_int(iterator);
+            strftime(stime, 32, "%F %H:%M:%S", localtime(&last_time_msg));
             Write("[ %s ] ", stime);
         }
 
@@ -343,6 +385,67 @@ void room_history()
             WriteLn(bson_iterator_string(iterator) ) ;
         }
     }
+}
+
+void signal_handler()
+{
+    if (!ignoreSignal && roomSet)
+        if (room_one_msg())
+            prompt();
+}
+
+bool room_one_msg()
+{
+    char stime[32];
+    bson query[1];
+    mongo_cursor cursor[1];
+
+    bson_init( query );
+
+    bson_append_start_object( query, "$query" );
+    bson_append_string( query, "roomId", currentRoom );
+        bson_append_start_object( query, "time" );
+            bson_append_int( query, "$gt", last_time_msg );
+        bson_append_finish_object( query );
+    bson_append_finish_object( query );
+
+    bson_append_start_object( query, "$orderby" );
+    bson_append_int( query, "time", 1);
+    bson_append_finish_object( query );
+
+    bson_finish( query );
+
+    mongo_cursor_init( cursor, &conn, COLLECTION_MESSAGES );
+    mongo_cursor_set_query( cursor, query );
+
+    int result = mongo_cursor_next(cursor);
+    if ( result != MONGO_OK )
+        return false;
+
+    WriteLn("");
+
+    while ( result == MONGO_OK )
+    {
+        bson_iterator iterator[1];
+        if ( !bson_find( iterator, mongo_cursor_bson( cursor ), "time" ))
+            continue;
+
+        last_time_msg = bson_iterator_int(iterator);
+        strftime(stime, 32, "%F %H:%M:%S", localtime(&last_time_msg));
+        Write("[ %s ] ", stime);
+
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "userId" ))
+        {
+            Write("%s: ", user_name(bson_iterator_string( iterator)));
+        }
+
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "message" ))
+        {
+            WriteLn(bson_iterator_string(iterator) ) ;
+        }
+        result = mongo_cursor_next(cursor);
+    }
+    return true;
 }
 
 const char *user_name(const char *userId)
@@ -362,6 +465,35 @@ const char *user_name(const char *userId)
     {
         bson_iterator iterator[1];
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "user" ))
+        {
+            bson_destroy( query );
+            mongo_cursor_destroy( cursor );
+            return bson_iterator_string(iterator);
+        }
+    }
+    bson_destroy( query );
+    mongo_cursor_destroy( cursor );
+    return " ";
+}
+
+
+const char *room_name(const char *roomId)
+{
+    bson query[1];
+    mongo_cursor cursor[1];
+    bson_oid_t oid;
+    bson_init( query );
+    bson_oid_from_string( &oid, roomId );
+    bson_append_oid( query, "_id", &oid );
+    bson_finish( query );
+
+    mongo_cursor_init( cursor, &conn, COLLECTION_ROOMS );
+    mongo_cursor_set_query( cursor, query );
+
+    while ( mongo_cursor_next( cursor ) == MONGO_OK )
+    {
+        bson_iterator iterator[1];
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "room" ))
         {
             bson_destroy( query );
             mongo_cursor_destroy( cursor );

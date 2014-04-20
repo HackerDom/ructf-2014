@@ -24,6 +24,7 @@ class CheckerBase(object):
 
 	def debug(self, msg):
 		sys.stderr.write('%s\n' % msg)
+		sys.stderr.flush()
 
 	def run(self):
 		if len(sys.argv) < 3:
@@ -62,7 +63,7 @@ class CheckerBase(object):
 			exit(EXITCODE_CHECKER_ERROR)
 		except socket.error as e:
 			self.debug(e)
-			if isinstance(e, socket.timeout) or 'errno' in dir(e) and e.errno == 111:
+			if 'errno' in dir(e) and e.errno == 111:
 				exit(EXITCODE_DOWN)
 			exit(EXITCODE_MUMBLE)
 		except Exception as e:

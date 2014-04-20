@@ -17,6 +17,7 @@ public class DatabaseManager
 	
 	private static HashMap<Integer, String> teamNamesHash = new HashMap<Integer, String>(); 
 	private static HashMap<Integer, String> serviceNamesHash = new HashMap<Integer, String>();
+	private static HashMap<Integer, Service> servicesHash = new HashMap<Integer, Service>();
 
 	public static void Initialize() throws Exception
 	{
@@ -62,7 +63,7 @@ public class DatabaseManager
 	{
 		return serviceNamesHash.get(serviceId);
 	}
-	
+		
 	public static String getTeamName(int teamId)
 	{
 		return teamNamesHash.get(teamId);
@@ -71,6 +72,11 @@ public class DatabaseManager
 	public static List<Service> getServices()
 	{
 		return services;
+	}
+	
+	public static Service getService(int id)
+	{
+		return servicesHash.get(id);
 	}
 
 	public static List<Team> getTeams()
@@ -89,7 +95,10 @@ public class DatabaseManager
 		Statement statement = internalDbConnection.createStatement();
 		services = Service.LoadServices(statement);
 		for (Service service : services)
+		{
 			serviceNamesHash.put(service.getId(), service.getName());
+			servicesHash.put(service.getId(), service);
+		}
 		teams = Team.LoadTeams(statement);
 		for (Team team : teams)
 			teamNamesHash.put(team.getId(), team.getName());

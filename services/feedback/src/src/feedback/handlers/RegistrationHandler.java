@@ -20,6 +20,12 @@ public class RegistrationHandler extends AjaxHandler<User> {
 		if(user == null || StringUtils.isBlank(user.login) || StringUtils.isBlank(user.password))
 			return AjaxResult.createError("Invalid login/password");
 
+		if(StringUtils.isBlank(user.login = user.login.trim()))
+			return AjaxResult.createError("Invalid login/password");
+
+		if(user.login.length() > MAX_LOGIN_AND_PASS_LENGTH || user.password.length() > MAX_LOGIN_AND_PASS_LENGTH)
+			return AjaxResult.createError("Login/password too long");
+
 		user.isAdmin = false;
 
 		if(!userIndex.add(user))
@@ -30,6 +36,8 @@ public class RegistrationHandler extends AjaxHandler<User> {
 
 		return AjaxResult.createSuccess("OK");
 	}
+
+	private static final int MAX_LOGIN_AND_PASS_LENGTH = 64;
 
 	private UserIndex userIndex;
 	private TokenCrypt tokenCrypt;

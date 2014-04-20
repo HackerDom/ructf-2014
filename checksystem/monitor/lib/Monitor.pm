@@ -1,6 +1,9 @@
 package Monitor;
 use Mojo::Base 'Mojolicious';
 
+use Mojo::Util 'slurp';
+use Time::Piece;
+
 has services   => sub { {} };
 has teams      => sub { {} };
 has scoreboard => sub { [] };
@@ -8,6 +11,9 @@ has round      => sub { {} };
 has status     => sub { {} };
 has flags      => sub { {} };
 has history    => sub { [] };
+
+has ip2team    => sub { {} };
+has fly        => sub { {} };
 
 sub startup {
   my $self = shift;
@@ -25,6 +31,8 @@ sub startup {
   $r->get('/')->to('main#index')->name('index');
   $r->get('/flags')->to('main#flags')->name('flags');
   $r->get('/history')->to('main#history')->name('history');
+  $r->get('/fly')->to('main#fly')->name('fly');
+  $r->get('/fly/data')->to('main#fly_data')->name('fly_data');
 
   $self->pg(
     'SELECT id, name FROM services;',
@@ -45,11 +53,38 @@ sub startup {
       $self->log->info('Fetch teams at startup');
       while (my $row = $db->sth->fetchrow_hashref()) {
         $self->teams->{$row->{id}} = $row;
+        $self->ip2team->{$row->{vuln_box}} = $row->{name};
       }
     });
 
   Mojo::IOLoop->recurring(
-    5 => sub {
+    30 => sub {
+      $self->log->info('[start] Update fly data');
+      my $data = slurp '/tmp/checker.vis';
+      my ($f, $teams);
+
+      for my $line (split /\r?\n/, $data) {
+        chomp $line;
+        my ($ip, $c) = split /:\t/, $line;
+        $c = substr $c, 1, length($c) - 2;
+        my @c = split /,\s+/, $c;
+        $teams->{$ip} = \@c;
+      }
+
+      $f->{progress} = time() - localtime($self->round->{time})->epoch;
+      for (keys %$teams) {
+        push @{$f->{teams}}, {
+          name   => $self->ip2team->{$_},
+          type   => 3,
+          coords => $teams->{$_}
+        }
+      }
+      $self->fly($f);
+      $self->log->info('[end] Update fly data');
+  });
+
+  Mojo::IOLoop->recurring(
+    30 => sub {
       $self->log->info('Update scoreboard');
       Mojo::IOLoop->delay(
         sub {
@@ -72,21 +107,16 @@ sub startup {
               => $delay->begin
           );
           $self->pg(
-            'SELECT team_id, service_id, status FROM service_status;'
+            'SELECT team_id, service_id, status, fail_comment FROM service_status;'
               => $delay->begin
           );
           $self->pg(
             'SELECT * FROM services_flags_stolen;'
               => $delay->begin
           );
-          $self->pg(
-            'SELECT * FROM points_history
-            ORDER BY team_id, round'
-              => $delay->begin
-          );
         },
         sub {
-          my ($delay, $fh, $sh, $rh, $ssh, $flh, $ph) = @_;
+          my ($delay, $fh, $sh, $rh, $ssh, $flh) = @_;
           my ($flag_points, $sla_points);
 
           while (my $row = $sh->sth->fetchrow_hashref()) {
@@ -128,20 +158,30 @@ sub startup {
           }
 
           while (my $row = $flh->sth->fetchrow_hashref()) {
-            $self->flags->{$row->{team_id}}{$row->{service}} = $row->{flags};
+            $self->flags->{$row->{team_id}}{$row->{service_id}} =
+              {count => $row->{flags}, name => $row->{service}};
           }
-
-          my ($h, $nh);
-          while (my $row = $ph->sth->fetchrow_hashref()) {
-            if ($row->{round} % 15 == 0) {
-              push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
-            }
-          }
-          for (keys %$h) {
-            push @$nh, {name => $_, data => $h->{$_}};
-          }
-          $self->history($nh);
         });
+    });
+    Mojo::IOLoop->recurring(
+      120 => sub {
+        $self->log->info('Update history');
+        $self->pg(
+          'SELECT * FROM points_history
+          ORDER BY team_id, round' => sub {
+            my $ph = shift;
+            my ($h, $nh);
+            while (my $row = $ph->sth->fetchrow_hashref()) {
+              if (($row->{round} > $self->round->{n} - 40) or ($row->{round} % 15 == 0)) {
+                push @{$h->{$row->{name}}}, {x => $row->{round}, y => 0 + $row->{points}};
+              }
+            }
+            for (keys %$h) {
+              push @$nh, {name => $_, data => $h->{$_}};
+            }
+            $self->history($nh);
+          }
+        );
     });
 }
 

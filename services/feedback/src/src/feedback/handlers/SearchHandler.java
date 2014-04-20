@@ -13,10 +13,9 @@ import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class SearchHandler implements IHttpListenerHandler {
 	public SearchHandler(LuceneIndex index, TokenCrypt tokenCrypt) {
@@ -41,19 +40,29 @@ public class SearchHandler implements IHttpListenerHandler {
 
 		AuthToken authToken = TokenHelper.getToken(request, tokenCrypt);
 
+		boolean isAdmin = authToken != null && authToken.isAdmin();
+		String login = authToken == null ? null : authToken.getLogin();
+
+		SearchResults results = search(query, top, login, isAdmin);
+		byte[] buffer = writer.writeValueAsBytes(results);
+		response.setContentLength(buffer.length);
+		response.setHeader("Content-Type", "application/json");
+		try(OutputStream stream = response.getOutputStream()) {
+			stream.write(buffer);
+		}
+	}
+
+	private SearchResults search(String query, int top, String login, boolean isAdmin) throws IOException {
 		try {
-			SearchResults results = index.search(query, top, authToken != null && authToken.isAdmin());
-			byte[] buffer = writer.writeValueAsBytes(results);
-			response.setContentLength(buffer.length);
-			response.setHeader("Content-Type", "application/json");
-			response.getOutputStream().write(buffer);
+			return index.search(query, top, login, isAdmin);
 		} catch(ParseException|InvalidTokenOffsetsException e) {
-			log.error(String.format("Query failed '%s'", query), e);
+			//log.error(String.format("Query failed '%s'", query), e);
+			return new SearchResults(0, null);
 		}
 	}
 
 	private static final int MAX_ITEMS = 100;
-	private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
+	//private static final Logger log = LoggerFactory.getLogger(SearchHandler.class);
 	private final ObjectWriter writer;
 	private final LuceneIndex index;
 	private TokenCrypt tokenCrypt;

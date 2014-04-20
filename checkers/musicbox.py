@@ -107,8 +107,11 @@ class MusicboxChecker(CheckerBase):
 	def create_socket(self, addr, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.settimeout(SOCKET_TIMEOUT)
-		sock.connect((addr, port))
-		return sock
+		try:
+			sock.connect((addr, port))
+			return sock
+		except:
+			exit(EXITCODE_DOWN)
 
 	def check(self, addr):
 		flag = ''.join([ random.choice(string.ascii_uppercase + string.digits) for e in range(31) ]) + '='

@@ -16,6 +16,7 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import ructf.daemon.DaemonSettings;
 import ructf.dbObjects.Service;
 import ructf.dbObjects.Team;
 import ructf.main.Constants;
@@ -27,15 +28,18 @@ public class Main {
 	
 	private static String sqlGetRoundTimes = "SELECT time FROM rounds ORDER BY n";
 	private static String sqlGetLastScores = "SELECT round, score.team_id, score.service_id, score.score, score.time FROM (SELECT team_id, service_id, MAX(time) AS time FROM score GROUP BY team_id, service_id) last_times INNER JOIN score ON last_times.time=score.time AND last_times.team_id=score.team_id AND last_times.service_id=score.service_id";
-	private static String sqlCreateInitState = "INSERT INTO score (round, time, team_id, service_id, score) SELECT 0, '2009-01-01', teams.id, services.id, (select 100 * count(*) FROM teams) FROM teams CROSS JOIN services";
+	private static String sqlCreateInitState = "INSERT INTO score (round, time, team_id, service_id, score) SELECT 0, '2009-01-01', teams.id, services.id, services.is_not_task::int * (select 100 * count(*) FROM teams) FROM teams CROSS JOIN services WHERE teams.enabled=TRUE";
 	private static String sqlGetStealsOfRottenFlags = "SELECT flags.flag_data,flags.time,stolen_flags.victim_team_id,stolen_flags.victim_service_id,stolen_flags.team_id FROM flags INNER JOIN stolen_flags ON flags.flag_data=stolen_flags.flag_data WHERE flags.time > ? AND extract(epoch FROM now() - flags.time) > ?";
 	private static String sqlInsertScore = "INSERT INTO score (round, time, team_id, service_id, score) VALUES (?,?,?,?,?)";
+	
+	private static String sqlSelectTaskScore = "SELECT stolen_task_flags.team_id, sum(flag_price.price) FROM stolen_task_flags INNER JOIN (select flag_data, 1.00000001 / count(*) as price FROM stolen_task_flags WHERE time < ? GROUP BY flag_data) as flag_price ON stolen_task_flags.flag_data = flag_price.flag_data GROUP BY stolen_task_flags.team_id";
 		
 	private static PreparedStatement stGetRoundTimes;
 	private static PreparedStatement stGetLastScores;	
 	private static PreparedStatement stCreateInitState;
 	private static PreparedStatement stGetStealsOfRottenFlags;
 	private static PreparedStatement stInsertScore;
+	private static PreparedStatement stSelectTaskScore;
 	
 	public static void main(String[] args) {			
 		PropertyConfigurator.configure(Constants.log4jConfigFile);
@@ -172,11 +176,22 @@ public class Main {
 					conn.setAutoCommit(false);
 
 					int round = BinarySearch(roundTimes, rottenTime);
-					for(;lastRound < round; lastRound++){
+					for(;lastRound < round; lastRound++){//TODO copy-paste
 						logger.info(String.format("Populating score INNER round: %d", lastRound));
+						Timestamp setTime = TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1);
+						
+						Hashtable<Integer,Double> taskScores = GetTaskScores(setTime);
+						
 						for(TeamService ts : state.keySet()){
-							InsertScore(lastRound, TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1), ts.team, ts.service, state.get(ts).score);						
-						}					
+							if(DatabaseManager.getService(ts.service).getIsNotTask())
+								InsertScore(lastRound, setTime, ts.team, ts.service, state.get(ts).score);
+							else{
+								double score = 0;
+								if(taskScores.containsKey(ts.team))
+									score = taskScores.get(ts.team);
+								InsertScore(lastRound, setTime, ts.team, ts.service, score);
+							}
+						}						
 					}
 					
 					for (RottenStolenFlag attackerFlag : list) {
@@ -221,10 +236,21 @@ public class Main {
 			try {
 				conn.setAutoCommit(false);
 				
-				for(;lastRound < FindLastFinishedRound(roundTimes); lastRound++){
+				for(;lastRound < FindLastFinishedRound(roundTimes); lastRound++){ //TODO copy-paste
 					logger.info(String.format("Populating score OUTER round: %d", lastRound));
+					Timestamp setTime = TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1);
+					
+					Hashtable<Integer,Double> taskScores = GetTaskScores(setTime);
+					
 					for(TeamService ts : state.keySet()){
-						InsertScore(lastRound, TimestampUtils.AddMillis(roundTimes[lastRound + 1], -1), ts.team, ts.service, state.get(ts).score);						
+						if(DatabaseManager.getService(ts.service).getIsNotTask())
+							InsertScore(lastRound, setTime, ts.team, ts.service, state.get(ts).score);
+						else{
+							double score = 0;
+							if(taskScores.containsKey(ts.team))
+								score = taskScores.get(ts.team);
+							InsertScore(lastRound, setTime, ts.team, ts.service, score);
+						}
 					}					
 				}
 			}
@@ -297,6 +323,20 @@ public class Main {
 		}
 		return max;
 	}	
+	
+	private static Hashtable<Integer,Double> GetTaskScores(Timestamp fromTimestamp) throws SQLException {
+		stSelectTaskScore.setTimestamp(1, fromTimestamp);
+		ResultSet res = stSelectTaskScore.executeQuery();
+		
+		Hashtable<Integer,Double> result = new Hashtable<Integer,Double>(); 
+		
+		while (res.next()) {
+			int team = res.getInt(1);
+			double score = res.getDouble(2);
+			result.put(team, score);
+		}
+		return result;
+	}
 
 	private static void CreateInitStateInDb() throws SQLException {
 		stCreateInitState.execute();
@@ -308,6 +348,7 @@ public class Main {
 		stCreateInitState = conn.prepareStatement(sqlCreateInitState);
 		stGetStealsOfRottenFlags = conn.prepareStatement(sqlGetStealsOfRottenFlags);
 		stInsertScore = conn.prepareStatement(sqlInsertScore);
+		stSelectTaskScore = conn.prepareStatement(sqlSelectTaskScore);
 	}
 	
 	private static Hashtable<TeamService, TeamScore> GetStateFromDb() throws SQLException{

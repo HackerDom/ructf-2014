@@ -45,7 +45,7 @@ public class HttpListener implements HttpHandler {
 			handler.handle(request, response);
 			sendError(httpExchange, 200, "");
 
-			log.info("Handle: '{}', bytes sent {}, elapsed {} ms", new Object[]{httpExchange.getRequestURI(), response.getBytesWritten(), System.currentTimeMillis() - start});
+			//log.info("Handle: '{}', bytes sent {}, elapsed {} ms", new Object[]{httpExchange.getRequestURI(), response.getBytesWritten(), System.currentTimeMillis() - start});
 		} catch(Exception e) {
 			log.error("Handle failed: '{}', elapsed {} ms", new Object[] {httpExchange.getRequestURI(), System.currentTimeMillis() - start, e});
 

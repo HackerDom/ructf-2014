@@ -4,20 +4,24 @@
 #include "common.h"
 
 uint8_t file_buffer[MAX_FILE];
+static const char *comment_text = "This file has been uploaded to Musicbox";
 
 void mb_send_response(int sockfd, char response_type) {
 	send(sockfd, (void *)&response_type, sizeof(response_type), 0);
 }
 
-int mb_set_ttl(uint8_t *data, int data_size, int ttl) {
-	struct Tag ttl_tag;
+int mb_set_tags(uint8_t *data, int data_size, int ttl) {
+	struct Tag tags[2];
 	char ttl_text[16];
 	int result;
 	uint8_t out_buffer[MAX_FILE];
 
+	if (ttl > MAX_TTL)
+		return -1;
 	sprintf(ttl_text, "%d", ttl);
-	mb_tag_init("TTL", ttl_text, &ttl_tag);
-	result = mb_set_metadata(data, data_size, out_buffer, &ttl_tag, 1);
+	mb_tag_init("TTL", ttl_text, &tags[0]);
+	mb_tag_init("COMMENT", comment_text, &tags[1]);
+	result = mb_set_metadata(data, data_size, out_buffer, tags, 2);
 	if (result < 0)
 		return -1;
 	memcpy(data, out_buffer, MAX_FILE);
@@ -41,7 +45,7 @@ void mb_process_put(int sockfd, struct Store *store) {
 		}
 		ptr += bytes_read;
 	} while (bytes_read != 0);
-	if (mb_set_ttl(file_buffer, ptr - file_buffer, ttl) < 0) {
+	if (mb_set_tags(file_buffer, ptr - file_buffer, ttl) < 0) {
 		mb_send_response(sockfd, MB_RESPONSE_ERROR);
 		return;
 	}

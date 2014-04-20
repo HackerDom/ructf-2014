@@ -3,7 +3,7 @@
 use constant {
     DEBUG => 0,
     PORT => 44100,
-    TIMEOUT => 0.1,
+    TIMEOUT => 1,
 
     CHECKER_OK => 101,
     CHECKER_NOFLAG => 102,
@@ -11,13 +11,20 @@ use constant {
     CHECKER_DOWN => 104,
     CHECKER_ERROR => 110,
 
-    VISUALIZER => 'checker.vis',
+    VISUALIZER => '/tmp/checker.vis',
 
     CONNECTION_ERROR => "Could not connect to service",
+    INVALID_HELLO => "Invalid `INIT' screen",
+    ADD_FLIGHT_ERROR => "Can't add flight ".
+        "(something has done wrong)",
+    READ_FLIGHT_ERROR => "Can't read flight ".
+        "(not exists or something has done wrong)",
+    DATABASE_END => "Can't generate flight",
     FLAG_NOT_FOUND => "Flag not found"
 };
 
 use Socket;
+use Fcntl qw/:flock/;
 use Term::ANSIColor qw/colorstrip/;
 
 my ($mode, $ip, $id, $flag) = @ARGV;
@@ -31,8 +38,7 @@ socket $S, PF_INET, SOCK_STREAM, getprotobyname 'tcp';
 $cr = connect $S, sockaddr_in PORT, inet_aton $ip;
 do_exit(CHECKER_DOWN, CONNECTION_ERROR) unless $cr;
 
-vec ($v = '', fileno ($S), 1) = 1;
-$| = 1;
+($|, $keys) = (1, 1);
 
 $handlers{$mode}->($id, $flag, $ip);
 
@@ -51,15 +57,16 @@ sub check {
     send_key('RST');
 
     local $_ = &get_all;
-    do_exit(CHECKER_MUMBLE) unless /RuCTF2014 FMGS/;
+    do_exit(CHECKER_MUMBLE, INVALID_HELLO) unless /RuCTF2014 FMGS/;
     do_exit(CHECKER_OK);
 }
 
 sub next_flight {
     my $ip = shift;
+    my $fn = "$ip.fmgs-last";
 
     my $last = 0;
-    if (open F, '<', "$ip.last") {
+    if (open F, '<', $fn) {
         $last = <F>;
         close F;
     }
@@ -69,7 +76,9 @@ sub next_flight {
     do { $result = <F> } while ($last--);
     close F;
 
-    open F, '>', "$ip.last";
+    return undef unless $result;
+
+    open F, '>', $fn;
     print F ($n + 1);
     close F;
 
@@ -81,9 +90,11 @@ sub visualize {
     my ($ip, $flight) = @_;
 
     open F, '>>', VISUALIZER;
+    flock F, LOCK_EX;
     my $line = join ' ', @{$flight}[5, 7, 6];
     $line =~ s/\s+/, /g;
     print F "$ip:\t[$line]\n";
+    flock F, LOCK_UN;
     close F;
 }
 
@@ -99,6 +110,13 @@ sub make_route {
     my ($flag, $pts) = @_;
     my @points = map { coords($_) } ($pts =~ /(\S+\s+\S+)/g);
 
+    my $max_len = 10;
+    if (@points > $max_len) {
+        my $d = @points / $max_len;
+        my @p = map { $points[$d*$_] } 1 .. $max_len;
+        @points = @p;
+    }
+
     $flag .= join '', map { chr(65 + int(rand(25))) }
         1..(5*@points - length($flag));
 
@@ -113,6 +131,8 @@ sub put {
     my ($id, $flag, $ip) = @_;
 
     my $fl = next_flight($ip);
+    do_exit(CHECKER_ERROR, DATABASE_END) unless defined $fl;
+
     send_key('RST');
     send_key('1L');
 
@@ -147,7 +167,7 @@ sub put {
     send_key('6R');
 
     my $result = &get_all;
-    do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
+    do_exit(CHECKER_MUMBLE, ADD_FLIGHT_ERROR) if $result =~ /ERROR/;
 
     print $fl->[0];
     eval { visualize($ip, $fl) };
@@ -164,9 +184,9 @@ sub get {
     send_key('PGDN');
 
     my $result = &get_all;
-    do_exit(CHECKER_MUMBLE, 'error') if $result =~ /ERROR/;
+    do_exit(CHECKER_MUMBLE, READ_FLIGHT_ERROR) if $result =~ /ERROR/;
     for my $i (0..6) {
-        do_exit(CHECKER_NOFLAG, "no flag")
+        do_exit(CHECKER_NOFLAG, FLAG_NOT_FOUND)
             if index($result, substr($flag, 5*$i, 5)) == -1;
     }
 
@@ -176,25 +196,20 @@ sub get {
 sub send_key {
     my $msg = shift;
     send $S, "$msg\n", 0;
+    ++ $k;
 }
 
 sub send_line {
-    my $msg = join "\n", split //, shift;
+    my $msg = join "\n", split //, $_[0];
     send $S, "$msg\n", 0;
+    $k += length($_[0])
 }
 
 sub get_all {
     my $x = '';
 
-    for (1..100*TIMEOUT) {
-        next unless select '' . $v, undef, undef, 0.01;
-        while (select '' . $v, undef, undef, 0.01) {
-            recv $S, ($_ = ''), 1024, 0;
-            return $x unless length;
-
-            $x .= $_;
-        }
-    }
+    $x .= <$S> for 1..15*($k + 1);
+    $k = 0;
 
     return $x;
 }

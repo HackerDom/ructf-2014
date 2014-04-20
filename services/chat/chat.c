@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <signal.h>
 
 #include "db.h"
@@ -52,9 +51,20 @@ int create_server_socket (int port)
 
 void print_greeting()
 {
-    WriteLn("   ::: Welcome to RuCTF 2014 passenger chat :::");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                 |                                    ");
+    WriteLn("                                _|_                                   ");
+    WriteLn("                               /___\\                                  ");
+    WriteLn("                              /_____\\                                 ");
+    WriteLn("                             /oo   oo\\                                ");
+    WriteLn(" \\___________________________\\       /___________________________/    ");
+    WriteLn("  `-----------|------|--------\\_____/--------|------|-----------'     ");
+    WriteLn("             ( )    ( )     O|OOo|oOO|O     ( )    ( )                ");
     WriteLn("");
-    WriteLn("Commands: \\help, \\register, \\login, \\list, \\join <room>, \\leave, \\quit");
+    WriteLn("            ::: Welcome to RuCTF 2014 passenger chat :::");
+    WriteLn("");
+    WriteLn("Commands: \\help, \\register, \\login, \\create, \\list, \\join, \\leave, \\quit");
     WriteLn("");
 }
 
@@ -72,6 +82,8 @@ void print_help()
 void parse_argv(char buf[], char **argv, int *argc)
 {
     (*argc) = 0;
+    memset(argv, 0, MAX_ARGV * sizeof(char *));
+
     char *c = strtok(buf, ARG_SEPARATORS);
     while (c != NULL && (*argc) < MAX_ARGV)
     {
@@ -80,46 +92,34 @@ void parse_argv(char buf[], char **argv, int *argc)
     }
 }
 
-void melting(int parameter) {
-    room_history();
-    Write(">");
-}
-
-void set_signal()
-{
-void (*originalInterruptSignal)(int); 
- originalInterruptSignal = signal(SIGUSR1, melting);
-}
-
 void process_client()
 {
     char *argv[MAX_ARGV];
     char buf[BUF_SIZE];
     int argc = 0;
+
     set_signal();
     print_greeting();
+    prompt();
 
     while (1)
     {
-        Write("> ");
         if (!fgets(buf, BUF_SIZE, stdin))
             break;
-        strtok(buf, "\r\n");            // Skip everything after "\r" or "\n"
+        strtok(buf, "\r\n");             // Skip everything after "\r" or "\n"
 
         parse_argv(buf, argv, &argc);    // It it sommand, so let's parse it
         char *cmd = argv[0];             // At least 1 token exists
 
-        if (!strcmp(cmd, "\\quit"))
+        if (buf[0] != '\\')              // If not command, then client wants to say something
+        {
+            say(buf);
+        }
+        else if (!strcmp(cmd, "\\quit"))
         {
             break;
         }
-        else if (buf[0] != '\\')             // If not command, then client wants to say something
-        {
-            say(buf);
-            kill(-1,SIGUSR1);
-            //room_history();
-        }
-        if (!strcmp(cmd, "\\help"))
+        else if (!strcmp(cmd, "\\help"))
         {
             print_help();
         }
@@ -129,19 +129,19 @@ void process_client()
         }
         else if (!strcmp(cmd, "\\register") && argc == 3)
         {
-            user_create(argv[1], argv[2]);            // (user,pass)
+            user_create(argv[1], argv[2]);            // args: user, pass
         }
         else if (!strcmp(cmd, "\\login") && argc == 3)
         {
-            user_login(argv[1], argv[2]);             // (user,pass)
+            user_login(argv[1], argv[2]);             // args: user, pass
         }
         else if (!strcmp(cmd, "\\create") && argc >= 2 && argc <= 3)
         {
-            room_create(argv[1], argc == 3 ? argv[2] : NULL);
+            room_create(argv[1], argv[2]);            // args: name, [pass]
         }
         else if (!strcmp(cmd, "\\join") && argc >= 2 && argc <= 3)
         {
-            room_join(argv[1], argc == 3 ? argv[2] : NULL);
+            room_join(argv[1], argv[2]);              // args: name, [pass]
         }
         else if (!strcmp(cmd, "\\leave"))
         {
@@ -151,8 +151,8 @@ void process_client()
         {
             WriteLn("Unknown command or wrong number of arguments (type '\\help' for commands list)");
         }
-
         WriteLn("");
+        prompt();
     }
 }
 
@@ -207,6 +207,7 @@ int main(int argc, char **argv)
             shutdown(client, 2);
             exit(0);
         }
+        close(client);
     }
     close(server);
     return 0;

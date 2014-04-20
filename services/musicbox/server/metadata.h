@@ -13,7 +13,7 @@ struct Tag {
 
 // Returns new Tag structure with 'key' and 'value' fields set according to parameters
 
-int mb_tag_init(char *key, char *value, struct Tag *tag);
+int mb_tag_init(const char *key, const char *value, struct Tag *tag);
 
 // Creates NEW string, which has to be deleted outside
 

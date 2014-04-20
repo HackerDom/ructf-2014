@@ -17,4 +17,11 @@ sub history {
   $self->render(json => $self->app->history);
 }
 
+sub fly_data {
+  my $self = shift;
+  my $f = $self->app->fly;
+  $f->{progress} = time() - localtime($self->app->round->{time})->epoch;
+  $self->render(json => $f);
+}
+
 1;

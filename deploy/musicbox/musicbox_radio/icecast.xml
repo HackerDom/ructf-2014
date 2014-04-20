@@ -1,0 +1,59 @@
+<icecast>
+    <location>Musicbox</location>
+    <admin>icemaster@musicbox</admin>
+
+    <limits>
+        <clients>100</clients>
+        <sources>2</sources>
+        <threadpool>5</threadpool>
+        <queue-size>524288</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65535</burst-size>
+    </limits>
+
+    <authentication>
+        <source-password>fgsfds</source-password>
+        <relay-password>fgsfds</relay-password>
+
+        <admin-user>musicbox</admin-user>
+        <admin-password>fgsfds</admin-password>
+    </authentication>
+
+    <directory>
+        <yp-url-timeout>15</yp-url-timeout>
+        <yp-url>http://dir.xiph.org/cgi-bin/yp-cgi</yp-url>
+    </directory>
+
+    <hostname>localhost</hostname>
+
+    <listen-socket>
+        <port>17216</port>
+    </listen-socket>
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast</basedir>
+        <logdir>/var/log/icecast</logdir>
+        <webroot>/usr/share/icecast/web</webroot>
+        <adminroot>/usr/share/icecast/admin</adminroot>
+        <alias source="/" destination="/status.xsl"/>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>3</loglevel> <!-- 4 Debug, 3 Info, 2 Warn, 1 Error -->
+        <logsize>10000</logsize> <!-- Max size of a logfile -->
+    </logging>
+
+    <security>
+        <chroot>0</chroot>
+        <changeowner>
+            <user>nobody</user>
+            <group>nobody</group>
+        </changeowner>
+    </security>
+</icecast>
