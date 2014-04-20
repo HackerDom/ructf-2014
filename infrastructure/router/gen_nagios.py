@@ -149,7 +149,7 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Backup core switch port
-    check_command       check_snmp_port!102
+    check_command       check_snmp_port!123
     check_interval 2
 }
 
@@ -157,7 +157,7 @@ define service {
     use                 generic-service
     host_name           Team {{i}} switch
     service_description Backup core switch port speed
-    check_command       check_snmp_portspeed!102
+    check_command       check_snmp_portspeed!123
     check_interval 2
 }
 
