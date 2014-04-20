@@ -256,16 +256,38 @@ class Checker(object):
         self._cookies = {}
 
     def http_get(self, url):
+        user_agent = self.generate_useragent()
+
+        self.log('- request GET: {0} -'.format(url))
+        self.log('COOKIES: {0}'.format(repr(self._cookies)))
+        self.log('USER_AGENT: {0}'.format(user_agent))
+
         cookies = self._cookies
-        headers = {'User-Agent': self.generate_useragent()}
+        headers = {'User-Agent': user_agent}
         rez = r.get(url, timeout=1, cookies=cookies, headers=headers)
+
+        self.log('STATUS: {0}'.format(rez.status_code))
+        self.log('BODY: {0}'.format(repr(rez.text)))
+        self.log('- ! -\n')
+
         self._cookies = rez.cookies.get_dict()
         return rez
 
     def http_post(self, url, data):
+        user_agent = self.generate_useragent()
+
+        self.log('- request POST: {0} -'.format(url))
+        self.log('COOKIES: {0}'.format(repr(self._cookies)))
+        self.log('USER_AGENT: {0}'.format(user_agent))
+
         cookies = self._cookies
-        headers = {'User-Agent': self.generate_useragent()}
+        headers = {'User-Agent': user_agent}
         rez = r.post(url, data, timeout=1, cookies=cookies, headers=headers)
+
+        self.log('STATUS: {0}'.format(rez.status_code))
+        self.log('BODY: {0}'.format(repr(rez.text)))
+        self.log('- ! - \n')
+
         self._cookies = rez.cookies.get_dict()
         return rez
 
@@ -288,6 +310,7 @@ class Checker(object):
 
         # ack !
         rez = self.http_get(self.url_for('ack'))
+
         if rez.status_code != 200:
             self.status_mumble('/ack/ url - invalid status')
 
@@ -338,6 +361,7 @@ class Checker(object):
         return format_str.format(flag)
 
     def generate_useragent(self):
+        # 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36' #
         return random.choice(USER_AGENTS)  # USER_AGENTS[hash % len(USER_AGENTS)]
 
 if __name__ == '__main__':
